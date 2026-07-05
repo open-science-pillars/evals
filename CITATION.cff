@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: If you use this eval suite, please cite it. Tagged releases are archived to Zenodo.
+title: "Open Science Pillars: evals"
+type: software
+authors:
+  - name: Open Science Pillars Community
+repository-code: https://github.com/open-science-pillars/evals
+license: Apache-2.0

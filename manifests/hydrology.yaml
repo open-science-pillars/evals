@@ -1,0 +1,8 @@
+name: hydrology
+cases:
+  - {id: swot-reach-node-scope,   plugin: hydrology, case: hydrology/evals/swot-reach-node-scope.yaml,   allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: nwis-provisional-data,   plugin: hydrology, case: hydrology/evals/nwis-provisional-data.yaml,   allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 25}
+  - {id: smap-radar-loss,         plugin: hydrology, case: hydrology/evals/smap-radar-loss.yaml,         allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: nwis-regulated-gauge,    plugin: hydrology, case: hydrology/evals/nwis-regulated-gauge.yaml,    allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 25}
+  - {id: volume-gate-rejection,   plugin: hydrology, case: hydrology/evals/volume-gate-rejection.yaml,   allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: recipe-fidelity-drought, plugin: hydrology, case: hydrology/evals/recipe-fidelity-drought.yaml, allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 30}

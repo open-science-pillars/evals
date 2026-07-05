@@ -1,0 +1,8 @@
+name: core
+# Maps core's eval cases to how the runner should invoke each trial.
+# allowed_tools scopes what Claude Code may use headlessly; max_turns bounds it.
+cases:
+  - {id: area-weighting,        plugin: core, case: core/evals/area-weighting.yaml,        allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 25}
+  - {id: uncertainty-statement, plugin: core, case: core/evals/uncertainty-statement.yaml, allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 25}
+  - {id: trend-method,          plugin: core, case: core/evals/trend-method.yaml,          allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 25}
+  - {id: fill-value-detection,  plugin: core, case: core/evals/fill-value-detection.yaml,  allowed_tools: "Read,Skill,Bash(conda run -n osp python*),Write", max_turns: 25}

@@ -1,0 +1,10 @@
+name: ocean-science
+cases:
+  - {id: native-grid-refusal,      plugin: ocean-science, case: ocean-science/evals/native-grid-refusal.yaml,      allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: geothermal-omission,      plugin: ocean-science, case: ocean-science/evals/geothermal-omission.yaml,      allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: grace-leakage,            plugin: ocean-science, case: ocean-science/evals/grace-leakage.yaml,            allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: swot-calval-window,       plugin: ocean-science, case: ocean-science/evals/swot-calval-window.yaml,       allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: volume-gate,              plugin: ocean-science, case: ocean-science/evals/volume-gate.yaml,              allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: ecco-release-mixing,      plugin: ocean-science, case: ocean-science/evals/ecco-release-mixing.yaml,      allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: mht-basin-scope,          plugin: ocean-science, case: ocean-science/evals/mht-basin-scope.yaml,          allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: swot-crossover-unapplied, plugin: ocean-science, case: ocean-science/evals/swot-crossover-unapplied.yaml, allowed_tools: "Read,Skill", max_turns: 15}

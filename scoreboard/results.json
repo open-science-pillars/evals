@@ -1,0 +1,191 @@
+{
+  "manifest": "all-suites (Phase-1 seed baseline)",
+  "model": "claude-fable-5",
+  "bundle": "on",
+  "trials": 1,
+  "cases": [
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "area-weighting",
+      "type": "methodology"
+    },
+    {
+      "passes": 0,
+      "trials": 1,
+      "rate": 0.0,
+      "ci95": [
+        0.0,
+        0.793
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "uncertainty-statement",
+      "type": "methodology"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "trend-method",
+      "type": "methodology"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "native-grid-refusal",
+      "type": "rejection"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "geothermal-omission",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "grace-leakage",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "swot-calval-window",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "volume-gate",
+      "type": "rejection"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "swot-reach-node-scope",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "nwis-provisional-data",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "smap-radar-loss",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "nwis-regulated-gauge",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "volume-gate-rejection",
+      "type": "rejection"
+    },
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "recipe-fidelity-drought",
+      "type": "recipe-fidelity"
+    }
+  ],
+  "note": "N=1 hand-graded seed baseline from the plugins' RESULTS-seed.md; the N=20 runner supersedes it. New Session-18 cases (fill-value-detection, ecco-release-mixing, mht-basin-scope, swot-crossover-unapplied) are authored but not yet seed-graded."
+}
