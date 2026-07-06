@@ -1,0 +1,7 @@
+name: poc-mht-triple
+# POC for PARKING #14: the MHT triple with discovery tools (Glob/Grep) so the
+# slimmed skill can find concepts dynamically. mht-basin-scope is the
+# knowledge-dependent case; native-grid-refusal is the hard-refusal control.
+cases:
+  - {id: mht-basin-scope,     plugin: ocean-science, case: ocean-science/evals/mht-basin-scope.yaml,     allowed_tools: "Read,Skill,Glob,Grep", max_turns: 16}
+  - {id: native-grid-refusal, plugin: ocean-science, case: ocean-science/evals/native-grid-refusal.yaml, allowed_tools: "Read,Skill,Glob,Grep", max_turns: 14}
