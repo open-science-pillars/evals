@@ -1,0 +1,12 @@
+<!doctype html><meta charset=utf-8><title>OSP evals: ablation PILOT (N=3, underpowered, NOT the pre-registered result) (claude-opus-4-8, N=3)</title>
+<style>body{font:14px system-ui;margin:2rem;max-width:60rem}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}
+th{background:#f4f4f4}.p{color:#137333;font-weight:600}.f{color:#c5221f;font-weight:600}
+caption{text-align:left;color:#555;padding-bottom:.5rem}</style>
+<h1>OSP evals: ablation PILOT (N=3, underpowered, NOT the pre-registered result) (claude-opus-4-8, N=3)</h1>
+<p>A case passes when the lower bound of its Wilson 95% pass-rate interval
+meets the threshold: the suite holds itself to the uncertainty rule the
+plugins enforce. Bundle-off columns, when present, are the knowledge-layer
+ablation.</p>
+<table><tr><th>case</th><th>type</th><th>bundle on: rate (95% CI)</th><th>bundle off: rate</th><th>delta</th><th>verdict</th></tr><tr><td>native-grid-refusal</td><td>rejection</td><td>1.00 [0.44, 1.00]</td><td>1.00</td><td>+0.0</td><td class='p'>PASS</td></tr><tr><td>geothermal-omission</td><td>gotcha-avoidance</td><td>1.00 [0.44, 1.00]</td><td>1.00</td><td>+0.0</td><td class='p'>PASS</td></tr><tr><td>swot-calval-window</td><td>gotcha-avoidance</td><td>1.00 [0.44, 1.00]</td><td>1.00</td><td>+0.0</td><td class='p'>PASS</td></tr><tr><td>grace-leakage</td><td>gotcha-avoidance</td><td>0.67 [0.21, 0.94]</td><td>0.67</td><td>+0.0</td><td class='f'>FAIL</td></tr><tr><td>ecco-release-mixing</td><td>gotcha-avoidance</td><td>0.00 [0.00, 0.56]</td><td>0.00</td><td>+0.0</td><td class='f'>FAIL</td></tr><tr><td>mht-basin-scope</td><td>gotcha-avoidance</td><td>0.67 [0.21, 0.94]</td><td>0.67</td><td>+0.0</td><td class='f'>FAIL</td></tr><tr><td>swot-crossover-unapplied</td><td>gotcha-avoidance</td><td>1.00 [0.44, 1.00]</td><td>1.00</td><td>+0.0</td><td class='p'>PASS</td></tr></table>
+<p style=color:#888>Generated from results.json by scoreboard.py.</p>

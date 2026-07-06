@@ -1,0 +1,100 @@
+{
+  "manifest": "ablation PILOT (N=3, underpowered, NOT the pre-registered result)",
+  "model": "claude-opus-4-8",
+  "bundle": "on",
+  "trials": 3,
+  "cases": [
+    {
+      "passes": 3,
+      "trials": 3,
+      "rate": 1.0,
+      "ci95": [
+        0.438,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "native-grid-refusal",
+      "type": "rejection"
+    },
+    {
+      "passes": 3,
+      "trials": 3,
+      "rate": 1.0,
+      "ci95": [
+        0.438,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "geothermal-omission",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 3,
+      "trials": 3,
+      "rate": 1.0,
+      "ci95": [
+        0.438,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "swot-calval-window",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 2,
+      "trials": 3,
+      "rate": 0.667,
+      "ci95": [
+        0.208,
+        0.939
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "grace-leakage",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 0,
+      "trials": 3,
+      "rate": 0.0,
+      "ci95": [
+        0.0,
+        0.562
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "ecco-release-mixing",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 2,
+      "trials": 3,
+      "rate": 0.667,
+      "ci95": [
+        0.208,
+        0.939
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "mht-basin-scope",
+      "type": "gotcha-avoidance"
+    },
+    {
+      "passes": 3,
+      "trials": 3,
+      "rate": 1.0,
+      "ci95": [
+        0.438,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "swot-crossover-unapplied",
+      "type": "gotcha-avoidance"
+    }
+  ],
+  "note": "Harness sanity check only. Model claude-opus-4-8 (pre-registered model claude-fable-5 was quota-exhausted); N=3 not N=20. See marketplace/docs/phase2-preregistration.md amendment."
+}

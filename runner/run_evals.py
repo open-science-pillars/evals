@@ -28,6 +28,9 @@ from judge import judge_trial  # noqa: E402
 from stats import verdict  # noqa: E402
 
 
+ERROR_MARKERS = ("reached your", "usage-credits", "/usage-credits")
+
+
 def run_trial(prompt, allowed_tools, max_turns, model, timeout=600):
     """One headless Claude Code trial; returns the transcript text."""
     try:
@@ -41,7 +44,15 @@ def run_trial(prompt, allowed_tools, max_turns, model, timeout=600):
         return ""
 
 
-def grade(case, transcript, ws):
+def is_error_transcript(t):
+    """A trial that never really ran (empty, or a quota/limit message) must not
+    be counted as a failure: it is an infrastructure error, tracked separately."""
+    if len(t.strip()) < 20:
+        return True
+    return any(m in t.lower() for m in ERROR_MARKERS) and len(t) < 400
+
+
+def grade(case, transcript, ws, no_judge=False):
     """A trial passes iff every present grader agrees."""
     results = {}
     ok = True
@@ -51,7 +62,7 @@ def grade(case, transcript, ws):
             if p is not None:
                 results["programmatic"] = p
                 ok = ok and p
-        if "rubric" in g:
+        if "rubric" in g and not no_judge:
             # A dedicated rubric file overrides; otherwise the case's own
             # `notes` field is the rubric (it already states pass/fail intent).
             rp = ws / case["_plugin"] / "evals" / g["rubric"]
@@ -73,6 +84,8 @@ def main():
     ap.add_argument("--out", default="scoreboard/results.json")
     ap.add_argument("--bundle", default="on", choices=["on", "off"],
                     help="knowledge bundle present ('on') or removed ('off') for the ablation")
+    ap.add_argument("--no-judge", action="store_true",
+                    help="programmatic graders only; skip the LLM rubric judge (faster pilot)")
     args = ap.parse_args()
 
     ws = Path(args.workspace)
@@ -87,17 +100,25 @@ def main():
         case = yaml.safe_load((ws / entry["case"]).read_text())
         case["_plugin"] = entry["plugin"]
         passes = 0
+        errors = 0
         for _ in range(args.trials):
             t = run_trial(case["prompt"], entry["allowed_tools"],
                           entry.get("max_turns", 20), args.model)
-            ok, _detail = grade(case, t, ws)
+            if is_error_transcript(t):
+                errors += 1
+                continue
+            ok, _detail = grade(case, t, ws, no_judge=args.no_judge)
             passes += int(ok)
-        v = verdict(passes, args.trials, case.get("pass_threshold", 0.8))
+        valid = args.trials - errors
+        v = verdict(passes, valid, case.get("pass_threshold", 0.8))
         v["id"] = entry["id"]
         v["type"] = case.get("type")
+        v["errors"] = errors
+        v["trials_requested"] = args.trials
         out["cases"].append(v)
-        print(f"{entry['id']}: {v['passes']}/{v['trials']} rate {v['rate']} "
-              f"CI {v['ci95']} -> {'PASS' if v['pass'] else 'FAIL'}")
+        flag = " (ALL TRIALS ERRORED)" if valid == 0 else ""
+        print(f"{entry['id']}: {v['passes']}/{valid} valid (rate {v['rate']}, "
+              f"{errors} errors) CI {v['ci95']} -> {'PASS' if v['pass'] else 'FAIL'}{flag}")
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=2))
