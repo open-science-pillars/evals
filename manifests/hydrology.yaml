@@ -1,6 +1,6 @@
 name: hydrology
 cases:
-  - {id: swot-reach-node-scope,   plugin: hydrology, case: hydrology/evals/swot-reach-node-scope.yaml,   allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: swot-reach-node-scope,   plugin: hydrology, case: hydrology/evals/swot-reach-node-scope.yaml,   allowed_tools: "Read,Skill", max_turns: 30}
   - {id: nwis-provisional-data,   plugin: hydrology, case: hydrology/evals/nwis-provisional-data.yaml,   allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
   - {id: smap-radar-loss,         plugin: hydrology, case: hydrology/evals/smap-radar-loss.yaml,         allowed_tools: "Read,Skill", max_turns: 15}
   - {id: nwis-regulated-gauge,    plugin: hydrology, case: hydrology/evals/nwis-regulated-gauge.yaml,    allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}

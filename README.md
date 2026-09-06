@@ -19,7 +19,7 @@ evals/
 │   ├── stats.py       # Wilson binomial CI + pass verdict
 │   └── scoreboard.py  # renders results.json to a static HTML scoreboard
 ├── manifests/         # per-plugin case lists with allowed_tools and max_turns
-└── scoreboard/        # results.json + index.html (published)
+└── scoreboard/        # results.json + index.html (published); transcripts/ when kept
 ```
 
 ## Grading
@@ -35,22 +35,40 @@ Wilson 95% interval is reported for transparency and drives the ablation.
 
 ```bash
 # Full sweep (a CI job: hundreds of agentic invocations)
-python runner/run_evals.py --manifest manifests/ocean-science.yaml \
+uv run runner/run_evals.py --manifest manifests/ocean-science.yaml \
     --workspace /path/to/osp-workspace --trials 20 --model claude-fable-5 \
-    --out scoreboard/results.json
-python runner/scoreboard.py scoreboard/results.json --out scoreboard/index.html
+    --out scoreboard/results.json --transcripts scoreboard/transcripts
+uv run runner/scoreboard.py scoreboard/results.json --out scoreboard/index.html
 
 # Quick check (a subset at low N, for local reproduction of seed grades)
-python runner/run_evals.py --manifest manifests/ocean-science.yaml \
+uv run runner/run_evals.py --manifest manifests/ocean-science.yaml \
     --workspace /path/to/osp-workspace --trials 3 \
     --cases geothermal-omission,grace-leakage --out /tmp/demo.json
 ```
 
 The plugins must be installed in the workspace Claude Code runs from. The full
 N=20 sweep across all suites is a continuous-integration / cloud job, not a
-laptop run.
+laptop run. The runner's dependencies are declared in its script header, so
+`uv run` needs no environment of its own.
 
-## The ablation (Session 19)
+### Reading a failure
+
+A pass rate is not a diagnosis. The results file records every trial
+(elapsed seconds, the error kind for a trial that never graded, each grader's
+outcome and the judge's one-sentence reason), and `--transcripts DIR` keeps
+the transcript, stderr and grader detail of every trial under
+`DIR/<case id>/trial<n>.*`, so a failed case is read from disk rather than
+rerun. Keep transcripts on any run whose numbers you intend to cite.
+
+Two limits shape a trial and both are recorded: the manifest's `max_turns`
+(a trial cut short by the turn allowance grades as whatever it managed to
+say, usually a FAIL) and the runner's `--timeout` (default 1200 s; a trial
+past it is an error, not a failure, and its partial output is kept). When a
+case fails, check the elapsed times and turn allowance before reading the
+rubric verdicts: a 30-turn multi-granule case has been measured above 600 s
+before judging.
+
+## The ablation
 
 The headline experiment runs the gotcha-avoidance suite with the knowledge
 bundle installed (`--bundle on`) and with `knowledge/` removed
