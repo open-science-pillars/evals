@@ -46,7 +46,16 @@ uv run runner/run_evals.py --manifest manifests/ocean-science.yaml \
     --cases geothermal-omission,grace-leakage --out /tmp/demo.json
 ```
 
-The plugins must be installed in the workspace Claude Code runs from. The full
+The plugins must be loaded in the Claude Code session each trial runs in:
+installed, or handed in from a checkout with `--claude-arg=--plugin-dir
+--claude-arg=/path/to/checkout` (repeatable; every value is passed to
+`claude` verbatim and recorded in the results file). An installed plugin of
+the same name wins over a checkout, so a checkout under test is loaded with
+that plugin disabled for the trial only: `--claude-arg=--settings
+--claude-arg='{"enabledPlugins":{"hydrology@open-science-pillars":false}}'`,
+which changes nothing on disk. Launch the runner from a directory that
+carries no project instructions or memory of its own, so a trial reads only
+what the plugins give it. The full
 N=20 sweep across all suites is a continuous-integration / cloud job, not a
 laptop run. The runner's dependencies are declared in its script header, so
 `uv run` needs no environment of its own.

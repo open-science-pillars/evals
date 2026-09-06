@@ -47,13 +47,17 @@ ERROR_MARKERS = ("reached your", "usage-credits", "/usage-credits")
 DEFAULT_TIMEOUT = 1200
 
 
-def run_trial(prompt, allowed_tools, max_turns, model, timeout=DEFAULT_TIMEOUT):
+def run_trial(prompt, allowed_tools, max_turns, model, timeout=DEFAULT_TIMEOUT,
+              claude_args=()):
     """One headless Claude Code trial.
 
     Returns (stdout, stderr, elapsed_seconds, timed_out). On a timeout the
-    partial stdout is returned so it can be kept beside the error."""
+    partial stdout is returned so it can be kept beside the error.
+    claude_args are handed to claude verbatim (a --plugin-dir for a checkout
+    under test, a --settings override); the results file records them."""
     cmd = ["claude", "-p", prompt, "--model", model,
-           "--allowedTools", allowed_tools, "--max-turns", str(max_turns)]
+           "--allowedTools", allowed_tools, "--max-turns", str(max_turns),
+           *claude_args]
     t0 = time.monotonic()
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
@@ -127,6 +131,10 @@ def main():
                     help="knowledge bundle present ('on') or removed ('off') for the ablation")
     ap.add_argument("--no-judge", action="store_true",
                     help="programmatic graders only; skip the LLM rubric judge (faster pilot)")
+    ap.add_argument("--claude-arg", action="append", default=[],
+                    help="extra argument handed to claude verbatim, repeatable (for example "
+                         "--claude-arg=--plugin-dir --claude-arg=/path/to/checkout to test a "
+                         "checkout, or a --settings override); recorded in the results file")
     args = ap.parse_args()
 
     ws = Path(args.workspace)
@@ -135,7 +143,8 @@ def main():
     troot = Path(args.transcripts) if args.transcripts else None
 
     out = {"manifest": man["name"], "model": args.model, "bundle": args.bundle,
-           "trials": args.trials, "timeout": args.timeout, "cases": []}
+           "trials": args.trials, "timeout": args.timeout,
+           "claude_args": args.claude_arg, "cases": []}
     for entry in man["cases"]:
         if only and entry["id"] not in only:
             continue
@@ -149,7 +158,7 @@ def main():
         for n in range(1, args.trials + 1):
             t, err, elapsed, timed_out = run_trial(
                 case["prompt"], entry["allowed_tools"], max_turns, args.model,
-                timeout=args.timeout)
+                timeout=args.timeout, claude_args=args.claude_arg)
             detail = {"trial": n, "elapsed_s": round(elapsed), "chars": len(t)}
             if timed_out or is_error_transcript(t):
                 detail["error"] = "timeout" if timed_out else "empty or limit message"
