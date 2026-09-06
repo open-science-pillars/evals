@@ -1,6 +1,6 @@
 # Ablation pilot (underpowered, NOT the pre-registered result)
 
-A harness sanity check run in Session 19, N=3, model claude-opus-4-8 (the
+A harness sanity check run 2026-07-05, N=3, model claude-opus-4-8 (the
 pre-registered model claude-fable-5 was quota-exhausted this session). The
 powered run is N=20 on the recorded model in a CI/cloud environment; the
 go/stop conditions in the pre-registration are tied to THAT run, not this.
