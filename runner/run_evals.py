@@ -63,11 +63,18 @@ def grade(case, transcript, ws, no_judge=False):
                 results["programmatic"] = p
                 ok = ok and p
         if "rubric" in g and not no_judge:
-            # A dedicated rubric file overrides; otherwise the case's own
-            # `notes` field is the rubric (it already states pass/fail intent).
-            rp = ws / case["_plugin"] / "evals" / g["rubric"]
-            rubric = rp.read_text() if rp.exists() else (
-                f"Grade this trial against the eval case's intent:\n{case.get('notes', '')}")
+            # A dedicated rubric file overrides; a case may also carry the
+            # rubric text inline (a value with whitespace is text, not a
+            # path); otherwise the case's own `notes` field is the rubric
+            # (it already states pass/fail intent).
+            spec = g["rubric"]
+            rp = ws / case["_plugin"] / "evals" / spec
+            if spec.strip() and not any(c.isspace() for c in spec.strip()) and rp.exists():
+                rubric = rp.read_text()
+            elif any(c.isspace() for c in spec.strip()):
+                rubric = spec
+            else:
+                rubric = f"Grade this trial against the eval case's intent:\n{case.get('notes', '')}"
             j = judge_trial(rubric, transcript)
             results["rubric"] = j
             ok = ok and (j.get("grade") == "PASS")
