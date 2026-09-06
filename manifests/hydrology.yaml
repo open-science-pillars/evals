@@ -7,3 +7,5 @@ cases:
   - {id: volume-gate-rejection,   plugin: hydrology, case: hydrology/evals/volume-gate-rejection.yaml,   allowed_tools: "Read,Skill", max_turns: 15}
   - {id: recipe-fidelity-drought, plugin: hydrology, case: hydrology/evals/recipe-fidelity-drought.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 30}
   - {id: nldi-unsnapped-point,    plugin: hydrology, case: hydrology/evals/nldi-unsnapped-point.yaml,    allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
+  - {id: imerg-run-mixing,        plugin: hydrology, case: hydrology/evals/imerg-run-mixing.yaml,        allowed_tools: "Read,Skill", max_turns: 20}
+  - {id: imerg-cold-season-orographic-underestimation, plugin: hydrology, case: hydrology/evals/imerg-cold-season-orographic-underestimation.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
