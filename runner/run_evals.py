@@ -36,6 +36,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from graders import run_programmatic  # noqa: E402
 from judge import judge_trial  # noqa: E402
+from toolspec import tool_names  # noqa: E402
 from stats import verdict  # noqa: E402
 
 
