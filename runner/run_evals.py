@@ -76,10 +76,15 @@ def is_error_transcript(t):
     return any(m in t.lower() for m in ERROR_MARKERS) and len(t) < 400
 
 
-def grade(case, transcript, ws, no_judge=False):
-    """A trial passes iff every present grader agrees."""
+def grade(case, transcript, ws, no_judge=False, model="claude-fable-5"):
+    """A trial passes iff every present grader agrees.
+
+    Returns (ok, results, judge_error): a judge that did not answer sets
+    judge_error, and the caller records the trial as an infrastructure error
+    rather than as a failure."""
     results = {}
     ok = True
+    judge_error = None
     for g in case.get("graders", []):
         if "programmatic" in g:
             p = run_programmatic(g["programmatic"], transcript)
@@ -99,10 +104,12 @@ def grade(case, transcript, ws, no_judge=False):
                 rubric = spec
             else:
                 rubric = f"Grade this trial against the eval case's intent:\n{case.get('notes', '')}"
-            j = judge_trial(rubric, transcript)
+            j = judge_trial(rubric, transcript, model=model)
             results["rubric"] = j
+            if j.get("grade") == "ERROR":
+                judge_error = j.get("reason", "judge error")
             ok = ok and (j.get("grade") == "PASS")
-    return ok, results
+    return ok, results, judge_error
 
 
 def keep(tdir, n, transcript, stderr, detail):
@@ -164,10 +171,17 @@ def main():
                 detail["error"] = "timeout" if timed_out else "empty or limit message"
                 errors += 1
             else:
-                ok, graders = grade(case, t, ws, no_judge=args.no_judge)
-                detail["pass"] = ok
+                ok, graders, judge_error = grade(case, t, ws, no_judge=args.no_judge,
+                                                 model=args.model)
                 detail["graders"] = graders
-                passes += int(ok)
+                if judge_error:
+                    # The trial ran; the judge did not. Counting this as a
+                    # failure would put a wrong rate in the record.
+                    detail["error"] = f"judge unavailable ({judge_error})"
+                    errors += 1
+                else:
+                    detail["pass"] = ok
+                    passes += int(ok)
             trials.append(detail)
             keep(tdir, n, t, err, detail)
             state = detail.get("error") or ("PASS" if detail["pass"] else "FAIL")
