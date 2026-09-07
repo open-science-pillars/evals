@@ -9,3 +9,5 @@ cases:
   - {id: nldi-unsnapped-point,    plugin: hydrology, case: hydrology/evals/nldi-unsnapped-point.yaml,    allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
   - {id: imerg-run-mixing,        plugin: hydrology, case: hydrology/evals/imerg-run-mixing.yaml,        allowed_tools: "Read,Skill", max_turns: 20}
   - {id: imerg-cold-season-orographic-underestimation, plugin: hydrology, case: hydrology/evals/imerg-cold-season-orographic-underestimation.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
+  - {id: mod16-fill-over-water-barren-urban, plugin: hydrology, case: hydrology/evals/mod16-fill-over-water-barren-urban.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
+  - {id: openet-area-cap,        plugin: hydrology, case: hydrology/evals/openet-area-cap.yaml,        allowed_tools: "Read,Skill", max_turns: 20}
