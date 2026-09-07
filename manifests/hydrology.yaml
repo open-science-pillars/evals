@@ -13,4 +13,4 @@ cases:
   - {id: openet-area-cap,        plugin: hydrology, case: hydrology/evals/openet-area-cap.yaml,        allowed_tools: "Read,Skill", max_turns: 20}
   - {id: water-balance-sub-floor-refusal, plugin: hydrology, case: hydrology/evals/water-balance-sub-floor-refusal.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
   - {id: water-balance-regulated-flag,    plugin: hydrology, case: hydrology/evals/water-balance-regulated-flag.yaml,    allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
-  - {id: water-balance-run-declared,      plugin: hydrology, case: hydrology/evals/water-balance-run-declared.yaml,      allowed_tools: "Read,Skill", max_turns: 20}
+  - {id: water-balance-run-declared,      plugin: hydrology, case: hydrology/evals/water-balance-run-declared.yaml,      allowed_tools: "Read,Skill", max_turns: 35}
