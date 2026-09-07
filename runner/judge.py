@@ -3,6 +3,12 @@
 Uses a headless `claude -p` call with a strict PASS/FAIL contract. The judge
 is deliberately skeptical: partial compliance is a FAIL, and a plausible-but-
 wrong answer is a FAIL, matching the eval cases' own notes.
+
+A judge that did not answer is not a verdict. A timeout, a usage-limit
+message or a reply the contract cannot be read out of returns grade ERROR,
+which the runner counts as an infrastructure error rather than as a failed
+trial: a judge outage that silently reads as FAIL would put a wrong rate in
+the record, which is the one thing a measurement must not do.
 """
 import json
 import subprocess
@@ -21,7 +27,14 @@ TRANSCRIPT:
 """
 
 
+ERROR_MARKERS = ("reached your", "usage limit", "rate limit", "credit balance",
+                 "quota", "overloaded")
+
+
 def judge_trial(rubric_text, transcript, model="claude-fable-5", timeout=180):
+    """Grade one transcript. The model defaults to claude-fable-5 and the
+    runner passes its own --model, so the judge and the trials cannot end up
+    on different models by accident."""
     prompt = JUDGE_PROMPT.format(rubric=rubric_text, transcript=transcript[:20000])
     try:
         out = subprocess.run(
@@ -29,7 +42,10 @@ def judge_trial(rubric_text, transcript, model="claude-fable-5", timeout=180):
             capture_output=True, text=True, timeout=timeout,
         ).stdout
     except subprocess.TimeoutExpired:
-        return {"grade": "FAIL", "reason": "judge timed out"}
+        return {"grade": "ERROR", "reason": f"judge timed out after {timeout}s"}
+    low = out.lower()
+    if len(out.strip()) < 20 or any(m in low for m in ERROR_MARKERS):
+        return {"grade": "ERROR", "reason": f"judge did not answer: {out.strip()[:200]}"}
     # Extract the JSON object from the judge's reply.
     start = out.rfind("{")
     end = out.rfind("}")
@@ -40,4 +56,4 @@ def judge_trial(rubric_text, transcript, model="claude-fable-5", timeout=180):
                 return d
         except json.JSONDecodeError:
             pass
-    return {"grade": "FAIL", "reason": "unparseable judge output"}
+    return {"grade": "ERROR", "reason": f"unparseable judge output: {out.strip()[:200]}"}
