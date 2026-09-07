@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from graders import run_programmatic  # noqa: E402
+from judge import parse_judgement  # noqa: E402
 from stats import verdict  # noqa: E402
 
 # (checker_id, good transcript, bad transcript)
@@ -63,6 +64,29 @@ def main():
             fails.append(f"{cid}: good transcript classified {g}, expected True")
         if b is not False:
             fails.append(f"{cid}: bad transcript classified {b}, expected False")
+    # The judge's reply, in every shape it comes back in. A verdict that
+    # was stated is a verdict even when the envelope is damaged; only a
+    # reply that states no grade is an error, because an outage read as a
+    # FAIL and a truncated FAIL read as an outage are both wrong rates.
+    JUDGE = [
+        ('{"grade": "PASS", "reason": "names the seam"}', "PASS", False),
+        ('here you go\n{"grade": "FAIL", "reason": "no run declared"}', "FAIL", False),
+        ('{"grade": "FAIL", "reason": "refused correctly but then delivered a closure by another route \u2014 P',
+         "FAIL", True),
+        ('{"grade": "PASS", "reason": "the masked fraction is stated and the volume is over the measured',
+         "PASS", True),
+        ("You've reached your Fable 5 limit. Switch to another model, or manage usage credits.", "ERROR", False),
+        ("", "ERROR", False),
+        ("I read the transcript and thought about it at some length, but here is only prose.", "ERROR", False),
+        ('{"grade": "PASS"} and also {"grade": "FAIL"}', "ERROR", False),
+    ]
+    for reply, want, salvaged in JUDGE:
+        got = parse_judgement(reply)
+        if got["grade"] != want:
+            fails.append(f"judge reply {reply[:40]!r}: graded {got['grade']}, expected {want}")
+        if bool(got.get("salvaged")) != salvaged:
+            fails.append(f"judge reply {reply[:40]!r}: salvaged={got.get('salvaged')}, expected {salvaged}")
+
     # Aggregation: 5/5 seed reproduces PASS at 0.8; 3/5 does not.
     assert verdict(5, 5, 0.8)["pass"] is True
     assert verdict(3, 5, 0.8)["pass"] is False
@@ -74,6 +98,7 @@ def main():
             print("  " + f)
         sys.exit(1)
     print(f"selftest: {len(CASES)} graders classify good/bad transcripts correctly; "
+          f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           "verdict aggregation correct")
     print("evals runner selftest: PASSED")
 
