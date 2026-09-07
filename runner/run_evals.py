@@ -26,6 +26,7 @@ run a subset at low --trials to demonstrate the runner reproduces seed grades.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -47,17 +48,66 @@ ERROR_MARKERS = ("reached your", "usage-credits", "/usage-credits")
 DEFAULT_TIMEOUT = 1200
 
 
+def tool_names(allowed_tools: str):
+    """The bare tool names in a manifest's allowed_tools string.
+
+    `--tools` names tools; `Bash(uv run*)` is a permission rule on one of
+    them. Both are needed and they are not the same list."""
+    # A rule's argument can hold spaces and commas of its own
+    # (`Bash(uv run*)`), so the arguments come off before anything is
+    # split: splitting first turns one tool into two nonexistent ones.
+    bare = re.sub(r"\([^)]*\)", "", allowed_tools)
+    names = []
+    for part in re.split(r"[,\s]+", bare.strip()):
+        if not part:
+            continue
+        name = part.strip()
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
 def run_trial(prompt, allowed_tools, max_turns, model, timeout=DEFAULT_TIMEOUT,
-              claude_args=()):
-    """One headless Claude Code trial.
+              claude_args=(), read_dirs=()):
+    """One headless Claude Code trial, with its tool set actually enforced.
 
     Returns (stdout, stderr, elapsed_seconds, timed_out). On a timeout the
     partial stdout is returned so it can be kept beside the error.
     claude_args are handed to claude verbatim (a --plugin-dir for a checkout
-    under test, a --settings override); the results file records them."""
+    under test, a --settings override); the results file records them.
+
+    Isolation, and why it takes three flags rather than one. `--allowedTools`
+    alone is a permission RULE, and a rule loses to the permission mode a
+    parent session leaves in the settings: measured 2026-09-07, a trial
+    launched with `--allowedTools Read` ran a shell command, queried the
+    network through MCP servers, and read the launching session's own memory
+    files and an earlier eval's transcripts. A measurement that can read the
+    answer is not a measurement.
+
+      --restricted   removes the code-running tools and confines the file
+                     tools to the working directories, and is enforced at the
+                     tool set rather than as a rule, so a parent's mode
+                     cannot override it;
+      --tools        names the tools the case allows back in, so a case that
+                     must run its plugin's loader still can;
+      --add-dir      opens exactly the checkout under test for reading, and
+                     nothing else: the workspace's other repositories, the
+                     launching session's memory and any previous transcripts
+                     stay out of reach.
+
+    `--allowedTools` is still passed, and inside restricted mode it means
+    something: measured, `uv run ...` is permitted under `Bash(uv run*)`
+    while `cat` of a path outside the working directories is refused.
+    `--strict-mcp-config` drops ambient MCP servers, without which a trial
+    can answer from a live catalogue instead of from the fixture it was
+    given."""
     cmd = ["claude", "-p", prompt, "--model", model,
+           "--restricted", "--tools", *tool_names(allowed_tools),
            "--allowedTools", allowed_tools, "--max-turns", str(max_turns),
-           *claude_args]
+           "--strict-mcp-config"]
+    for d in read_dirs:
+        cmd += ["--add-dir", str(d)]
+    cmd += list(claude_args)
     t0 = time.monotonic()
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
@@ -151,7 +201,12 @@ def main():
 
     out = {"manifest": man["name"], "model": args.model, "bundle": args.bundle,
            "trials": args.trials, "timeout": args.timeout,
-           "claude_args": args.claude_arg, "cases": []}
+           "claude_args": args.claude_arg,
+           "isolation": ("--restricted with --tools from the case's allowed_tools, --strict-mcp-config, and "
+                         "--add-dir on the plugin under test only: the tool set is enforced rather than "
+                         "advised, and the trial cannot read the launching session's memory, another "
+                         "repository, or an earlier transcript"),
+           "cases": []}
     for entry in man["cases"]:
         if only and entry["id"] not in only:
             continue
@@ -165,7 +220,8 @@ def main():
         for n in range(1, args.trials + 1):
             t, err, elapsed, timed_out = run_trial(
                 case["prompt"], entry["allowed_tools"], max_turns, args.model,
-                timeout=args.timeout, claude_args=args.claude_arg)
+                timeout=args.timeout, claude_args=args.claude_arg,
+                read_dirs=[ws / entry["plugin"]])
             detail = {"trial": n, "elapsed_s": round(elapsed), "chars": len(t)}
             if timed_out or is_error_transcript(t):
                 detail["error"] = "timeout" if timed_out else "empty or limit message"

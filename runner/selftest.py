@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pyyaml"]
+# ///
 """Deterministic self-test of the eval runner's grading and aggregation.
 
 Feeds known good/bad transcript snippets to the programmatic graders and asserts
@@ -11,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from graders import run_programmatic  # noqa: E402
+from run_evals import tool_names  # noqa: E402
 from judge import parse_judgement  # noqa: E402
 from stats import verdict  # noqa: E402
 
@@ -87,6 +91,21 @@ def main():
         if bool(got.get("salvaged")) != salvaged:
             fails.append(f"judge reply {reply[:40]!r}: salvaged={got.get('salvaged')}, expected {salvaged}")
 
+    # The tool set handed to --tools is the bare names; the permission
+    # rules keep their arguments and go to --allowedTools. Getting this
+    # wrong silently disarms the isolation, so it is asserted here.
+    TOOLS = [
+        ("Read,Skill", ["Read", "Skill"]),
+        ("Read,Skill,Bash(uv run*),Write", ["Read", "Skill", "Bash", "Write"]),
+        ("Read, Skill , Bash(uv run*)", ["Read", "Skill", "Bash"]),
+        ("Bash(uv run*),Bash(git status)", ["Bash"]),
+        ("", []),
+    ]
+    for spec, want in TOOLS:
+        got = tool_names(spec)
+        if got != want:
+            fails.append(f"tool_names({spec!r}) = {got}, expected {want}")
+
     # Aggregation: 5/5 seed reproduces PASS at 0.8; 3/5 does not.
     assert verdict(5, 5, 0.8)["pass"] is True
     assert verdict(3, 5, 0.8)["pass"] is False
@@ -99,6 +118,7 @@ def main():
         sys.exit(1)
     print(f"selftest: {len(CASES)} graders classify good/bad transcripts correctly; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
+          f"{len(TOOLS)} tool specs split into names and rules correctly; "
           "verdict aggregation correct")
     print("evals runner selftest: PASSED")
 
