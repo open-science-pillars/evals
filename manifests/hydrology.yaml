@@ -21,3 +21,4 @@ cases:
   - {id: snodas-not-a-budget-term, plugin: hydrology, case: hydrology/evals/snodas-not-a-budget-term.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: drought-panels-no-single-index, plugin: hydrology, case: hydrology/evals/drought-panels-no-single-index.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: swot-gauge-datum-mismatch, plugin: hydrology, case: hydrology/evals/swot-gauge-datum-mismatch.yaml, allowed_tools: "Read,Skill", max_turns: 35}
+  - {id: hydrocron-collection-default, plugin: hydrology, case: hydrology/evals/hydrocron-collection-default.yaml, allowed_tools: "Read,Skill", max_turns: 35}
