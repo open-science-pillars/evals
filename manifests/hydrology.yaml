@@ -18,3 +18,5 @@ cases:
   - {id: swath-footprint-is-not-an-observation, plugin: hydrology, case: hydrology/evals/swath-footprint-is-not-an-observation.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: peaks-two-series-one-response, plugin: hydrology, case: hydrology/evals/peaks-two-series-one-response.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: screening-fit-is-not-bulletin-17c, plugin: hydrology, case: hydrology/evals/screening-fit-is-not-bulletin-17c.yaml, allowed_tools: "Read,Skill", max_turns: 35}
+  - {id: snodas-not-a-budget-term, plugin: hydrology, case: hydrology/evals/snodas-not-a-budget-term.yaml, allowed_tools: "Read,Skill", max_turns: 35}
+  - {id: drought-panels-no-single-index, plugin: hydrology, case: hydrology/evals/drought-panels-no-single-index.yaml, allowed_tools: "Read,Skill", max_turns: 35}
