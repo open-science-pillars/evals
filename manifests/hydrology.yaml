@@ -16,3 +16,5 @@ cases:
   - {id: water-balance-run-declared,      plugin: hydrology, case: hydrology/evals/water-balance-run-declared.yaml,      allowed_tools: "Read,Skill", max_turns: 35}
   - {id: dswx-class-mismatch,     plugin: hydrology, case: hydrology/evals/dswx-class-mismatch.yaml,     allowed_tools: "Read,Skill", max_turns: 35}
   - {id: swath-footprint-is-not-an-observation, plugin: hydrology, case: hydrology/evals/swath-footprint-is-not-an-observation.yaml, allowed_tools: "Read,Skill", max_turns: 35}
+  - {id: peaks-two-series-one-response, plugin: hydrology, case: hydrology/evals/peaks-two-series-one-response.yaml, allowed_tools: "Read,Skill", max_turns: 35}
+  - {id: screening-fit-is-not-bulletin-17c, plugin: hydrology, case: hydrology/evals/screening-fit-is-not-bulletin-17c.yaml, allowed_tools: "Read,Skill", max_turns: 35}
