@@ -20,3 +20,4 @@ cases:
   - {id: screening-fit-is-not-bulletin-17c, plugin: hydrology, case: hydrology/evals/screening-fit-is-not-bulletin-17c.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: snodas-not-a-budget-term, plugin: hydrology, case: hydrology/evals/snodas-not-a-budget-term.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: drought-panels-no-single-index, plugin: hydrology, case: hydrology/evals/drought-panels-no-single-index.yaml, allowed_tools: "Read,Skill", max_turns: 35}
+  - {id: swot-gauge-datum-mismatch, plugin: hydrology, case: hydrology/evals/swot-gauge-datum-mismatch.yaml, allowed_tools: "Read,Skill", max_turns: 35}
