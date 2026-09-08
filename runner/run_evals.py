@@ -48,6 +48,28 @@ ERROR_MARKERS = ("reached your", "usage-credits", "/usage-credits")
 DEFAULT_TIMEOUT = 1200
 
 
+def read_dirs_for(ws, plugin: str):
+    """The checkout under test, plus the plugin bundles it declares as
+    dependencies and that are present in the workspace.
+
+    A concept a plugin relies on can live in another bundle: the DSWx
+    concepts a hydrology case tests are in the provider bundle, because
+    provider-product facts belong there. Opening only the plugin under
+    test would measure the isolation rather than the knowledge, and a
+    trial would fail for want of a file a real install would have."""
+    dirs = [ws / plugin]
+    manifest = ws / plugin / ".claude-plugin" / "plugin.json"
+    if manifest.is_file():
+        try:
+            for dep in json.loads(manifest.read_text()).get("dependencies", []):
+                d = ws / dep.get("name", "")
+                if d.is_dir() and d not in dirs:
+                    dirs.append(d)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return dirs
+
+
 def run_trial(prompt, allowed_tools, max_turns, model, timeout=DEFAULT_TIMEOUT,
               claude_args=()):
     """One headless Claude Code trial.
