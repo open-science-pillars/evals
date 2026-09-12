@@ -1,9 +1,13 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pyyaml"]
+# ///
 """Deterministic self-test of the eval runner's grading and aggregation.
 
 Feeds known good/bad transcript snippets to the programmatic graders and asserts
 correct classification, then checks the binomial verdict. This exercises the
 runner logic without slow, flaky live agentic trials (the full N=20 live sweep
-is the CI job). Run: `python selftest.py` (exit 0 = green).
+is the CI job). Run: `uv run runner/selftest.py` (exit 0 = green).
 """
 import sys
 from pathlib import Path
@@ -13,6 +17,9 @@ from graders import run_programmatic  # noqa: E402
 from toolspec import tool_names  # noqa: E402
 from judge import parse_judgement  # noqa: E402
 from stats import verdict  # noqa: E402
+from record import RUNTIMES, build_record, capability_record, runtime_record, value_digest  # noqa: E402
+from drivers import command_for  # noqa: E402
+from scoreboard import comparison, label, render  # noqa: E402
 
 # (checker_id, good transcript, bad transcript)
 CASES = [
@@ -107,6 +114,78 @@ def main():
     assert verdict(3, 5, 0.8)["pass"] is False
     assert verdict(18, 20, 0.8)["pass"] is True   # point rate 0.9 >= 0.8
 
+    # The cross-runtime record. A scratch workspace with one capability
+    # carrying a package file and a release lock, and no build-kit, so the
+    # lock is recorded and its currency is unchecked rather than guessed.
+    import json
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        ws = Path(tmp)
+        (ws / "ocean-science" / ".osp").mkdir(parents=True)
+        (ws / "ocean-science" / ".osp" / "package.yaml").write_text(
+            "schema_version: 1\npackage: {name: ocean-science, version: 0.8.2, type: capability}\n"
+            "content: {}\ndependencies: {capabilities: [], knowledge: []}\n")
+        lock = {"schema_version": 1, "package": "ocean-science", "version": "0.8.2",
+                "skills_digest": "sha256:abc"}
+        (ws / "ocean-science" / ".osp" / "release-lock.json").write_text(json.dumps(lock))
+        cap = capability_record(ws, "ocean-science")
+        if cap["version"] != "0.8.2" or cap["release_lock"] != value_digest(lock) \
+                or cap["release_lock_version"] != "0.8.2" or cap["release_lock_current"] is not None:
+            fails.append(f"capability record wrong: {cap}")
+        (ws / "core" / ".claude-plugin").mkdir(parents=True)
+        (ws / "core" / ".claude-plugin" / "plugin.json").write_text('{"name": "core", "version": "0.5.0"}')
+        bare = capability_record(ws, "core")
+        if bare["version"] != "0.5.0" or bare["release_lock"] is not None:
+            fails.append(f"manifest-only capability record wrong: {bare}")
+        rec = build_record(ws, ["ocean-science", "core", "core"], "openai-codex", "codex 0.50.0",
+                           "gpt-5", "claude-fable-5", "ocean-science", 20)
+        if rec["record_version"] != 2 or rec["runtime"] != {"name": "openai-codex", "projection": "agent-plugins", "version": "codex 0.50.0"} \
+                or sorted(rec["capabilities"]) != ["core", "ocean-science"] or rec["judge_model"] != "claude-fable-5" \
+                or len(rec["date"]) != 10 or rec["suite"] != "ocean-science" or rec["trials"] != 20:
+            fails.append(f"record wrong: {rec}")
+    for rt, proj in RUNTIMES.items():
+        if runtime_record(rt, "x")["projection"] != proj:
+            fails.append(f"runtime {rt} projection wrong")
+    try:
+        runtime_record("emacs", "x")
+        fails.append("unknown runtime accepted")
+    except ValueError:
+        pass
+    # Drivers: Claude Code keeps its exact command; Codex takes the prompt on
+    # stdin; a runtime with no headless command is refused, not guessed.
+    argv, stdin, _ = command_for("claude-code", "hi", "Read,Skill", 25, "claude-fable-5", ["--plugin-dir", "/x"])
+    if argv != ["claude", "-p", "hi", "--model", "claude-fable-5", "--allowedTools", "Read,Skill",
+                "--max-turns", "25", "--plugin-dir", "/x"] or stdin is not None:
+        fails.append(f"claude-code command wrong: {argv} {stdin}")
+    argv, stdin, notes = command_for("openai-codex", "hi", "Read", 25, "gpt-5")
+    if argv[:2] != ["codex", "exec"] or stdin != "hi" or "--model" not in argv or not notes:
+        fails.append(f"codex command wrong: {argv} {stdin}")
+    try:
+        command_for("claude-cowork", "hi", "Read", 25, "m")
+        fails.append("cowork driver should be refused")
+    except ValueError:
+        pass
+    # Scoreboard: an old results file without the record still renders; two
+    # files on different runtimes render as a runtime comparison, the same
+    # runtime with bundle off as the ablation.
+    old = {"manifest": "m", "model": "claude-fable-5", "bundle": "on", "trials": 1,
+           "cases": [{"id": "a", "type": "t", "rate": 1.0, "ci95": [0.2, 1.0], "pass": True}]}
+    if "runtime" in label(old) or "<td>a</td>" not in render(old):
+        fails.append("old results file does not render")
+    a = dict(old, runtime={"name": "claude-code", "projection": "claude", "version": "2.1"},
+             capabilities={"ocean-science": {"version": "0.8.2", "release_lock": "sha256:abcdef0123456789", "release_lock_current": True}},
+             date="2026-09-12")
+    b = dict(a, runtime={"name": "openai-codex", "projection": "agent-plugins", "version": "0.5"},
+             cases=[{"id": "a", "type": "t", "rate": 0.5, "ci95": [0.1, 0.9], "pass": False}])
+    if comparison(a, b)[0] != "runtime" or comparison(a, dict(a, bundle="off"))[0] != "bundle":
+        fails.append("comparison kind wrong")
+    html = render(a, b)
+    for needle in ("claude-code against openai-codex", "openai-codex: rate", "ocean-science 0.8.2", "+0.5", "runtime's, not the science's"):
+        if needle not in html:
+            fails.append(f"runtime comparison lacks {needle!r}")
+    if "bundle off: rate" not in render(a, dict(a, bundle="off")):
+        fails.append("ablation columns lost")
+
     if fails:
         print("SELFTEST FAILED:")
         for f in fails:
@@ -115,7 +194,8 @@ def main():
     print(f"selftest: {len(CASES)} graders classify good/bad transcripts correctly; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
-          "verdict aggregation correct")
+          "verdict aggregation correct; the cross-runtime record, the drivers and the "
+          "scoreboard's runtime comparison behave")
     print("evals runner selftest: PASSED")
 
 

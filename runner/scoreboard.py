@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Render a static scoreboard (HTML) from one or more results.json files.
 
-Usage: python scoreboard.py results.json [results_off.json] --out scoreboard/index.html
-When two files are given (bundle on and off), renders the ablation delta.
+Usage: python scoreboard.py results.json [other.json] --out scoreboard/index.html
+With two files the second is compared case by case: the knowledge-layer
+ablation when the two arms differ in `bundle`, and a runtime comparison
+when they differ in `runtime` (the same capability release, the same
+cases and graders, another runtime). The header states what each file
+recorded: capability and version, release lock, runtime, model, date.
 """
 import argparse
 import json
@@ -21,9 +25,37 @@ def rows(on, off=None):
         yield c, o, delta
 
 
+def label(r):
+    """One line saying what a results file recorded."""
+    rt = r.get("runtime") or {}
+    caps = r.get("capabilities") or {}
+    parts = []
+    for name, c in sorted(caps.items()):
+        lock = (c.get("release_lock") or "no lock")[:19]
+        stale = "" if c.get("release_lock_current") in (True, None) else " (lock stale)"
+        parts.append(f"{name} {c.get('version') or '?'} {lock}{stale}")
+    return " | ".join(filter(None, [
+        ", ".join(parts), rt.get("name") and f"runtime {rt['name']} ({rt.get('projection')}, {rt.get('version') or 'version unknown'})",
+        f"model {r.get('model', '?')}", r.get("judge_model") and f"judge {r['judge_model']}",
+        r.get("date") and f"date {r['date']}", f"N={r.get('trials', '?')}"]))
+
+
+def comparison(on, off):
+    """What the second file is: an ablation arm or another runtime."""
+    if off is None:
+        return None
+    a = (on.get("runtime") or {}).get("name")
+    b = (off.get("runtime") or {}).get("name")
+    if a and b and a != b:
+        return ("runtime", a, b)
+    return ("bundle", f"bundle {on.get('bundle', 'on')}", f"bundle {off.get('bundle', 'off')}")
+
+
 def render(on, off=None):
-    head = ("<tr><th>case</th><th>type</th><th>bundle on: rate (95% CI)</th>"
-            + ("<th>bundle off: rate</th><th>delta</th>" if off else "")
+    kind = comparison(on, off)
+    col_a = f"{kind[1]}: rate (95% CI)" if kind else "rate (95% CI)"
+    head = (f"<tr><th>case</th><th>type</th><th>{col_a}</th>"
+            + (f"<th>{kind[2]}: rate</th><th>delta</th>" if off else "")
             + "<th>verdict</th></tr>")
     body = []
     for c, o, delta in rows(on, off):
@@ -35,16 +67,22 @@ def render(on, off=None):
         cells.append(f"<td class='{'p' if c['pass'] else 'f'}'>{'PASS' if c['pass'] else 'FAIL'}</td>")
         body.append("<tr>" + "".join(cells) + "</tr>")
     title = f"OSP evals: {on['manifest']} ({on['model']}, N={on['trials']})"
+    if kind and kind[0] == "runtime":
+        title += f", {kind[1]} against {kind[2]}"
+    record = f"<p><b>A:</b> {label(on)}</p>" + (f"<p><b>B:</b> {label(off)}</p>" if off else "")
+    note = ("Bundle-off columns, when present, are the knowledge-layer ablation."
+            if not kind or kind[0] == "bundle" else
+            "The second column is the same capability release and the same cases on another "
+            "runtime; the delta is the runtime's, not the science's.")
     return f"""<!doctype html><meta charset=utf-8><title>{title}</title>
 <style>body{{font:14px system-ui;margin:2rem;max-width:60rem}}
 table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}}
 th{{background:#f4f4f4}}.p{{color:#137333;font-weight:600}}.f{{color:#c5221f;font-weight:600}}
 caption{{text-align:left;color:#555;padding-bottom:.5rem}}</style>
 <h1>{title}</h1>
-<p>A case passes when the lower bound of its Wilson 95% pass-rate interval
-meets the threshold: the suite holds itself to the uncertainty rule the
-plugins enforce. Bundle-off columns, when present, are the knowledge-layer
-ablation.</p>
+{record}
+<p>A case passes when its point-estimate pass rate meets the threshold; the
+Wilson 95% interval is reported beside it. {note}</p>
 <table>{head}{''.join(body)}</table>
 <p style=color:#888>Generated from results.json by scoreboard.py.</p>
 """

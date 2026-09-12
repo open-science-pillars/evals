@@ -1,20 +1,22 @@
 # evals
 
 The Open Science Pillars eval runner: headless, N-trial execution of the
-plugins' eval cases against Claude Code, with programmatic and rubric-judge
-grading, binomial confidence intervals, and a scoreboard.
+plugins' eval cases against a runtime (Claude Code by default), with
+programmatic and rubric-judge grading, binomial confidence intervals, a
+scoreboard, and a record on every result that says which capability
+release ran on which runtime.
 
 Evals test the assistant's **scientific judgment** with a capability installed
 (golden notebooks test code; the runtime harness tests packaging). A case
 lives with the capability it tests (`<plugin>/evals/*.yaml`) or, where the
 capability declares an eval repository as its cases' home, in that
 repository's product subtree (the ocean cases are `agent-evals/ecco/cases/`);
-this repo runs them. Results will record capability, capability version,
-release lock, runtime, model, suite, trial count, score, interval and date
-once the cross-runtime dimension lands (the architecture alignment
-initiative's runtime track), so identical cases compare across runtimes
-without changing the capability contract; today they record model and
-date.
+this repo runs them. Every results file records capability, capability
+version, release lock, runtime, model, suite, trial count, score, interval
+and date (the cross-runtime record below), so identical cases compare
+across runtimes without changing the capability contract: the cases and
+the graders are the same on every runtime, and the record is the
+dimension that differs.
 
 ## Layout
 
@@ -25,7 +27,9 @@ evals/
 │   ├── graders.py     # programmatic transcript predicates (fast, deterministic gate)
 │   ├── judge.py       # rubric judge (LLM-as-judge; authoritative)
 │   ├── stats.py       # Wilson binomial CI + pass verdict
-│   └── scoreboard.py  # renders results.json to a static HTML scoreboard
+│   ├── record.py      # the cross-runtime record: capability, release lock, runtime, model, date
+│   ├── drivers.py     # the headless command per runtime (Claude Code; Codex, unexercised)
+│   └── scoreboard.py  # renders results.json to a static HTML scoreboard; compares runtimes
 ├── manifests/         # per-plugin case lists with allowed_tools and max_turns
 └── scoreboard/        # results.json + index.html (published); transcripts/ when kept
 ```
@@ -84,6 +88,34 @@ past it is an error, not a failure, and its partial output is kept). When a
 case fails, check the elapsed times and turn allowance before reading the
 rubric verdicts: a 30-turn multi-granule case has been measured above 600 s
 before judging.
+
+## The cross-runtime record
+
+Every results file carries, at the top level and echoed on each case:
+
+| Field | Where it comes from |
+|---|---|
+| `capabilities.<name>.version` | the capability's `.osp/package.yaml` (or its Claude manifest) in the workspace |
+| `capabilities.<name>.release_lock` | sha256 of the capability's `.osp/release-lock.json` as a value; `release_lock_current` says whether the lock still matches the tree, asked of build-kit's `osp.py lock --check` when build-kit is in the workspace, `null` when it is not |
+| `runtime` | `--runtime` (default `claude-code`), its projection (`claude` for the Claude family, `agent-plugins` for every other client) and the runtime's own version string (`--runtime-version` when its CLI cannot be asked) |
+| `model`, `judge_model` | the trial model and the rubric judge's model; the judge is a Claude Code call on every runtime, so grading is held constant across runtimes |
+| `suite`, `trials`, `date` | the manifest name, trials requested per case, the UTC date of the run |
+| per case: `rate`, `ci95`, `passes`, `trials` | the score, its Wilson 95% interval and the counts, as before |
+
+Two results files for the same capability release on different runtimes
+compare with `scoreboard.py results_claude.json results_codex.json`: the
+header states what each recorded and the delta column is the runtime's,
+not the science's. A result whose lock is stale, or whose capability
+version differs between the two files, is not a runtime comparison and
+the header says so.
+
+Claude Code is the runtime the runner drives headlessly. `--runtime
+openai-codex` launches `codex exec` with the prompt on standard input;
+that command is written from the Codex CLI's documented headless form and
+is unexercised until the reference capability's Codex leg runs it. Claude
+Cowork has no headless interface: a Cowork result is produced by the
+qualification checklist and written with the same record fields. A
+runtime with no driver here is refused rather than guessed.
 
 ## The ablation
 
