@@ -4,8 +4,11 @@
 # ///
 """Open Science Pillars eval runner.
 
-Headless N-trial execution of the plugins' eval cases against Claude Code, with
-programmatic + rubric-judge grading and binomial-CI pass rates. A trial passes
+Headless N-trial execution of the plugins' eval cases against a runtime (Claude
+Code by default), with programmatic + rubric-judge grading and binomial-CI
+pass rates. Every results file carries the cross-runtime record (record.py):
+capability, version, release lock, runtime and projection, model, judge model,
+suite, trials and date, so identical cases compare across runtimes. A trial passes
 only if every grader present agrees (programmatic AND rubric): the programmatic
 check is a conservative gate, the judge is authoritative.
 
@@ -38,6 +41,8 @@ from graders import run_programmatic  # noqa: E402
 from judge import judge_trial  # noqa: E402
 from toolspec import tool_names  # noqa: E402
 from stats import verdict  # noqa: E402
+from record import RUNTIMES, build_record  # noqa: E402
+from drivers import command_for  # noqa: E402
 
 
 ERROR_MARKERS = ("reached your", "usage-credits", "/usage-credits")
@@ -71,19 +76,18 @@ def read_dirs_for(ws, plugin: str):
 
 
 def run_trial(prompt, allowed_tools, max_turns, model, timeout=DEFAULT_TIMEOUT,
-              claude_args=()):
-    """One headless Claude Code trial.
+              claude_args=(), runtime="claude-code"):
+    """One headless trial on the runtime (Claude Code unless told otherwise).
 
     Returns (stdout, stderr, elapsed_seconds, timed_out). On a timeout the
     partial stdout is returned so it can be kept beside the error.
-    claude_args are handed to claude verbatim (a --plugin-dir for a checkout
-    under test, a --settings override); the results file records them."""
-    cmd = ["claude", "-p", prompt, "--model", model,
-           "--allowedTools", allowed_tools, "--max-turns", str(max_turns),
-           *claude_args]
+    claude_args are handed to the runtime's command verbatim (a --plugin-dir
+    for a checkout under test, a --settings override); the results file
+    records them."""
+    cmd, stdin_text, _ = command_for(runtime, prompt, allowed_tools, max_turns, model, claude_args)
     t0 = time.monotonic()
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, input=stdin_text)
         return r.stdout, r.stderr, time.monotonic() - t0, False
     except subprocess.TimeoutExpired as e:
         def _text(b):
@@ -165,16 +169,34 @@ def main():
                     help="extra argument handed to claude verbatim, repeatable (for example "
                          "--claude-arg=--plugin-dir --claude-arg=/path/to/checkout to test a "
                          "checkout, or a --settings override); recorded in the results file")
+    ap.add_argument("--runtime", default="claude-code", choices=sorted(RUNTIMES),
+                    help="the runtime the trials run on; recorded with its projection and version")
+    ap.add_argument("--runtime-version", default=None,
+                    help="the runtime's version string, when its CLI cannot be asked")
+    ap.add_argument("--judge-model", default=None,
+                    help="model for the rubric judge (default: --model); the judge is a Claude Code "
+                         "call on every runtime, so grading is held constant")
+    ap.add_argument("--no-lock-check", action="store_true",
+                    help="record the release lock without asking build-kit whether it is current")
     args = ap.parse_args()
+    judge_model = args.judge_model or args.model
 
     ws = Path(args.workspace)
     man = yaml.safe_load(Path(args.manifest).read_text())
     only = set(filter(None, args.cases.split(",")))
     troot = Path(args.transcripts) if args.transcripts else None
 
+    plugins = [e["plugin"] for e in man["cases"] if not only or e["id"] in only]
+    record = build_record(ws, plugins, args.runtime, args.runtime_version, args.model,
+                          judge_model, man["name"], args.trials, check_lock=not args.no_lock_check)
     out = {"manifest": man["name"], "model": args.model, "bundle": args.bundle,
            "trials": args.trials, "timeout": args.timeout,
-           "claude_args": args.claude_arg, "cases": []}
+           "claude_args": args.claude_arg, **record, "cases": []}
+    for name, cap in record["capabilities"].items():
+        lock = cap["release_lock"] or "no release lock"
+        current = {True: "current", False: "STALE", None: "unchecked"}[cap["release_lock_current"]]
+        print(f"{name} {cap['version']}: {lock} ({current}) on {args.runtime} "
+              f"({record['runtime']['version'] or 'version unknown'})", flush=True)
     for entry in man["cases"]:
         if only and entry["id"] not in only:
             continue
@@ -188,14 +210,14 @@ def main():
         for n in range(1, args.trials + 1):
             t, err, elapsed, timed_out = run_trial(
                 case["prompt"], entry["allowed_tools"], max_turns, args.model,
-                timeout=args.timeout, claude_args=args.claude_arg)
+                timeout=args.timeout, claude_args=args.claude_arg, runtime=args.runtime)
             detail = {"trial": n, "elapsed_s": round(elapsed), "chars": len(t)}
             if timed_out or is_error_transcript(t):
                 detail["error"] = "timeout" if timed_out else "empty or limit message"
                 errors += 1
             else:
                 ok, graders, judge_error = grade(case, t, ws, no_judge=args.no_judge,
-                                                 model=args.model)
+                                                 model=judge_model)
                 detail["graders"] = graders
                 if judge_error:
                     # The trial ran; the judge did not. Counting this as a
@@ -214,6 +236,10 @@ def main():
         v = verdict(passes, valid, case.get("pass_threshold", 0.8))
         v["id"] = entry["id"]
         v["type"] = case.get("type")
+        cap = record["capabilities"][entry["plugin"]]
+        v["capability"] = cap["name"]
+        v["capability_version"] = cap["version"]
+        v["release_lock"] = cap["release_lock"]
         v["errors"] = errors
         v["trials_requested"] = args.trials
         v["max_turns"] = max_turns
