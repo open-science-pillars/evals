@@ -1,9 +1,13 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pyyaml"]
+# ///
 """Deterministic self-test of the eval runner's grading and aggregation.
 
 Feeds known good/bad transcript snippets to the programmatic graders and asserts
 correct classification, then checks the binomial verdict. This exercises the
 runner logic without slow, flaky live agentic trials (the full N=20 live sweep
-is the CI job). Run: `python selftest.py` (exit 0 = green).
+is the CI job). Run: `uv run runner/selftest.py` (exit 0 = green).
 """
 import sys
 from pathlib import Path
