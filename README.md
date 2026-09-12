@@ -4,9 +4,17 @@ The Open Science Pillars eval runner: headless, N-trial execution of the
 plugins' eval cases against Claude Code, with programmatic and rubric-judge
 grading, binomial confidence intervals, and a scoreboard.
 
-Evals test the assistant's **scientific judgment** with a plugin installed
-(golden notebooks test code; the surface harness tests packaging). Each case
-lives with the plugin it tests (`<plugin>/evals/*.yaml`); this repo runs them.
+Evals test the assistant's **scientific judgment** with a capability installed
+(golden notebooks test code; the runtime harness tests packaging). A case
+lives with the capability it tests (`<plugin>/evals/*.yaml`) or, where the
+capability declares an eval repository as its cases' home, in that
+repository's product subtree (the ocean cases are `agent-evals/ecco/cases/`);
+this repo runs them. Results will record capability, capability version,
+release lock, runtime, model, suite, trial count, score, interval and date
+once the cross-runtime dimension lands (the architecture alignment
+initiative's runtime track), so identical cases compare across runtimes
+without changing the capability contract; today they record model and
+date.
 
 ## Layout
 
