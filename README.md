@@ -10,8 +10,11 @@ Evals test the assistant's **scientific judgment** with a capability installed
 (golden notebooks test code; the runtime harness tests packaging). A case
 lives with the capability it tests (`<plugin>/evals/*.yaml`) or, where the
 capability declares an eval repository as its cases' home, in that
-repository's product subtree (the ocean cases are `agent-evals/ecco/cases/`);
-this repo runs them. Every results file records capability, capability
+repository's product subtree (the ocean cases are `ecco/cases/` in
+[agent-evals](https://github.com/open-science-pillars/agent-evals));
+this repo runs them. How cases are written and graded (fields, grader
+kinds, seed discipline) is documented once, in the marketplace's
+[testing guide](https://github.com/open-science-pillars/marketplace/blob/main/docs/testing.md). Every results file records capability, capability
 version, release lock, runtime, model, suite, trial count, score, interval
 and date (the cross-runtime record below), so identical cases compare
 across runtimes without changing the capability contract: the cases and
@@ -33,6 +36,16 @@ evals/
 ├── manifests/         # per-plugin case lists with allowed_tools and max_turns
 └── scoreboard/        # results.json + index.html (published); transcripts/ when kept
 ```
+
+A manifest lists the cases of one suite with the tools each trial may use
+and its turn allowance: `manifests/ocean-science.yaml` drives the ECCO cases
+from agent-evals and is the suite the organization's own ocean runs use,
+`core.yaml` and `hydrology.yaml` run those capabilities' own cases,
+`ablation.yaml` is the pre-registered bundle-on versus bundle-off suite (the
+ocean gotcha-avoidance cases, same prompts and model in both arms), and
+`poc-mht.yaml` is the small proof-of-concept pair (the heat-transport
+basin-scope case plus the native-grid refusal as its control) that measured
+whether a slimmed skill finds its concepts through discovery tools.
 
 ## Grading
 
