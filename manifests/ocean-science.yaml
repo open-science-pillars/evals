@@ -6,6 +6,7 @@ cases:
   - {id: native-grid-refusal,      plugin: ocean-science, case: agent-evals/ecco/cases/native-grid-refusal.yaml,      allowed_tools: "Read,Skill", max_turns: 15}
   - {id: geothermal-omission,      plugin: ocean-science, case: agent-evals/ecco/cases/geothermal-omission.yaml,      allowed_tools: "Read,Skill", max_turns: 15}
   - {id: grace-leakage,            plugin: ocean-science, case: agent-evals/ecco/cases/grace-leakage.yaml,            allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: grace-intermission-gap,   plugin: ocean-science, case: agent-evals/ecco/cases/grace-intermission-gap.yaml,   allowed_tools: "Read,Skill", max_turns: 15}
   - {id: swot-calval-window,       plugin: ocean-science, case: agent-evals/ecco/cases/swot-calval-window.yaml,       allowed_tools: "Read,Skill", max_turns: 15}
   - {id: volume-gate,              plugin: ocean-science, case: agent-evals/ecco/cases/volume-gate.yaml,              allowed_tools: "Read,Skill", max_turns: 15}
   - {id: ecco-release-mixing,      plugin: ocean-science, case: agent-evals/ecco/cases/ecco-release-mixing.yaml,      allowed_tools: "Read,Skill", max_turns: 15}
