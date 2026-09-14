@@ -10,3 +10,4 @@ cases:
   - {id: ebaf-imbalance-anchored-to-ocean-heating, plugin: nasa-daac-knowledge, case: agent-evals/ceres/cases/ebaf-imbalance-anchored-to-ocean-heating.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: merra2-prectotcorr-versus-prectot, plugin: nasa-daac-knowledge, case: agent-evals/merra2/cases/merra2-prectotcorr-versus-prectot.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: hls-fmask-is-bit-packed, plugin: nasa-daac-knowledge, case: agent-evals/hls/cases/hls-fmask-is-bit-packed.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: mur-grid-is-not-feature-resolution, plugin: nasa-daac-knowledge, case: agent-evals/mur/cases/mur-grid-is-not-feature-resolution.yaml, allowed_tools: "Read,Skill", max_turns: 15}
