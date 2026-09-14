@@ -1,8 +1,16 @@
 name: nasa-daac-knowledge
 # Cases that rest on a provider bundle's concepts alone, with no domain
-# plugin skill to target yet: the NSIDC land-ice set lives in the
-# agent-evals repository under nsidc/cases (a checkout beside the plugin,
-# as the runner reads every case path from the workspace). The plugin
-# under test is the knowledge repository itself, installed as a plugin.
+# plugin skill to target yet. They live in the agent-evals repository
+# under product subtrees (nsidc/cases, ceres/cases and the others), a
+# checkout beside the plugin, as the runner reads every case path from
+# the workspace. The plugin under test is the knowledge repository
+# itself, installed as a plugin.
 cases:
   - {id: atl15-height-change-is-not-mass-change, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/atl15-height-change-is-not-mass-change.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: ebaf-imbalance-anchored-to-ocean-heating, plugin: nasa-daac-knowledge, case: agent-evals/ceres/cases/ebaf-imbalance-anchored-to-ocean-heating.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: merra2-prectotcorr-versus-prectot, plugin: nasa-daac-knowledge, case: agent-evals/merra2/cases/merra2-prectotcorr-versus-prectot.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: hls-fmask-is-bit-packed, plugin: nasa-daac-knowledge, case: agent-evals/hls/cases/hls-fmask-is-bit-packed.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: mur-grid-is-not-feature-resolution, plugin: nasa-daac-knowledge, case: agent-evals/mur/cases/mur-grid-is-not-feature-resolution.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: daymet-365-day-year, plugin: nasa-daac-knowledge, case: agent-evals/daymet/cases/daymet-365-day-year.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: chlor-a-blended-ocx-and-ci, plugin: nasa-daac-knowledge, case: agent-evals/oceancolor/cases/chlor-a-blended-ocx-and-ci.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: sea-ice-pole-hole-by-sensor, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/sea-ice-pole-hole-by-sensor.yaml, allowed_tools: "Read,Skill", max_turns: 15}

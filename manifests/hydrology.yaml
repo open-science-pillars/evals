@@ -23,3 +23,4 @@ cases:
   - {id: swot-gauge-datum-mismatch, plugin: hydrology, case: hydrology/evals/swot-gauge-datum-mismatch.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: hydrocron-collection-default, plugin: hydrology, case: hydrology/evals/hydrocron-collection-default.yaml, allowed_tools: "Read,Skill", max_turns: 35}
   - {id: grace-basin-below-resolution-floor, plugin: hydrology, case: hydrology/evals/grace-basin-below-resolution-floor.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
+  - {id: snow-cover-ndsi-is-not-fraction, plugin: hydrology, case: hydrology/evals/snow-cover-ndsi-is-not-fraction.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
