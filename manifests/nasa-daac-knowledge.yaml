@@ -14,3 +14,5 @@ cases:
   - {id: daymet-365-day-year, plugin: nasa-daac-knowledge, case: agent-evals/daymet/cases/daymet-365-day-year.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: chlor-a-blended-ocx-and-ci, plugin: nasa-daac-knowledge, case: agent-evals/oceancolor/cases/chlor-a-blended-ocx-and-ci.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: sea-ice-pole-hole-by-sensor, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/sea-ice-pole-hole-by-sensor.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: airs-pressure-levels-and-surface-mask, plugin: nasa-daac-knowledge, case: agent-evals/airs/cases/airs-pressure-levels-and-surface-mask.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: omi-row-anomaly, plugin: nasa-daac-knowledge, case: agent-evals/airs/cases/omi-row-anomaly.yaml, allowed_tools: "Read,Skill", max_turns: 15}
