@@ -22,3 +22,5 @@ cases:
   - {id: bedmachine-thickness-is-interpolated, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/bedmachine-thickness-is-interpolated.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: atl10-freeboard-is-not-thickness, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/atl10-freeboard-is-not-thickness.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: gedi-footprint-is-not-a-pixel, plugin: nasa-daac-knowledge, case: agent-evals/gedi/cases/gedi-footprint-is-not-a-pixel.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: index-is-not-a-state-variable, plugin: nasa-daac-knowledge, case: agent-evals/modis-land/cases/index-is-not-a-state-variable.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: sif-is-not-photosynthesis, plugin: nasa-daac-knowledge, case: agent-evals/oco2/cases/sif-is-not-photosynthesis.yaml, allowed_tools: "Read,Skill", max_turns: 15}
