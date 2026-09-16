@@ -25,3 +25,4 @@ cases:
   - {id: grace-basin-below-resolution-floor, plugin: hydrology, case: hydrology/evals/grace-basin-below-resolution-floor.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
   - {id: snow-cover-ndsi-is-not-fraction, plugin: hydrology, case: hydrology/evals/snow-cover-ndsi-is-not-fraction.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
   - {id: swot-lake-identity-across-passes, plugin: hydrology, case: hydrology/evals/swot-lake-identity-across-passes.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
+  - {id: nwm-gauge-confrontation, plugin: hydrology, case: hydrology/evals/nwm-gauge-confrontation.yaml, allowed_tools: "Read,Skill,Bash(uv run*),Write", max_turns: 25}
