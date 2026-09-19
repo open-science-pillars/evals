@@ -7,9 +7,9 @@ name: nasa-daac-knowledge
 # itself, installed as a plugin. A case moves out of this manifest when
 # a capability release gives it a skill to target: the radiation budget
 # cases that the atmospheric-physics skills exercise are in
-# manifests/atmospheric-physics.yaml.
+# manifests/atmospheric-physics.yaml, and the ice sheet cases that the
+# land-ice skills exercise are in manifests/land-ice.yaml.
 cases:
-  - {id: atl15-height-change-is-not-mass-change, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/atl15-height-change-is-not-mass-change.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: merra2-prectotcorr-versus-prectot, plugin: nasa-daac-knowledge, case: agent-evals/merra2/cases/merra2-prectotcorr-versus-prectot.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: hls-fmask-is-bit-packed, plugin: nasa-daac-knowledge, case: agent-evals/hls/cases/hls-fmask-is-bit-packed.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: mur-grid-is-not-feature-resolution, plugin: nasa-daac-knowledge, case: agent-evals/mur/cases/mur-grid-is-not-feature-resolution.yaml, allowed_tools: "Read,Skill", max_turns: 15}
@@ -21,11 +21,9 @@ cases:
   - {id: nasadem-orthometric-versus-ellipsoidal, plugin: nasa-daac-knowledge, case: agent-evals/nasadem/cases/nasadem-orthometric-versus-ellipsoidal.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: mod11-clear-sky-and-view-time, plugin: nasa-daac-knowledge, case: agent-evals/nasadem/cases/mod11-clear-sky-and-view-time.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: wind-analysis-is-not-observation, plugin: nasa-daac-knowledge, case: agent-evals/ccmp/cases/wind-analysis-is-not-observation.yaml, allowed_tools: "Read,Skill", max_turns: 15}
-  - {id: bedmachine-thickness-is-interpolated, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/bedmachine-thickness-is-interpolated.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: atl10-freeboard-is-not-thickness, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/atl10-freeboard-is-not-thickness.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: gedi-footprint-is-not-a-pixel, plugin: nasa-daac-knowledge, case: agent-evals/gedi/cases/gedi-footprint-is-not-a-pixel.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: index-is-not-a-state-variable, plugin: nasa-daac-knowledge, case: agent-evals/modis-land/cases/index-is-not-a-state-variable.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: sif-is-not-photosynthesis, plugin: nasa-daac-knowledge, case: agent-evals/oco2/cases/sif-is-not-photosynthesis.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: syn1deg-surface-fluxes-are-modelled-not-measured, plugin: nasa-daac-knowledge, case: agent-evals/ceres/cases/syn1deg-surface-fluxes-are-modelled-not-measured.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: syn1deg-refuses-long-term-trend-use, plugin: nasa-daac-knowledge, case: agent-evals/ceres/cases/syn1deg-refuses-long-term-trend-use.yaml, allowed_tools: "Read,Skill", max_turns: 15}
-  - {id: firn-air-content-spread-dominates-the-altimetric-mass-rate, plugin: nasa-daac-knowledge, case: agent-evals/nsidc/cases/firn-air-content-spread-dominates-the-altimetric-mass-rate.yaml, allowed_tools: "Read,Skill", max_turns: 15}
