@@ -1,0 +1,13 @@
+name: atmospheric-physics
+# The radiation budget cases that exercise a skill of the
+# atmospheric-physics capability, whose first release wraps the two
+# attested computations signed in the ASDC bundle. The cases themselves
+# live in the agent-evals repository under ceres/cases (a checkout
+# beside the plugin, as the runner reads every case path from the
+# workspace); the plugin under test is the capability, and the
+# concepts each case is graded against stay in nasa-daac-knowledge,
+# which the capability depends on. A CERES case with no skill to target
+# stays in manifests/nasa-daac-knowledge.yaml.
+cases:
+  - {id: ebaf-imbalance-anchored-to-ocean-heating, plugin: atmospheric-physics, case: agent-evals/ceres/cases/ebaf-imbalance-anchored-to-ocean-heating.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: ebaf-clear-sky-definitions, plugin: atmospheric-physics, case: agent-evals/ceres/cases/ebaf-clear-sky-definitions.yaml, allowed_tools: "Read,Skill", max_turns: 15}
