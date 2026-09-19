@@ -1,0 +1,14 @@
+name: land-ice
+# The ice sheet cases that exercise a skill of the land-ice capability,
+# whose first release wraps the two attested computations signed in the
+# nsidc bundle. The cases themselves live in the agent-evals repository
+# under nsidc/cases (a checkout beside the plugin, as the runner reads
+# every case path from the workspace); the plugin under test is the
+# capability, and the concepts each case is graded against stay in
+# nasa-daac-knowledge, which the capability depends on. The sea ice
+# cases of the same bundle stay in manifests/nasa-daac-knowledge.yaml:
+# this capability wraps no sea ice computation.
+cases:
+  - {id: atl15-height-change-is-not-mass-change, plugin: land-ice, case: agent-evals/nsidc/cases/atl15-height-change-is-not-mass-change.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: firn-air-content-spread-dominates-the-altimetric-mass-rate, plugin: land-ice, case: agent-evals/nsidc/cases/firn-air-content-spread-dominates-the-altimetric-mass-rate.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: bedmachine-thickness-is-interpolated, plugin: land-ice, case: agent-evals/nsidc/cases/bedmachine-thickness-is-interpolated.yaml, allowed_tools: "Read,Skill", max_turns: 15}
