@@ -12,3 +12,4 @@ cases:
   - {id: atl15-height-change-is-not-mass-change, plugin: land-ice, case: agent-evals/nsidc/cases/atl15-height-change-is-not-mass-change.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: firn-air-content-spread-dominates-the-altimetric-mass-rate, plugin: land-ice, case: agent-evals/nsidc/cases/firn-air-content-spread-dominates-the-altimetric-mass-rate.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: bedmachine-thickness-is-interpolated, plugin: land-ice, case: agent-evals/nsidc/cases/bedmachine-thickness-is-interpolated.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: sweep-window-verdict, plugin: land-ice, case: agent-evals/nsidc/cases/sweep-window-verdict.yaml, allowed_tools: "Read,Skill,Bash", max_turns: 20}

@@ -11,3 +11,4 @@ name: atmospheric-physics
 cases:
   - {id: ebaf-imbalance-anchored-to-ocean-heating, plugin: atmospheric-physics, case: agent-evals/ceres/cases/ebaf-imbalance-anchored-to-ocean-heating.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: ebaf-clear-sky-definitions, plugin: atmospheric-physics, case: agent-evals/ceres/cases/ebaf-clear-sky-definitions.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: sweep-refuses-to-average-clear-sky-conventions, plugin: atmospheric-physics, case: agent-evals/ceres/cases/sweep-refuses-to-average-clear-sky-conventions.yaml, allowed_tools: "Read,Skill,Bash", max_turns: 20}
