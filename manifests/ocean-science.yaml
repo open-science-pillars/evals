@@ -18,3 +18,4 @@ cases:
   - {id: psmsl-rlr-versus-metric, plugin: ocean-science, case: agent-evals/ecco/cases/psmsl-rlr-versus-metric.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: tide-gauge-relative-sea-level-and-land-motion, plugin: ocean-science, case: agent-evals/ecco/cases/tide-gauge-relative-sea-level-and-land-motion.yaml, allowed_tools: "Read,Skill", max_turns: 15}
   - {id: coastal-heights-ellipsoidal-versus-orthometric, plugin: ocean-science, case: agent-evals/ecco/cases/coastal-heights-ellipsoidal-versus-orthometric.yaml, allowed_tools: "Read,Skill", max_turns: 15}
+  - {id: sweep-aggregate-refusal,  plugin: ocean-science, case: agent-evals/ecco/cases/sweep-aggregate-refusal.yaml,  allowed_tools: "Read,Skill,Bash", max_turns: 20}
