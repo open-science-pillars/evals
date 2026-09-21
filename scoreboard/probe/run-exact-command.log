@@ -1,0 +1,28 @@
+== bundle-ON arm ==
+usage: run_evals.py [-h] --manifest MANIFEST --workspace WORKSPACE
+                    [--trials TRIALS] [--model MODEL] [--cases CASES]
+                    [--out OUT] [--timeout TIMEOUT]
+                    [--transcripts TRANSCRIPTS] [--bundle {on,off}]
+                    [--no-judge] [--claude-arg CLAUDE_ARG]
+                    [--runtime {claude-code,claude-cowork,claude-science,gemini-cli,goose,openai-codex}]
+                    [--runtime-version RUNTIME_VERSION]
+                    [--judge-model JUDGE_MODEL] [--no-lock-check]
+run_evals.py: error: unrecognized arguments: --concurrency 2
+== stripping knowledge/ for the bundle-OFF arm ==
+ablating /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+== bundle-OFF arm ==
+usage: run_evals.py [-h] --manifest MANIFEST --workspace WORKSPACE
+                    [--trials TRIALS] [--model MODEL] [--cases CASES]
+                    [--out OUT] [--timeout TIMEOUT]
+                    [--transcripts TRANSCRIPTS] [--bundle {on,off}]
+                    [--no-judge] [--claude-arg CLAUDE_ARG]
+                    [--runtime {claude-code,claude-cowork,claude-science,gemini-cli,goose,openai-codex}]
+                    [--runtime-version RUNTIME_VERSION]
+                    [--judge-model JUDGE_MODEL] [--no-lock-check]
+run_evals.py: error: unrecognized arguments: --concurrency 2
+restored knowledge/
+ERROR: the on arm kept no transcripts under /home/user/probe/exact/transcripts_on; the analysis commitments require them
+
+real	0m0.115s
+user	0m0.096s
+sys	0m0.020s

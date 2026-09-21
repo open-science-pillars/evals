@@ -1,0 +1,68 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "on",
+  "trials": 2,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-21",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": true
+    }
+  },
+  "cases": [
+    {
+      "passes": 1,
+      "trials": 1,
+      "rate": 1.0,
+      "ci95": [
+        0.207,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "grace-leakage",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 1,
+      "trials_requested": 2,
+      "max_turns": 30,
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 227,
+          "chars": 5290,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted surfaces the coastal-leakage gotcha by name, cites the CRI grid product explicitly, explains mascon-scale (not grid-cell) native resolution with the ~300-350 km cap argument, states the ice-loss leakage risk with a signal-ratio estimate, refuses to quote a bare trend, and frames required uncertainty as formal error plus leakage bound (CRI minus unfiltered) alongside autocorrelation-corrected fitting."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 204,
+          "chars": 29,
+          "error": "empty or limit message"
+        }
+      ]
+    }
+  ]
+}

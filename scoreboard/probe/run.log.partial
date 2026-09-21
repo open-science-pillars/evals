@@ -1,0 +1,11 @@
+== bundle-ON arm ==
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (current) on claude-code (2.1.278 (Claude Code))
+  grace-leakage trial 1: PASS (227s, 5290 chars)
+  grace-leakage trial 2: empty or limit message (204s, 29 chars)
+grace-leakage: 1/1 valid (rate 1.0, 1 errors) CI [0.207, 1.0] -> PASS
+wrote /home/user/probe/shard/results_on.json
+== stripping knowledge/ for the bundle-OFF arm ==
+ablating /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+== bundle-OFF arm ==
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (current) on claude-code (2.1.278 (Claude Code))
+  grace-leakage trial 1: PASS (169s, 4302 chars)

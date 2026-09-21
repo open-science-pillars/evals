@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 227,
+  "chars": 5290,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha by name, cites the CRI grid product explicitly, explains mascon-scale (not grid-cell) native resolution with the ~300-350 km cap argument, states the ice-loss leakage risk with a signal-ratio estimate, refuses to quote a bare trend, and frames required uncertainty as formal error plus leakage bound (CRI minus unfiltered) alongside autocorrelation-corrected fitting."
+    }
+  },
+  "pass": true
+}

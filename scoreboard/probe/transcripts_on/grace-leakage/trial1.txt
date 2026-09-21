@@ -1,0 +1,40 @@
+## Short answer
+
+I did not produce a trend number, and I don't think one should be quoted for that region. Two reasons — one about this session, one about the data.
+
+## The data reason (the important one)
+
+The JPL mascon product cannot resolve shelf waters around southeast Greenland, and the quantity you asked for is the textbook failure mode of a high-severity gotcha in the installed PO.DAAC bundle:
+
+**`knowledge/podaac/gotchas/grace-coastal-leakage.md`** — severity high, status stable, human-verified (PaulMRamirez, 2026-07-04):
+
+> *Wrong-result mode.* Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends **near Greenland**, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim.
+
+The mechanism is geometric. From **`knowledge/podaac/datasets/grace-fo-mascons.md`** (stable, human-verified twice, most recently 2026-09-13): the solution is 4,551 equal-area 3° spherical-cap mascons, distributed as 0.5° grids that *represent* the mascons — "the native information scale is the mascon, not the grid cell," order 300 km caps. The concept's Uncertainty section is explicit: "a basin whose area approaches or falls below the mascon scale is resolution- and leakage-dominated."
+
+My own arithmetic on that, not a bundle number: 4,551 caps over Earth's surface is ~1.1 × 10⁵ km² each, roughly 350 km across. The southeast Greenland shelf — Cape Farewell to Denmark Strait, ~1,100 km of coast, shelf 50–150 km wide — is ~1 × 10⁵ km². **The entire region you asked about is about one mascon, and it is the ocean half of coastline-straddling mascons whose land half is one of the fastest-losing sectors of the ice sheet.**
+
+The signal ratio is the problem. Order-of-magnitude, again mine: a SE Greenland ice sector shedding tens of Gt/yr over ~10⁵ km² is 10–30 cm of water equivalent per year. A real shelf manometric trend is order 3 mm/yr of sea level, i.e. ~0.3 cm/yr water equivalent — roughly two orders of magnitude smaller. The CRI filter "reduces leakage substantially but does not eliminate it." A few percent residual still dominates the ocean signal you're trying to measure.
+
+The bundle carries no regional anchor to check against: the recipe **`knowledge/podaac/recipes/grace-mass-to-sea-level.md`** (stable, human-verified 4×) notes "a regional ice-sheet anchor is not recorded yet."
+
+## Three more things that would bite even in a clean region
+
+- **A coastal-mascon bug was fixed in July 2025.** The release note, via the same recipe, records a fix that "corrected the GAD mass added back to the ocean part of land/ocean mascons," and **only files whose series extends past March 2025 carry it.** Your region *is* the ocean part of land/ocean mascons, so the answer depends on which file you pull.
+- **GRACE-FO months inside your window are not uniform.** RL06.3M v4 differs from v3 in an accelerometer transplant bundle touching January–February 2023 and July 2023 onward, with the uncertainty calibration updated for low-signal mascons.
+- **Shelf bottom pressure is wind-dominated** (general method, no installed concept covers it): barotropic response to along-shelf wind is large and not trend-like, so 72 months is short. The recipe requires a joint linear + annual + semi-annual fit with an effective-sample-size-corrected interval, not a bare OLS slope.
+
+Two traps that *don't* bite: 2019–2024 sits entirely after the July 2017 – May 2018 inter-mission gap, so no bridge is needed; and GIA (ICE-6G_D, referenced to 2008-01-01) plus the degree-1/C20/C30 substitutions (TN-14 v3, JPL mascon-consistent geocenter) are already applied — don't re-apply them, and name them in any trend statement.
+
+## What I'd compute instead
+
+1. **Bound the leakage directly.** CRI grid minus unfiltered grid (`TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4` vs `TELLUS_GRAC-GRFO_MASCON_GRID_RL06.3_V4`) over the coastal mascons. This is the recipe's own sanctioned leakage bound, and it turns "is this signal real?" into a number.
+2. **If you want Greenland's freshwater forcing** — the SE sector's land mascon sum. GRACE does this well; it's the product's recommended land-ice application, and the recipe gives the full method and uncertainty ledger.
+3. **If you want ocean mass** — move a full mascon block offshore, to the Irminger Sea interior. The gotcha says "basin-scale open-ocean averages are robust; the trap is specifically the nearshore."
+4. **If you genuinely need shelf manometric change** — GRACE is the wrong instrument. Bottom pressure recorders, ECCO OBP, or altimetry-minus-steric.
+
+## The session reason
+
+Separately, I couldn't have run it here anyway. `python3`, the Earthdata CMR tools, and shell globbing outside `/home/user` are all unapproved in this session, and I found no `.netrc` for Earthdata Login. `/home/user` holds the bundle source repos, not data; the only GRACE file committed is a global-mean ocean mass series (`ocean_mass_200204_202607.txt`), and the one attested sea-level computation is global-mean only — there's no attested regional mascon computation.
+
+To unblock option 1 or 2, I'd need `python3` and the earthdata MCP approved, plus Earthdata credentials. Say which of the four you want and I'll set it up.
