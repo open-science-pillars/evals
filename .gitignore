@@ -1,4 +1,7 @@
 .DS_Store
 __pycache__/
 *.pyc
-transcripts/
+# Any transcript directory a run writes, including the ablation's per-arm
+# transcripts_on/ and transcripts_off/. Kept beside the results on disk and
+# carried out of a CI run as an artifact, not committed.
+transcripts*/
