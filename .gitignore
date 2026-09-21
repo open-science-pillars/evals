@@ -1,7 +1,11 @@
 .DS_Store
 __pycache__/
 *.pyc
-# Any transcript directory a run writes, including the ablation's per-arm
-# transcripts_on/ and transcripts_off/. Kept beside the results on disk and
-# carried out of a CI run as an artifact, not committed.
-transcripts*/
+# The transcripts a run writes beside its results, carried out of a CI run as
+# an artifact rather than committed. Named exactly, because the earlier
+# transcripts*/ also swallowed runner/fixtures/transcripts, so the recorded
+# calibration fixtures were silently never committed and the selftest that
+# reads them would have found nothing and passed.
+transcripts_on/
+transcripts_off/
+/scoreboard/transcripts/

@@ -1,0 +1,34 @@
+I did not run the trend. Consulting the installed knowledge first turned up a high-severity, human-verified concept that disqualifies this specific computation, and I think quoting you a number would have been the wrong deliverable. Here's the reasoning and what I'd do instead.
+
+## Why this region breaks the product
+
+**`knowledge/podaac/gotchas/grace-coastal-leakage.md`** (severity high, status stable, human-verified by PaulMRamirez 2026-07-04) names your case almost verbatim:
+
+> Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends **near Greenland**, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim.
+
+Its stated correct approach is to keep "a buffer from strong land sources or model them explicitly," and it closes: "Basin-scale open-ocean averages are robust; the trap is specifically the nearshore." Southeast Greenland shelf is the nearshore of the strongest land source in the Northern Hemisphere, with no buffer available.
+
+Two independent things go wrong at once:
+
+**1. The region is smaller than the measurement.** Per `knowledge/podaac/datasets/grace-fo-mascons.md`, the solution is 4,551 equal-area 3° spherical caps — about 112,000 km² each, roughly 335 km across — and the 0.5° grid only *represents* them: "the native information scale is the mascon, not the grid cell." The SE Greenland shelf is a strip on the order of 50–150 km wide. You'd be asking for a number at well under one-third of a resolution element. The dataset concept's Uncertainty section rules on this directly: a region "whose area approaches or falls below the mascon scale is resolution- and leakage-dominated."
+
+**2. The contaminant is ~100× the signal.** Using the conversion in `knowledge/podaac/recipes/grace-mass-to-sea-level.md` (mass in Gt = anomaly in cm × area in km² × 1e-5), and taking the shelf as ~2×10⁵ km²: a genuine ocean-mass trend of 2 mm/yr water-equivalent is about **0.4 Gt/yr**. The adjacent SE Greenland ice sector is losing mass at order 10¹–10² Gt/yr. The CRI filter "reduces leakage substantially but does not eliminate it" — so even a residual of one percent of the land signal matches or exceeds the entire quantity you're trying to measure. That ratio is mine, on general method, not from a concept; but it's the reason no amount of careful masking rescues this.
+
+A trend computed here would be numerically stable, plausible-looking, and would be measuring Helheim and Kangerdlugssuaq, not the ocean.
+
+## Two things that are *not* problems here, for the record
+
+- **The inter-mission gap doesn't bite.** The July 2017–May 2018 hole (plus August/September 2018) falls entirely before your window, so 2019–2024 needs no bridging — unusual good luck for a GRACE trend.
+- **The GAD fix is avoidable, but only if you re-download.** The recipe's provenance notes a July 2025 correction to "the GAD mass added back to the **ocean part of land/ocean mascons**" — precisely your cells — carried only by files whose series extends past March 2025. The current file runs to 2026-07-16, so a fresh pull has it; a staged older download of a 2019–2024 window does not.
+
+I could not confirm the collection live — the CMR lookup needed a permission that wasn't granted — so the coverage above is from the dataset concept's own CMR verification of 2026-09-13.
+
+## What I'd compute instead
+
+Which of these you want depends on the question under the question:
+
+- **If you care about Greenland freshwater reaching the shelf** — this is what the product is *for*. The dataset concept records CMR listing it as "the recommended one for land-ice applications." Define the SE Greenland sector as whole **land** mascons, sum with true mascon areas, fit with annual and semi-annual terms per the recipe. That's a well-posed number with an honest uncertainty budget, and it's the physically meaningful driver of shelf freshening.
+- **If you genuinely need ocean bottom pressure on the shelf** — GRACE cannot give it to you there at any processing level. That needs in-situ OBP recorders or a regional model; note ECCO v4r4 ends in 2017 and won't cover your window either.
+- **If you want the damage quantified rather than argued** — the recipe prescribes differencing the CRI and unfiltered grids over the coastal mascons as the leakage bound. That converts "this is contaminated" into a number, and it's a legitimate deliverable. It needs Earthdata credentials and the MCP permission.
+
+Tell me which one, and I'll run it properly. My guess is the first.

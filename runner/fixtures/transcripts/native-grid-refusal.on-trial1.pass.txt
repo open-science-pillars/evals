@@ -1,0 +1,54 @@
+I can't compute this one, and the reason is specific rather than procedural. Here's what the knowledge says and what the valid path is.
+
+## Refused: no correct heat budget exists on the 0.5° product
+
+`knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (**stable**, high severity, human-verified by PaulMRamirez 2026-09-04) is explicit that this is the wrong input, and it names your exact collection as its evidence source:
+
+- **Mechanism.** ECCO's conservation is a property of the *native* formulation — face fluxes (`ADV*`, `DF*`), partial-cell geometry (`hFac`), and tile topology together satisfy the model equations exactly. The `05DEG` collections are produced by interpolation for display and comparison convenience, and interpolation does not preserve flux divergences.
+- **Wrong-result mode.** This is the part that matters. A heat budget assembled from regridded fields produces *residuals of the same order as the physical terms*, and tendencies you'd attribute to mixing or forcing are numerical artifacts of the interpolation. Nothing errors. The numbers are simply wrong — so this failure would not announce itself in the output.
+- **It isn't even assemblable.** A CMR sweep on 2026-07-04 found no `05DEG` 3D flux collections. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries state variables only. There is no regridded `ADV*`/`DF*`/`hFacC` to build terms 2 and 3 from at all.
+
+So this isn't a tolerance I could loosen or a caveat I could footnote — three of the four terms have no ingredients in the data you downloaded.
+
+## The native path for the subpolar North Atlantic
+
+Per `knowledge/podaac/recipes/ecco-heat-budget.md` (**stable**, human-verified), the inputs are:
+
+| | |
+|---|---|
+| 3D temperature flux | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface heat flux | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| T/S snapshots (tendency) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| SSH snapshots (`ETAN`, z\*) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+
+Plus one ancillary that is **not a PO.DAAC collection**: `geothermalFlux.bin`, from the ECCO v4 tutorial repo's `misc/` directory. `knowledge/podaac/gotchas/ecco-geothermal-flux.md` (**stable**, high severity, human-verified) is worth reading before you run — a budget built from PO.DAAC collections alone omits it silently, surface layers still close, and deep/bottom cells fail by order 10–100 mW m⁻² equivalent. For a full-depth subpolar box that bias lands everywhere.
+
+For a regional control volume there's an attested computation, `knowledge/computations/ecco-regional-heat-budget.md`, whose executor takes an explicit box:
+
+```bash
+uv run $PLUGIN_ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <year> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+uv run $PLUGIN_ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+**Two things to expect before you commit to that box.** First, the concept states a v1 limit: the volume must lie within one tile interior, and seam-crossing volumes are refused until the seam-calibrated section machinery lands. A subpolar North Atlantic box is a plausible candidate to hit that — the executor resolves the mask and discloses tile, index bounds and wet-cell counts, so it will tell you rather than quietly clip. Second, an explicit box carries no reference anchor (only the registered `southeast-atlantic-upper` configuration does), so it attests on the general contract and the report has to say so.
+
+Two blockers I couldn't clear from here: this session's sandbox confines me to `/home/user/evals`, so I could neither confirm a native tree at `~/ECCO_V4r4_record` nor locate your 0.5° download — and every attester refuses a receipt from a tree lacking the `RECORD.json` stamp that `tools/science_record_verify.py` leaves.
+
+## What the 0.5° data you have is good for
+
+The same gotcha states the valid use directly: regridded fields serve for **maps and pointwise comparison against gridded observations**. From `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` I can give you subpolar North Atlantic heat *content* and its evolution — area-weighted 0–700 m / 0–2000 m OHC time series, seasonal cycle, trends with an honest interval, T/S structure, comparison against Argo. That's a description of how heat changed. What it can't be is an *attribution* of that change to advection, diffusion and forcing, which is what a budget buys you.
+
+Tell me which of those you're actually after and I'll run it — or, if it's genuinely the budget decomposition, say the word and I'll scope the native fetch (the flux collections are the bulk of the volume, so it's worth gating on year range and depth first).
+
+## Concepts consulted
+
+- `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — stable, human-verified 2026-09-04 (the refusal)
+- `knowledge/podaac/gotchas/ecco-geothermal-flux.md` — stable, human-verified 2026-09-04
+- `knowledge/podaac/recipes/ecco-heat-budget.md` — stable, human-verified 2026-09-05
+- `knowledge/computations/ecco-heat-budget.md` — stable, human-verified 2026-09-20 (pass bar: `residual_max` ≤ 1e-10, `residual_p999` ≤ 1e-11 degC/s)
+- `knowledge/computations/ecco-regional-heat-budget.md` — stable, human-verified 2026-09-20
+
+One housekeeping note: both computation concepts carry a placement note in the body saying they sit at `status: draft` pending re-signature, while their frontmatter reads `status: stable` with a 2026-09-20 verified event. I voiced them as stable per the frontmatter, which is what the consult convention specifies, but the narrative looks like it predates the merge and may want a cleanup pass.

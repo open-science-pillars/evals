@@ -169,6 +169,15 @@ def main():
             fails.append(f"{cid}: bad transcript classified {b}, expected False")
     probe_checks = 0
     recorded = 0
+    # An empty fixture directory must fail rather than pass quietly. These
+    # files were gitignored when they were first added, so on a clean checkout
+    # this loop had nothing to iterate and the selftest agreed with itself. A
+    # guard that can be satisfied by the absence of its own evidence is not a
+    # guard.
+    if not list(recorded_transcripts()):
+        fails.append(f"no recorded transcripts under {TRANSCRIPT_FIXTURES}: the probes are "
+                     "checked only against phrasings we invented, which is the gap these exist "
+                     "to close. Check they are committed and not ignored.")
     for probe, expected, path in recorded_transcripts():
         recorded += 1
         got = run_programmatic(probe, path.read_text())

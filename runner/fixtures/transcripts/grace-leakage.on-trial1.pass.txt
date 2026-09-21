@@ -1,0 +1,33 @@
+## I didn't compute a number, and I don't think one should be quoted for that region
+
+I consulted the installed knowledge bundles first, and two stable, human-verified concepts say the quantity you asked for isn't one this product can deliver. Both blockers are independent, and both fail silently — you'd get a clean-looking series with plausible formal errors.
+
+**1. The region is smaller than the product's resolution element.**
+
+The JPL solution is estimated on 4,551 equal-area 3° spherical caps (~300 km). The 0.5° grids *represent* those mascons; the cells are not independent information (`knowledge/podaac/datasets/grace-fo-mascons.md`, stable, human-verified 2026-09-13). The southeast Greenland shelf is a strip on the order of 100–200 km wide — sub-mascon. There is no set of whole ocean mascons that constitutes "the SE Greenland shelf," and the recipe is explicit that a region mask is built from whole mascons "never at 0.5-degree cell scale" (`recipes/grace-mass-to-sea-level.md`, stable). The dataset concept's Uncertainty section states the consequence directly: a basin at or below mascon scale is "resolution- and leakage-dominated."
+
+**2. It's the worst place on Earth for the leakage, and the leakage has the sign you'd be tempted to interpret.**
+
+`knowledge/podaac/gotchas/grace-coastal-leakage.md` (severity **high**, stable, human-reviewed 2026-07-04) names your exact case: nearshore ocean-mass trends near Greenland "can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim." Southeast Greenland is the ice sheet's dynamic-loss hotspot — the coastal mascons there straddle the largest land mass-loss gradient anywhere. The CRI filter partitions those mascons and "reduces leakage substantially but does not eliminate it."
+
+The trap that closes it: **the formal per-mascon uncertainty grids do not include leakage or GIA**, and the dataset concept notes both "exceed the formal errors regionally." So the uncertainty you'd naturally attach would look tight and be meaningless. A shelf trend computed this way would most likely come out strongly negative, and would mostly be Helheim and Kangerdlugssuaq bleeding across a mascon boundary — not shelf water mass.
+
+### Two things that *would* have bitten your window, and one that doesn't
+
+- **The inter-mission gap doesn't apply.** 2019–2024 sits entirely after the July 2017–May 2018 hole and the missing Aug/Sep 2018. `gotchas/grace-intermission-gap.md` (high) is clean for this window — worth knowing, since it breaks most longer GRACE trend fits.
+- **The July 2025 GAD fix lands exactly on this quantity.** The RL06.3M v4 release note (via the recipe's provenance) records a fix to the GAD mass added back to *the ocean part of land/ocean mascons* — precisely the CRI-partitioned coastal mascons a shelf analysis would use. Only files extending past March 2025 carry it, so the file's last month matters as much as the version string here.
+- **Roughly a quarter of your window sits in accelerometer-transplant months.** v4 differs from v3 in that bundle, which touches January–February 2023 and July 2023 onward — inside 2019–2024.
+
+(For any trend you do eventually quote: GIA is pre-applied as ICE-6G_D at the 2008-01-01 epoch — don't re-correct it — and the low-degree terms are TN-14 v3 with JPL's mascon-consistent geocenter. Also, the scale factors shipped with the CRI grid come from a land hydrology model and are for hydrology, not ice and not ocean.)
+
+### What I'd compute instead — which one do you want?
+
+These are genuinely different questions, so I'd rather you pick than guess:
+
+**(a) Subpolar North Atlantic ocean mass, buffered off the shelf.** Whole ocean mascons one full mascon clear of the Greenland shelf break — Irminger and Iceland basins. This is the case the leakage gotcha explicitly blesses: "basin-scale open-ocean averages are robust; the trap is specifically the nearshore." You get a defensible manometric/OBP trend for 2019–2024. It is not the shelf and won't see the coastal freshwater.
+
+**(b) Southeast Greenland *ice* mass trend.** If what you're actually after is the meltwater forcing on those shelf waters, this is what the product is built for — CMR records it as the recommended product for land-ice applications. Land mascons with the CRI partition at the coast, per `recipes/grace-mass-to-sea-level.md`, delivered in Gt/yr plus mm/yr sea level equivalent at 362 Gt/mm, with the uncertainty stated term by term rather than as one number.
+
+**(c) If you truly need shelf water mass, GRACE is the wrong instrument** and no amount of processing fixes that. Bottom pressure recorders or a high-resolution state estimate are the routes.
+
+**Two caveats on what I actually did:** this determination is from the knowledge bundles, not from a live catalog check or a computation — `claude plugin list --json`, the Earthdata MCP calls, and Python all needed approvals I don't have in this session, so I searched the running plugin roots directly (core, ocean-science, nasa-daac-knowledge/podaac) rather than the installer's record. Tell me which option you want and grant the data access, and I'll run it properly.
