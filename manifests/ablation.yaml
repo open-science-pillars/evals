@@ -5,11 +5,22 @@ name: ablation-gotcha-avoidance
 # them. They said ocean-science/evals/ until 2026-09-21, which is where the
 # cases lived when this file was written and has resolved to nothing since
 # they moved; this manifest was the only one not carried along.
+#
+# max_turns is 30, raised from 12 on 2026-09-21 and recorded in the
+# pre-registration before either arm runs. At 12, seven of eight pilot trials
+# returned "Error: Reached max turns" instead of an answer, on both arms. That
+# is not a scoring problem once exhaustion counts as an outage; it is a
+# sampling one, because consulting the bundle costs turns, so the arm with the
+# knowledge present exhausts more readily and the trials that survive it are
+# the atypically brief ones. A budget that decides which trials exist is part
+# of the treatment. 30 is the scale the runner's own timeout note is written
+# around, and the ocean-science manifest already gives these same cases 15 and
+# 20.
 cases:
-  - {id: native-grid-refusal,      plugin: ocean-science, case: agent-evals/ecco/cases/native-grid-refusal.yaml,      allowed_tools: "Read,Skill", max_turns: 12}
-  - {id: geothermal-omission,      plugin: ocean-science, case: agent-evals/ecco/cases/geothermal-omission.yaml,      allowed_tools: "Read,Skill", max_turns: 12}
-  - {id: swot-calval-window,       plugin: ocean-science, case: agent-evals/ecco/cases/swot-calval-window.yaml,       allowed_tools: "Read,Skill", max_turns: 12}
-  - {id: grace-leakage,            plugin: ocean-science, case: agent-evals/ecco/cases/grace-leakage.yaml,            allowed_tools: "Read,Skill", max_turns: 12}
-  - {id: ecco-release-mixing,      plugin: ocean-science, case: agent-evals/ecco/cases/ecco-release-mixing.yaml,      allowed_tools: "Read,Skill", max_turns: 12}
-  - {id: mht-basin-scope,          plugin: ocean-science, case: agent-evals/ecco/cases/mht-basin-scope.yaml,          allowed_tools: "Read,Skill", max_turns: 12}
-  - {id: swot-crossover-unapplied, plugin: ocean-science, case: agent-evals/ecco/cases/swot-crossover-unapplied.yaml, allowed_tools: "Read,Skill", max_turns: 12}
+  - {id: native-grid-refusal,      plugin: ocean-science, case: agent-evals/ecco/cases/native-grid-refusal.yaml,      allowed_tools: "Read,Skill", max_turns: 30}
+  - {id: geothermal-omission,      plugin: ocean-science, case: agent-evals/ecco/cases/geothermal-omission.yaml,      allowed_tools: "Read,Skill", max_turns: 30}
+  - {id: swot-calval-window,       plugin: ocean-science, case: agent-evals/ecco/cases/swot-calval-window.yaml,       allowed_tools: "Read,Skill", max_turns: 30}
+  - {id: grace-leakage,            plugin: ocean-science, case: agent-evals/ecco/cases/grace-leakage.yaml,            allowed_tools: "Read,Skill", max_turns: 30}
+  - {id: ecco-release-mixing,      plugin: ocean-science, case: agent-evals/ecco/cases/ecco-release-mixing.yaml,      allowed_tools: "Read,Skill", max_turns: 30}
+  - {id: mht-basin-scope,          plugin: ocean-science, case: agent-evals/ecco/cases/mht-basin-scope.yaml,          allowed_tools: "Read,Skill", max_turns: 30}
+  - {id: swot-crossover-unapplied, plugin: ocean-science, case: agent-evals/ecco/cases/swot-crossover-unapplied.yaml, allowed_tools: "Read,Skill", max_turns: 30}
