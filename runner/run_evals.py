@@ -29,6 +29,7 @@ run a subset at low --trials to demonstrate the runner reproduces seed grades.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -45,7 +46,19 @@ from record import RUNTIMES, build_record  # noqa: E402
 from drivers import command_for  # noqa: E402
 
 
+# A trial that never really ran. The turn limit belongs here and did not
+# carry one until 2026-09-21: "Error: Reached max turns (12)" is 29
+# characters, so it cleared the empty-transcript test by nine, and it says
+# "reached max" rather than "reached your", so it cleared the quota test
+# too. It was scored as a substantive failure instead, which is what the
+# comment below already says it must not be.
 ERROR_MARKERS = ("reached your", "usage-credits", "/usage-credits")
+# The turn limit, which carried no marker until 2026-09-21: "Error: Reached
+# max turns (12)" is 29 characters, so it cleared the empty-transcript test by
+# nine, and it says "reached max" rather than "reached your", so it cleared the
+# quota test too. It was scored as a substantive failure instead, which is what
+# the comment below already says it must not be.
+TURN_LIMIT = re.compile(r"reached max turns", re.I)
 
 # A trial at 30 turns has been measured above 600 s with judging still to
 # come; the default leaves headroom so a slow but complete trial is graded
@@ -100,7 +113,16 @@ def is_error_transcript(t):
     be counted as a failure: it is an infrastructure error, tracked separately."""
     if len(t.strip()) < 20:
         return True
-    return any(m in t.lower() for m in ERROR_MARKERS) and len(t) < 400
+    low = t.lower()
+    # Turn exhaustion is an outage at any length: a trial cut off after twelve
+    # turns of real work was still cut off rather than answered, and counting
+    # it as a failure reads the harness's own bound as the package's behaviour.
+    # Anchored on the transcript ending in the runner's error line, so a
+    # complete answer that happens to discuss turn limits is not swept up.
+    last = next((ln for ln in reversed(low.splitlines()) if ln.strip()), "")
+    if TURN_LIMIT.search(last):
+        return True
+    return any(m in low for m in ERROR_MARKERS) and len(t) < 400
 
 
 def grade(case, transcript, ws, no_judge=False, model="claude-fable-5"):
