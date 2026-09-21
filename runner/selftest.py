@@ -128,6 +128,36 @@ PROBE_CALIBRATION = [
 ]
 
 
+# Real transcripts from a run, not phrasings anyone imagined. The probes were
+# calibrated on 2026-09-21 against hand-written examples, which is better than
+# fixtures written in the grader's own words and still not the same as output a
+# model produced: the first pilot to return real answers failed one of them,
+# because a reply quotes the collection identifier LLC0090 where the pattern
+# asked for llc90, and offers a "native path" where it demanded a "native
+# grid". A transcript the rubric judge graded PASS belongs here, so a probe
+# cannot drift back to language nobody writes. The file name carries the case
+# and the expected classification.
+TRANSCRIPT_FIXTURES = Path(__file__).parent / "fixtures" / "transcripts"
+PROBE_FOR_CASE = {
+    "native-grid-refusal": "transcript_refuses_and_offers_native_grid",
+    "grace-leakage": "transcript_surfaces_leakage_caveat",
+    "ecco-release-mixing": "transcript_names_single_release",
+    "swot-calval-window": "transcript_surfaces_orbit_phase_split",
+    "swot-crossover-unapplied": "transcript_applies_height_cor_xover",
+    "mht-basin-scope": "transcript_uses_atlantic_basin_for_rapid",
+    "geothermal-omission": "plan_includes_geothermal_term_and_ancillary_source",
+}
+
+
+def recorded_transcripts():
+    """(probe id, expected verdict, path) for every saved real transcript."""
+    for path in sorted(TRANSCRIPT_FIXTURES.glob("*.txt")):
+        case, _, tail = path.name.partition(".")
+        probe = PROBE_FOR_CASE.get(case)
+        if probe:
+            yield probe, tail.endswith("pass.txt"), path
+
+
 def main():
     fails = []
     for cid, good, bad in CASES:
@@ -138,6 +168,22 @@ def main():
         if b is not False:
             fails.append(f"{cid}: bad transcript classified {b}, expected False")
     probe_checks = 0
+    recorded = 0
+    # An empty fixture directory must fail rather than pass quietly. These
+    # files were gitignored when they were first added, so on a clean checkout
+    # this loop had nothing to iterate and the selftest agreed with itself. A
+    # guard that can be satisfied by the absence of its own evidence is not a
+    # guard.
+    if not list(recorded_transcripts()):
+        fails.append(f"no recorded transcripts under {TRANSCRIPT_FIXTURES}: the probes are "
+                     "checked only against phrasings we invented, which is the gap these exist "
+                     "to close. Check they are committed and not ignored.")
+    for probe, expected, path in recorded_transcripts():
+        recorded += 1
+        got = run_programmatic(probe, path.read_text())
+        if got is not expected:
+            fails.append(f"{probe}: the recorded transcript {path.name} classified {got}, "
+                         f"expected {expected}; a probe must agree with output a model produced")
     for cid, goods, bads in PROBE_CALIBRATION:
         for text in goods:
             probe_checks += 1
@@ -269,7 +315,7 @@ def main():
         sys.exit(1)
     print(f"selftest: {len(CASES)} graders classify good/bad transcripts correctly; "
           f"the {len(PROBE_CALIBRATION)} powered ablation probes discriminate application from "
-          f"mention over {probe_checks} phrasings; "
+          f"mention over {probe_checks} phrasings and agree with {recorded} recorded transcripts; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
           "verdict aggregation correct; the cross-runtime record, the drivers and the "

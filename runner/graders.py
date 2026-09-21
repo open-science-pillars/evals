@@ -66,10 +66,19 @@ def _w(t, pattern):
     return bool(re.search(pattern, t, re.I))
 
 
-_REGRIDDED = r"(?:regrid\w*|interpolated|0\.5[-\s]?degree|half[-\s]?degree|lat[-\s]?lon\s+grid)"
+# 0.5 only when it is a resolution: the degree sign or the word, never the bare
+# number, which is how "0.52 mm/yr" used to satisfy this.
+_REGRIDDED = (r"(?:regrid\w*|interpolated|0\.5\s*(?:°|deg\b|degree)|half[-\s]?degree|"
+              r"lat[-\s]?lon\s+grid|\b05deg\b)")
 _REFUSAL = (r"(?:refus\w+|declin\w+|cannot|can't|will\s+not|won't|unsuitable|not\s+valid|"
             r"invalid|does\s+not\s+close|doesn't\s+close|not\s+appropriate|no\s+budget)")
-_NATIVE = r"(?:native[-\s]grid|\bllc90\b|native\s+llc)"
+# The grid identifier is zero padded in the collection names a real reply
+# quotes, LLC0090 rather than llc90, which is what the old pattern asked for
+# and what mine still asked for until a pilot transcript failed on it. And a
+# reply offers the "native path", "native tree" or "native fields" about as
+# readily as the "native grid" the pattern demanded.
+_NATIVE = (r"(?:native[-\s](?:grid|path|tree|fetch|field|formulation|collection|llc)\w*"
+           r"|\bllc\s*0*90\b)")
 
 
 def transcript_refuses_and_offers_native_grid(t):

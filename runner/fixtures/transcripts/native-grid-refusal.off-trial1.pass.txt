@@ -1,0 +1,42 @@
+## I can't compute a heat budget from that product — and the reason is physical, not procedural
+
+Your downloaded collection is `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`, the 0.5° interpolated product. A heat budget on regridded ECCO fields is refused outright by the plugin's budget gate, citing `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (status: stable, verified 2026-09-04):
+
+- **Mechanism.** ECCO's conservation is a property of the *native* formulation — face fluxes (`ADV*`, `DF*`), partial-cell geometry (`hFac`), and llc90 tile topology together satisfy the model equations exactly. Interpolation to 0.5° does not preserve flux divergences.
+- **Wrong-result mode.** This is the dangerous part: nothing errors. You get residuals *the same order as the physical terms*, and any tendency you then attribute to mixing or forcing is an artifact of the interpolation.
+- **It isn't even assemblable.** The `05DEG` collections carry state variables only — a CMR sweep (2026-07-04) found no 0.5° 3D flux collections. There is no `ADVx_TH`, no `DFrI_TH`, no `hFacC`. Four terms, and you have the ingredients for none of them.
+
+So the T/S product you have is the right tool for maps, pointwise comparison against gridded observations, and T-S/water-mass work — not for closure.
+
+## The native-grid path, which I can run
+
+The attested route needs these llc90 collections (from `knowledge/podaac/recipes/ecco-heat-budget.md`):
+
+| Purpose | Collection |
+|---|---|
+| Advective + diffusive T fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Forcing (TFLUX, shortwave) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| z\* scale factor (ETAN) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| `rA`, `drF`, `hFacC`, `Depth`, `Z` | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+
+Plus one ancillary that is **not** a PO.DAAC collection and has to be fetched separately: `geothermalFlux.bin` from the ECCO tutorial misc directory. Omitting it is the single most common closure failure, and it shows up as a bottom-cell residual signature.
+
+For a subpolar North Atlantic control volume, the sanctioned executor is `ecco_regional_budget.py` under the `ecco-regional-heat-budget` contract. "Subpolar North Atlantic" is not a registered region, so it goes in as an explicit box:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two things you should know before I run it. An explicit box is disclosed by mask digest and **carries no reference anchor** — unlike the registered `southeast-atlantic-upper` configuration, the attester can't check its cell count and volume two-sided, so the report has to say so. And a lat/lon box in the subpolar gyre is an *open* domain: the integrated budget will carry boundary transports through the faces explicitly rather than asserting domain-integrated closure.
+
+## What I need from you
+
+1. **Confirm the box and depth.** I used 50–65°N, 60–10°W, top 1000 m as a standard subpolar gyre definition — tell me if you want something else (e.g. a deeper volume to catch Labrador Sea Water, or a σ-based rather than box-based domain).
+2. **Confirm the year or period.** The executor binds a single `year`; the fixture cache is 2010, the full science record runs 1992–2017.
+3. **Point me at a native tree.** I couldn't check whether `~/ECCO_V4r4` or `~/ECCO_V4r4_record` exists — the sandbox blocked the listing. It also needs the `RECORD.json` stamp from the provider's verify tool, or every attester will refuse the receipt regardless of the numbers. If neither tree is staged, the download is roughly 2.5 GB for the 2010 fixture and I'll need your Earthdata Login.
+
+If what you actually want from the 0.5° data is something it *can* support — a subpolar heat-content time series, a T-S census, mixed-layer seasonality — say so and I'll take that route instead, with no budget framing attached.
