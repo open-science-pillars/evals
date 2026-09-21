@@ -62,6 +62,72 @@ CASES = [
 ]
 
 
+# The seven probes the powered ablation runs, each with several phrasings a
+# reply actually uses and several that must not pass. One good and one bad per
+# grader is what let the old release probe through: its fixture was written in
+# the grader's own words ("not mix"), so the selftest agreed with it while the
+# pilot scored 0 of 3 in both arms, because a reply saying "must not be mixed"
+# failed. A probe is calibrated when it accepts the paraphrases and refuses the
+# near misses, so both lists are part of the check.
+PROBE_CALIBRATION = [
+    ("transcript_names_single_release",
+     ["I will use ECCO V4R4 SSH. Note that V4R4 and V4R4B must not be mixed, because the release "
+      "correction would enter the trend.",
+      "Sticking to V4R4B throughout the 1992-2017 period; combining it with V4R4 would introduce a "
+      "spurious step.",
+      "There are two SSH releases, V4R4 and V4R4B. I am building the series from V4R4B only.",
+      "I'll use a single release, V4R4B, throughout, and not mix it with V4R4."],
+     ["ECCO has a v4r4 dataset. People often say you should use a single release. Here is a series "
+      "assembled from whatever collections cover the period.",
+      "I'll grab v4r4 for 1992-2010 and v4r4b for 2011-2017. Some say do not mix releases but "
+      "coverage matters more.",
+      "I'll pull whatever SSH collections cover 1992-2017 and concatenate them."]),
+    ("transcript_surfaces_leakage_caveat",
+     ["Near the coast, GRACE mascon coastal leakage bleeds land signal in; I apply a CRI buffer.",
+      "The shelf signal is contaminated by leakage from the ice sheet, so the trend carries an "
+      "inflated uncertainty rather than a bare formal error.",
+      "This is a mascon-scale value, not a grid-cell one, and land signal leaks into the coastal "
+      "mascons."],
+     ["I described the GRACE leakage issue.",
+      "There may be leakage near the coast. Anyway the mascon trend is 2.3 mm/yr.",
+      "I take the mascon value at the coastal grid point directly."]),
+    ("transcript_refuses_and_offers_native_grid",
+     ["That regridded 0.5-degree product cannot close a budget; I refuse and offer the native-grid "
+      "llc90 path with snapshots.",
+      "A budget does not close on the interpolated lat-lon grid; I will not compute it there, and "
+      "the native llc90 fields are the right input."],
+     ["The North Atlantic SSH trend on the native grid llc90 is 0.52 mm/yr.",
+      "Sure, I'll compute the heat budget from the 0.5-degree regridded field."]),
+    ("transcript_applies_height_cor_xover",
+     ["I add height_cor_xover (gated by height_cor_xover_qual) to ssha_karin before computing "
+      "statistics.",
+      "The crossover correction height_cor_xover is applied to the SSH field first."],
+     ["The SWOT product has a height_cor_xover field. I ignored it and used ssha_karin directly.",
+      "I compute mean and std of ssha_karin over the good-flagged pixels."]),
+    ("transcript_surfaces_orbit_phase_split",
+     ["The cal/val 1-day fast-sampling phase and the 21-day science orbit are separate records; I "
+      "keep them apart.",
+      "These are two different sampling phases, the 1-day calval one and the 21-day science orbit, "
+      "and they must not be pooled into one series."],
+     ["I take every SWOT pass over the region across the whole mission and average them.",
+      "The 21-day repeat gives good coverage, so I pool everything available."]),
+    ("plan_includes_geothermal_term_and_ancillary_source",
+     ["Terms: tendency, advection, diffusion, forcing, and the geothermal flux from the ancillary "
+      "geothermalFlux.bin (not a PO.DAAC collection).",
+      "I include a geothermal term, read from the ancillary binary rather than from a PO.DAAC "
+      "collection."],
+     ["Terms: tendency, advection, diffusion, and surface forcing. That covers a full-depth budget.",
+      "The geothermal flux is negligible for this budget, so I drop it and use the ancillary file "
+      "for nothing."]),
+    ("transcript_uses_atlantic_basin_for_rapid",
+     ["For the RAPID comparison I use the Atlantic (atlExt) section, 0.666 PW for 2010, not the "
+      "full circle.",
+      "RAPID measures the Atlantic basin, so I mask to the atlExt basin before integrating."],
+     ["The 26.5N transport is 1.098 PW, which I compare directly against the RAPID mean.",
+      "I integrate the full latitude circle at 26.5N and call that the Atlantic overturning."]),
+]
+
+
 def main():
     fails = []
     for cid, good, bad in CASES:
@@ -71,6 +137,16 @@ def main():
             fails.append(f"{cid}: good transcript classified {g}, expected True")
         if b is not False:
             fails.append(f"{cid}: bad transcript classified {b}, expected False")
+    probe_checks = 0
+    for cid, goods, bads in PROBE_CALIBRATION:
+        for text in goods:
+            probe_checks += 1
+            if run_programmatic(cid, text) is not True:
+                fails.append(f"{cid}: a phrasing that applies the concept was rejected: {text[:70]}")
+        for text in bads:
+            probe_checks += 1
+            if run_programmatic(cid, text) is not False:
+                fails.append(f"{cid}: a phrasing that only mentions the concept passed: {text[:70]}")
     # The judge's reply, in every shape it comes back in. A verdict that
     # was stated is a verdict even when the envelope is damaged; only a
     # reply that states no grade is an error, because an outage read as a
@@ -192,6 +268,8 @@ def main():
             print("  " + f)
         sys.exit(1)
     print(f"selftest: {len(CASES)} graders classify good/bad transcripts correctly; "
+          f"the {len(PROBE_CALIBRATION)} powered ablation probes discriminate application from "
+          f"mention over {probe_checks} phrasings; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
           "verdict aggregation correct; the cross-runtime record, the drivers and the "
