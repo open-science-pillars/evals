@@ -16,10 +16,23 @@
 set -uo pipefail
 WS="$1"; TRIALS="$2"; OUT="$3"; shift 3; EXTRA="${*:-}"
 MAN="$WS/evals/manifests/ablation.yaml"
-# The installed knowledge tree, found rather than pinned. This read
-# ocean-science/0.3.0 until 2026-09-21, four releases after that version,
-# so the OFF arm could only ever exit on the guard below.
-KDIR=$(ls -d "$HOME"/.claude/plugins/cache/open-science-pillars/ocean-science/*/knowledge 2>/dev/null | sort -V | tail -1)
+# The installed knowledge tree, found rather than pinned, in the marketplace
+# as well as the version. This read open-science-pillars/ocean-science/0.3.0
+# until 2026-09-21: four releases behind, and under a marketplace name that a
+# candidate or release-candidate install does not use, so it matched nothing on
+# the machine the qualification runs installed. Ablating the wrong tree would be
+# worse than matching none, so more than one match is an error rather than a
+# choice the script makes quietly.
+KDIRS=$(ls -d "$HOME"/.claude/plugins/cache/*/ocean-science/*/knowledge 2>/dev/null | sort -V)
+KCOUNT=$(printf '%s\n' "$KDIRS" | grep -c . || true)
+if [ "$KCOUNT" -gt 1 ]; then
+  echo "ERROR: ocean-science knowledge trees are installed from more than one marketplace;"
+  echo "the ablation would not know which one the trials read. Found:"
+  printf '  %s\n' $KDIRS
+  echo "Leave exactly one installed and run again."
+  exit 1
+fi
+KDIR=$(printf '%s\n' "$KDIRS" | tail -1)
 KOFF="${KDIR:-/nonexistent}.ABLATION_OFF"
 mkdir -p "$OUT"
 
@@ -32,7 +45,7 @@ python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
   --transcripts "$OUT/transcripts_on" $EXTRA
 
 echo "== stripping knowledge/ for the bundle-OFF arm =="
-[ -n "$KDIR" ] && [ -d "$KDIR" ] || { echo "ERROR: no installed ocean-science knowledge tree under $HOME/.claude/plugins/cache/open-science-pillars/ocean-science/*/knowledge; install the capability before the ablation"; exit 1; }
+[ -n "$KDIR" ] && [ -d "$KDIR" ] || { echo "ERROR: no installed ocean-science knowledge tree under $HOME/.claude/plugins/cache/*/ocean-science/*/knowledge; install the capability before the ablation"; exit 1; }
 echo "ablating $KDIR"
 mv "$KDIR" "$KOFF"
 
