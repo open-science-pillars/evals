@@ -4,15 +4,23 @@ Branch `claude/ablation-probe`. Container: Claude Code on the web, Linux 6.18.44
 Probe date 2026-09-21. Model pinned to `claude-opus-5` throughout; no substitution
 was made at any point.
 
-**This file is written while the bundle-OFF arm is still running.** It is pushed
-partial, on request, because the branch did not exist on the remote and nothing was
-visible. The sections below say exactly what is complete and what is not.
+The run is **complete**: `ABLATION_DONE`, exit 0, 12 m 55.9 s wall clock for four
+trials. An earlier commit on this branch pushed this file partial, mid-OFF-arm, on
+request; this is the final version. Two numbers from that partial version were wrong
+and are corrected here — see "Corrections" at the end.
 
 ## Bottom line
 
-The harness works, but **the shard command as written cannot run**, and separately
-**the bundle-OFF arm does not ablate the `grace-leakage` case**. Details in
-"What breaks", which is the part of this document worth your time.
+A shard runs end to end: setup, both arms, the arm change, transcripts, the outage
+guard and the delta scoreboard all work, and a backgrounded run survives the agent's
+turn ending. Two things break.
+
+1. **The shard command as written cannot run.** `--concurrency` does not exist.
+2. **The bundle-OFF arm does not ablate `grace-leakage`.** The case's ground truth
+   lives in a bundle neither arm touches, so the shard's headline result — a delta of
+   **+0.0**, 1.00 against 1.00 — is not a null. It is a measurement of nothing.
+
+"What breaks" is the part of this document worth your time.
 
 ---
 
@@ -253,7 +261,9 @@ unchanged; no number and no eval case was altered.
 bash /home/user/evals/runner/ablate.sh /home/user 2 /home/user/probe/shard claude-opus-5 --cases grace-leakage
 ```
 
-### 3.1 Output so far, verbatim
+### 3.1 Output, verbatim
+
+Complete run log, exactly as written:
 
 ```
 == bundle-ON arm ==
@@ -267,11 +277,28 @@ ablating /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/kn
 == bundle-OFF arm ==
 ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (current) on claude-code (2.1.278 (Claude Code))
   grace-leakage trial 1: PASS (169s, 4302 chars)
+  grace-leakage trial 2: PASS (148s, 4668 chars)
+grace-leakage: 2/2 valid (rate 1.0, 0 errors) CI [0.342, 1.0] -> PASS
+wrote /home/user/probe/shard/results_off.json
+restored knowledge/
+transcripts kept: 4 trial files
+== delta scoreboard ==
+wrote /home/user/probe/shard/ablation.html
+ABLATION_DONE
+
+real	12m55.905s
+user	0m41.130s
+sys	0m6.455s
+EXIT=0
 ```
 
-**The OFF arm's trial 2 was still running when this file was written.** The run had
-not reached `ABLATION_DONE`, the delta scoreboard had not been rendered, and
-`results_off.json` did not yet exist.
+The rendered delta table:
+
+| case | type | bundle on: rate (95% CI) | bundle off: rate | delta | verdict |
+|---|---|---|---|---|---|
+| grace-leakage | gotcha-avoidance | 1.00 [0.21, 1.00] | 1.00 | +0.0 | PASS |
+
+Read 2.3 before reading anything into that delta.
 
 ### 3.2 Per-trial elapsed seconds
 
@@ -280,26 +307,32 @@ not reached `ABLATION_DONE`, the delta scoreboard had not been rendered, and
 | on | 1 | PASS | 227 | 5290 |
 | on | 2 | error: turn limit | 204 | 29 |
 | off | 1 | PASS | 169 | 4302 |
-| off | 2 | *(in flight at time of writing)* | — | — |
+| off | 2 | PASS | 148 | 4668 |
 
-Three completed trials: 227 + 204 + 169 = 600 s, mean **200 s/trial**.
+Sum of trial time: **748 s**. Total wall clock: **775.9 s**. Everything that is not a
+trial — building the record, three rubric-judge calls, the arm change, the guard and
+the scoreboard render — cost **27.9 s combined**, so judging is cheap (order 7-9 s per
+graded trial) and trial time dominates almost completely.
 
-Wall clock is larger than the sum of trials, because each PASS also pays for a rubric
-judge call that is not counted in `elapsed_s`. Measured: ON arm start to
-`wrote results_on.json` was about 8 minutes for two trials, against 431 s of trial
-time — roughly **90 s of judging per passing trial** on top.
+Mean **194 s of wall clock per trial**, which is the number to plan with.
 
-**Estimate for the full experiment.** At ~200 s/trial plus ~90 s judging per
-non-errored trial, one case-trial costs roughly 250-290 s end to end. The full
-pre-registered suite is 7 cases x 2 arms x N trials, strictly sequential:
+**Estimate for the full experiment.** Trials are strictly sequential (2.1). The
+pre-registered suite is 7 cases x 2 arms x N trials:
 
-- N=2 (this shard's depth), all 7 cases: 28 trials, ~2.0-2.3 hours
-- N=20 (the pre-registered sweep): 280 trials, **~19-22 hours of wall clock in one container**
+| Scope | Trials | Estimated wall clock |
+|---|---|---|
+| This shard (1 case, N=2) | 4 | 12 m 56 s (measured) |
+| All 7 cases, N=2 | 28 | ~1.5 h |
+| All 7 cases, N=20 (pre-registered) | 280 | **~15 h in one container** |
 
-That is a single-threaded estimate, and per 2.1 there is currently no way to make it
-anything else within one run. Sharding across containers is the only parallelism
-available, and per the standing rule two ablations must not share a container because
-the arm change moves a directory in the shared plugin cache.
+Caveats on that 15 h. It assumes grace-leakage's trial cost is representative; the
+runner's own note warns a 30-turn multi-granule case has been measured above 600 s,
+which is three times this case's mean, so a suite-wide figure could be materially
+higher. It also assumes the outage rate stays near this shard's, and an errored trial
+costs nearly as much as a good one (the turn-limit trial burned 204 s to produce 29
+bytes) without contributing to N. Sharding across containers is the only parallelism
+available, and two ablations must not share a container because the arm change moves a
+directory in the shared plugin cache.
 
 ### 3.3 The ON arm outage, verbatim
 
@@ -311,8 +344,9 @@ message, or something else. **It was the turn limit.** The complete transcript o
 Error: Reached max turns (30)
 ```
 
-`trial2.stderr` is **empty** — zero bytes. There is no quota message, no API error,
-no partial answer. The grader detail recorded:
+`trial2.stderr` is **empty** — zero bytes. There is no quota message, no API error and
+no partial answer; the runner classified it from the transcript text alone. The
+recorded grader detail:
 
 ```json
 {
@@ -329,72 +363,122 @@ This matters more than one lost trial. `max_turns` was raised 12 -> 30 on 2026-0
 precisely because seven of eight pilot trials exhausted at 12. At 30, **one of two ON
 trials still exhausted** — and the manifest's own comment explains why that is not a
 neutral loss: consulting the bundle costs turns, so the arm with the knowledge present
-exhausts more readily, and the surviving trials are the atypically brief ones. That is
-a treatment-correlated sampling bias, and this shard shows it is still live at 30
-turns. One trial is far too little to put a number on, but at N=20 a ~50% ON-arm
-outage rate would halve the ON arm's effective sample while leaving OFF nearly intact.
+exhausts more readily, and the trials that survive are the atypically brief ones. That
+is a treatment-correlated sampling bias, and this shard shows it is still live at 30
+turns.
 
-Turn exhaustion is correctly counted as an outage rather than a failure (`errors: 1`),
-so it does not contaminate the rate: the ON arm reported 1/1 valid, rate 1.0. The
-`trials` field in the results file is the *valid* count, not the requested count;
-`trials_requested` carries the 2.
+The shard is consistent with that bias, though far too small to establish it: the ON
+arm lost one of two trials to exhaustion, the OFF arm lost none, and the two OFF trials
+(169 s, 148 s) were both faster than the one surviving ON trial (227 s). At N=20 an
+ON-arm outage rate anywhere near this would halve the ON arm's effective sample while
+leaving OFF intact, and the ON arm's survivors would be skewed short. Worth watching
+the per-arm `errors` counts across the other shards.
 
-### 3.4 Arm change: stripped and restored
+Turn exhaustion is correctly counted as an outage rather than a failure, so it does not
+contaminate the rate: the ON arm reported 1/1 valid, rate 1.0, errors 1. The `trials`
+field in a results file is the *valid* count, not the requested count; `trials_requested`
+carries the 2. The consequence for the ablation is that the two arms are reported at
+different effective N — ON at n=1, CI [0.21, 1.00]; OFF at n=2, CI [0.34, 1.00] — and
+the delta column prints a bare `+0.0` with no interval at all.
 
-- **Stripped correctly.** Checked live during the OFF arm: the only entry matching
+### 3.4 Arm change: stripped and restored correctly
+
+Verified at all three points:
+
+- **Stripped.** Checked live during the OFF arm: the only entry matching
   `.../ocean-science/*/knowledge*` was `knowledge.ABLATION_OFF`. The real tree was
-  gone for the duration of the OFF arm, which is the intended behaviour.
-- **Restored correctly after the failed exact-command run.** `restored knowledge/`
-  printed, the glob returned only `knowledge`, and the tree still held 45 markdown
-  files.
-- **Not yet restored for the in-flight run**, because that run is still in its OFF
-  arm. See the warning below.
+  absent for the whole OFF arm, which is the intended behaviour.
+- **Restored.** `restored knowledge/` printed before the guard ran. After completion:
+
+```
+$ ls -d /root/.claude/plugins/cache/*/ocean-science/*/knowledge*
+/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+
+$ find /root/.claude/plugins/cache -name '*.ABLATION_OFF'
+(no output)
+
+$ find .../ocean-science/0.9.0/knowledge -name '*.md' | wc -l
+45
+```
+
+**No leftover `knowledge.ABLATION_OFF`.** The tree is back with all 45 concepts and the
+container is clean for the next run.
+
+- **Restored on failure too.** The failed exact-command run (2.1) also left no
+  residue: the `trap restore EXIT INT TERM` fired and the glob returned only
+  `knowledge`. The restore path is exercised on both the success and the error route.
 
 ### 3.5 Transcripts
 
-Transcripts were written, to
-`<outdir>/transcripts_{on,off}/<case id>/trial<n>.{txt,stderr,json}`:
+Transcripts were written, for both arms, to
+`<outdir>/transcripts_{on,off}/<case id>/trial<n>.{txt,stderr,json}` — four trials,
+twelve files:
 
 ```
-/home/user/probe/shard/transcripts_on/grace-leakage/trial1.txt
-/home/user/probe/shard/transcripts_on/grace-leakage/trial1.stderr
-/home/user/probe/shard/transcripts_on/grace-leakage/trial1.json
-/home/user/probe/shard/transcripts_on/grace-leakage/trial2.txt
-/home/user/probe/shard/transcripts_on/grace-leakage/trial2.stderr
-/home/user/probe/shard/transcripts_on/grace-leakage/trial2.json
-/home/user/probe/shard/transcripts_off/grace-leakage/trial1.*
+/home/user/probe/shard/transcripts_on/grace-leakage/trial1.{txt,stderr,json}
+/home/user/probe/shard/transcripts_on/grace-leakage/trial2.{txt,stderr,json}
+/home/user/probe/shard/transcripts_off/grace-leakage/trial1.{txt,stderr,json}
+/home/user/probe/shard/transcripts_off/grace-leakage/trial2.{txt,stderr,json}
 ```
 
-`ablate.sh` passes `--transcripts` for both arms unconditionally, so this is not
-something a caller can forget. The `.txt` holds the model's reply, `.stderr` its
-standard error, `.json` the grader detail including the judge's one-sentence reason.
+`ablate.sh` passes `--transcripts` for both arms unconditionally, so a caller cannot
+forget it, and the end-of-run guard confirmed `transcripts kept: 4 trial files`. The
+`.txt` holds the model's reply, `.stderr` its standard error, `.json` the grader detail
+including the judge's one-sentence reason.
 
-Committed under `scoreboard/probe/`. `.gitignore` matches `transcripts_on/` and
-`transcripts_off/` at any depth, so these are tracked with `git add -f`; the directory
-names are kept as the harness wrote them rather than renamed.
+Committed under `scoreboard/probe/`, alongside `results_on.json`, `results_off.json`,
+the full `run.log`, the rendered `ablation.html` and the failed exact-command log.
+`.gitignore` matches `transcripts_on/` and `transcripts_off/` at any depth, so these
+are tracked with `git add -f`; the directory names are kept as the harness wrote them
+rather than renamed, so they line up with the run log.
 
 ---
 
-## 4. Warning about this container's state
+## 4. Container state after the run
 
-At the time of writing, the knowledge tree is moved aside:
+Clean. The knowledge tree is restored with all 45 concepts, no `*.ABLATION_OFF` exists
+anywhere under the plugin cache, and no `ablate.sh` or `run_evals.py` process is left
+running (checked with `ps -eo pid,etime,cmd`, not `pgrep`).
 
-```
-/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge.ABLATION_OFF
-```
+**A backgrounded run survives the agent's turn ending.** This was checked directly
+while the OFF arm was in flight: `ps` showed both `ablate.sh` (pid 983) and
+`run_evals.py --bundle off` (pid 1862) alive across several turns, and the run went on
+to complete normally with exit 0. **The other thirteen shards can be driven this way.**
 
-**This is correct and expected — the bundle-OFF arm is still running.** It is not the
-residue of a dead run. Confirmed with `ps`, not `pgrep`:
+One caution learned here. While a run is live, the tree is *supposed* to be sitting as
+`knowledge.ABLATION_OFF`, and that state is indistinguishable at a glance from the
+residue of a dead run. Moving it back on sight would corrupt a live OFF arm mid-flight.
+Check liveness with `ps` first and only restore if nothing is running — which during
+this probe is exactly what the state check found, so the tree was deliberately left
+alone and `ablate.sh` restored it itself.
 
-```
-  983  10:59 bash /home/user/evals/runner/ablate.sh /home/user 2 /home/user/probe/shard claude-opus-5 --cases grace-leakage
- 1862   3:40 python /home/user/evals/runner/run_evals.py --manifest .../ablation.yaml --workspace /home/user --trials 2 --model claude-opus-5 --bundle off --out .../results_off.json --transcripts .../transcripts_off --cases grace-leakage
-```
+---
 
-Moving the tree back now would corrupt the live OFF arm mid-flight. It is left alone
-deliberately; `ablate.sh`'s `trap restore EXIT INT TERM` restores it when the arm
-finishes. The restoration is verified in the final version of this file.
+## 5. Corrections to the partial version of this file
 
-**The run survived the agent turn ending.** A backgrounded `ablate.sh` keeps running
-across turns in this container, which is the fact that decides whether the other
-thirteen shards can be driven this way. They can.
+The mid-run commit on this branch carried two numbers that the completed run disproved:
+
+- It estimated **~90 s of judging per passing trial**, inferred from a partial reading
+  of elapsed timestamps. The real figure is **7-9 s**: total non-trial overhead for the
+  whole run was 27.9 s across three judged trials.
+- On that inflated overhead it put the N=20 sweep at **~19-22 h**. Corrected to
+  **~15 h**, from a measured 194 s of wall clock per trial.
+
+Nothing else changed. The findings in section 2 stand as written.
+
+---
+
+## 6. What I did not do
+
+- I did not change the harness, the manifest, any case, any threshold or any trial
+  count, and I did not fix any of the defects in section 2.
+- I did not substitute a model. `claude-opus-5` ran every trial and every judge call,
+  recorded in both results files as `"model": "claude-opus-5"` and
+  `"judge_model": "claude-opus-5"`.
+- I did not run two ablations at once. The two runs on this container were strictly
+  sequential, and the first had already restored the tree before the second started.
+- I did not re-run the ON arm, and I started no new run after the check-in.
+- The one deviation from the instructions: I dropped `--concurrency 2` for the real
+  run, after first running the command exactly as given and capturing its failure
+  (2.1). Nothing else about the command changed. Had I not dropped it, there would be
+  no run to report.

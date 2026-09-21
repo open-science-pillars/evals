@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 148,
+  "chars": 4668,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha, identifies the CRI-filtered mascon product and its unfiltered counterpart, insists on mascon-scale (~335 km) rather than 0.5\u00b0 grid-cell interpretation, quantifies the Greenland ice-loss leakage risk against the real ocean-mass signal, and explicitly notes that formal per-mascon errors exclude leakage and GIA rather than quoting a bare trend."
+    }
+  },
+  "pass": true
+}

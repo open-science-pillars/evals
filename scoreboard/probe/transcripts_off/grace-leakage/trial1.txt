@@ -1,0 +1,40 @@
+I read the bundle concepts before touching data, and they stop this computation as specified. Let me give you the reason, because it's substantive rather than procedural.
+
+## The problem is resolution, not method
+
+`knowledge/podaac/datasets/grace-fo-mascons.md` (stable, human-verified 2026-09-13): the JPL solution estimates mass on **4,551 equal-area 3° spherical caps**. The 0.5° grid is a *representation* of those caps — "the native information scale is the mascon, not the grid cell."
+
+Working that out: 4πR²/4551 ≈ **112,000 km² per mascon**, about 335 km on a side.
+
+The SE Greenland shelf, Denmark Strait to Cape Farewell, is roughly 950 km of margin by 100–150 km of shelf width — call it **120,000 km²**. So the entire feature you asked about is *about one mascon in area*, shaped as a strip roughly 0.4 mascons wide across-margin. There is no ocean-only mascon anywhere on that shelf. Every mascon covering it straddles the coast, and what sits on the land side is the Helheim–Kangerlussuaq sector, the fastest-thinning part of the ice sheet.
+
+The dataset concept names this case directly: "a basin whose area approaches or falls below the mascon scale is resolution- and leakage-dominated."
+
+## The magnitudes make it worse
+
+`knowledge/podaac/gotchas/grace-coastal-leakage.md` (stable, **severity high**, human-verified, eval case `grace-leakage`) names your exact region in its wrong-result mode: "apparent coastal sea level or ocean-mass trends near Greenland, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim."
+
+Scale of the two signals in a coastal SE Greenland mascon (my arithmetic, not a bundle number):
+
+- **Ocean signal sought** — global barystatic rise is +2.3 mm/yr (the bundle's own anchor: +2.299 mm/yr, 2005–2016, CRI grid). Near Greenland the sea-level fingerprint reverses it, so the real local ocean mass trend is order **±0.2–0.7 cm/yr** of equivalent water thickness.
+- **Land signal next door** — SE Greenland ice loss concentrated into ~112,000 km² mascons runs to **tens of cm/yr** of equivalent water thickness.
+
+That's roughly **two orders of magnitude**. The CRI filter partitions straddling mascons and "reduces leakage substantially but does not eliminate it" — so even 90–95% suppression leaves a residual several times larger than the signal. I can produce a number, but I can't produce one where the ocean part is distinguishable from the ice part.
+
+One thing that *does* work in your favour: 2019–2024 is entirely GRACE-FO, so `grace-intermission-gap.md` doesn't bite. The window is clean; the geometry isn't.
+
+## What I'd compute instead — pick one
+
+**A. Open Irminger Sea ocean mass.** Whole mascons, CRI grid, buffered ≥1 mascon (~335 km) off the coast, per the gotcha's "correct approach." A real, defensible ocean mass trend with leakage bounded by the CRI-vs-unfiltered difference, as `recipes/grace-mass-to-sea-level.md` specifies. It is *not* the shelf, and I'd label it so.
+
+**B. SE Greenland ice-sheet mass loss.** If what you're really after is the freshwater forcing arriving on that shelf, this is the well-posed GRACE question, and it's what the product is recommended for. Land mascons of the SE sector, trend in Gt/yr, converted to sea level equivalent at 362 Gt/mm.
+
+**C. Shelf ocean mass by other means.** If you need the shelf specifically, GRACE can't resolve it at any processing level — that would need bottom pressure recorders, or altimetry minus steric as a manometric residual.
+
+My read is that **B** is the question behind the question, and **A** is the honest version of what you literally asked.
+
+## One blocker
+
+I haven't run anything — this session is denying `python3` and the Earthdata/CMR calls at the permission prompt, so the numbers above are hand arithmetic from the concepts, not from a granule. To actually compute A or B I'll need approval for `python3` and outbound access to CMR and PO.DAAC, plus Earthdata credentials, since I found no `~/.netrc` and no EDL environment variables.
+
+Tell me which option, and approve those, and I'll run it properly — whole mascons with true areas, annual and semi-annual terms in the fit, and the formal error, leakage and GIA terms quoted separately rather than folded together.

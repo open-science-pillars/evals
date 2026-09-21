@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 169,
+  "chars": 4302,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the CRI-filtered JPL mascon product, interprets at mascon scale (~3\u00b0 caps, ~112,000 km\u00b2) rather than the 0.5\u00b0 grid, quantifies the SE Greenland ice-loss leakage risk as dominating the ocean signal by ~two orders of magnitude, offers well-posed alternatives, and commits to reporting formal error, leakage and GIA separately rather than a bare trend."
+    }
+  },
+  "pass": true
+}

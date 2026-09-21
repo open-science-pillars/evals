@@ -9,3 +9,16 @@ ablating /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/kn
 == bundle-OFF arm ==
 ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (current) on claude-code (2.1.278 (Claude Code))
   grace-leakage trial 1: PASS (169s, 4302 chars)
+  grace-leakage trial 2: PASS (148s, 4668 chars)
+grace-leakage: 2/2 valid (rate 1.0, 0 errors) CI [0.342, 1.0] -> PASS
+wrote /home/user/probe/shard/results_off.json
+restored knowledge/
+transcripts kept: 4 trial files
+== delta scoreboard ==
+wrote /home/user/probe/shard/ablation.html
+ABLATION_DONE
+
+real	12m55.905s
+user	0m41.130s
+sys	0m6.455s
+EXIT=0

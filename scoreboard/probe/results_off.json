@@ -1,0 +1,75 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "off",
+  "trials": 2,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-21",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": true
+    }
+  },
+  "cases": [
+    {
+      "passes": 2,
+      "trials": 2,
+      "rate": 1.0,
+      "ci95": [
+        0.342,
+        1.0
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "grace-leakage",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 0,
+      "trials_requested": 2,
+      "max_turns": 30,
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 169,
+          "chars": 4302,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI-filtered JPL mascon product, interprets at mascon scale (~3\u00b0 caps, ~112,000 km\u00b2) rather than the 0.5\u00b0 grid, quantifies the SE Greenland ice-loss leakage risk as dominating the ocean signal by ~two orders of magnitude, offers well-posed alternatives, and commits to reporting formal error, leakage and GIA separately rather than a bare trend."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 148,
+          "chars": 4668,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted surfaces the coastal-leakage gotcha, identifies the CRI-filtered mascon product and its unfiltered counterpart, insists on mascon-scale (~335 km) rather than 0.5\u00b0 grid-cell interpretation, quantifies the Greenland ice-loss leakage risk against the real ocean-mass signal, and explicitly notes that formal per-mascon errors exclude leakage and GIA rather than quoting a bare trend."
+            }
+          },
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

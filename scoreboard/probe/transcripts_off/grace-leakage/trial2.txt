@@ -1,0 +1,38 @@
+## I didn't produce that number, and I'd recommend against it
+
+Two things happened: I hit an operational block (no Earthdata credentials staged — no `.netrc`, and the CMR/Python calls need approval), but more importantly, the analysis as specified sits squarely inside a documented failure mode for this product. Even with credentials I'd have come back to you before quoting a trend.
+
+**The governing concept** is `knowledge/podaac/gotchas/grace-coastal-leakage.md` (status `stable`, severity `high`, human-verified by you on 2026-07-04, fresh until 2027-01-04). Its wrong-result mode names your exact case:
+
+> *"apparent coastal sea level or ocean-mass trends near Greenland, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim."*
+
+### Why southeast Greenland is the worst case, not a marginal one
+
+**The shelf is smaller than the instrument.** Per `datasets/grace-fo-mascons.md`, the solution is 4,551 equal-area 3° spherical caps — about 1.1×10⁵ km² each, ~335 km on a side. The SE Greenland shelf is roughly 50–150 km wide. It is never resolved. The 0.5° grid the product ships on will happily give you cells that look like shelf water, but the concept is explicit that "the native information scale is the mascon, not the grid cell." There is no mascon that *is* shelf water — every candidate is a coastline-straddling mascon, which is precisely the CRI-partitioned population where residual leakage is largest.
+
+**The adjacent land signal is enormous.** A scaling argument, using the concept's own conversion (1 cm water-equivalent over 1 km² = 10⁻⁵ Gt) — treat these as illustrative, not product numbers, since no installed concept carries a SE Greenland rate:
+
+| Leakage residual into the ocean mascon | Assumed neighbouring ice mascon loss | Spurious ocean-mass trend |
+|---|---|---|
+| 5% | −20 Gt/yr | ≈ −9 mm/yr w.e. |
+| 1% | −20 Gt/yr | ≈ −1.8 mm/yr w.e. |
+
+For scale, the bundle's own anchor for the *global* ocean mass term is **+2.299 mm/yr** over 2005–2016 (`ocean-science/knowledge/computations/sea-level-budget.md`). So even a 1% residual after CRI is the size of the entire real signal, and it enters with the wrong sign — ice loss next door reads as ocean mass *loss* on the shelf. The CRI filter "reduces leakage substantially but does not eliminate it." You would get a confident, large, negative trend that is mostly Helheim and Kangerdlugssuaq, not ocean.
+
+Worth adding: the product's formal per-mascon uncertainty grids **would not warn you.** The dataset concept states the formal errors exclude leakage and GIA, "both exceed the formal errors regionally." The error bars would look reassuring and be irrelevant.
+
+### One thing your window gets right
+
+2019–2024 sits entirely after the GRACE/GRACE-FO gap (`gotchas/grace-intermission-gap.md`). No inter-mission bias, no bridging argument needed. That's the window the gap gotcha explicitly recommends — "prefer a window that does not cross it." Whatever we compute, that choice holds up.
+
+### What I can compute instead
+
+1. **SE Greenland ice-sheet mass trend, 2019–2024, at mascon scale.** This is the product's *recommended* use — the CMR record names it the recommended product for land-ice applications. Follows `recipes/grace-mass-to-sea-level.md` end to end: whole mascons from the placement file, true areas, annual + semi-annual terms fitted with the slope, then Gt/yr and a sea-level equivalent at 362 Gt/mm. Defensible, and probably the physics you're actually after.
+2. **Irminger Sea / subpolar North Atlantic ocean mass**, with a one-mascon (~335 km) buffer offshore. The gotcha is clear that "basin-scale open-ocean averages are robust; the trap is specifically the nearshore."
+3. **Bound the leakage explicitly** by differencing the CRI grid against the unfiltered `TELLUS_GRAC-GRFO_MASCON_GRID_RL06.3_V4` over the coastal mascons — the recipe names this as the way to size the term. This turns your original question into a quantified statement about *how badly* GRACE can't see the shelf, which is a real result.
+
+If you want shelf-scale ocean mass specifically, GRACE is the wrong instrument at any processing level. ECCO v4r4 carries an OBP field but ends in 2017, so it can't cover your window either. That would need bottom pressure recorders or steric-corrected altimetry.
+
+**To unblock me:** Earthdata credentials (a `.netrc` or `earthaccess` login), plus approval for Python and the CMR tools.
+
+Which option do you want? And if you'd still like the naive shelf number — as a leakage demonstration rather than an ocean result — say so and I'll run it, labelled as such.
