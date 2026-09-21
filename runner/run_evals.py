@@ -28,10 +28,12 @@ The full N=20 sweep is a CI job (hundreds of agentic invocations); on a laptop
 run a subset at low --trials to demonstrate the runner reproduces seed grades.
 """
 import argparse
+import concurrent.futures as cf
 import json
 import re
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -64,6 +66,9 @@ TURN_LIMIT = re.compile(r"reached max turns", re.I)
 # come; the default leaves headroom so a slow but complete trial is graded
 # rather than discarded. A trial past the limit is an error, never a failure.
 DEFAULT_TIMEOUT = 1200
+
+# Serialises trial lines when an arm runs its trials concurrently.
+PRINT_LOCK = threading.Lock()
 
 
 def read_dirs_for(ws, plugin: str):
@@ -178,6 +183,9 @@ def main():
     ap.add_argument("--trials", type=int, default=20)
     ap.add_argument("--model", default="claude-fable-5")
     ap.add_argument("--cases", default="")
+    ap.add_argument("--concurrency", type=int, default=1,
+                    help="trials to run at once within one arm; the arm change is never "
+                         "concurrent, so this changes when trials run and not what they do")
     ap.add_argument("--out", default="scoreboard/results.json")
     ap.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT,
                     help="seconds allowed per trial before it is recorded as an error")
@@ -226,17 +234,15 @@ def main():
         case["_plugin"] = entry["plugin"]
         max_turns = entry.get("max_turns", 20)
         tdir = troot / entry["id"] if troot else None
-        passes = 0
-        errors = 0
-        trials = []
-        for n in range(1, args.trials + 1):
+        def one_trial(n):
+            """One trial, whole: run it, grade it, keep it. Independent of every
+            other trial in this arm, which is why they may run together."""
             t, err, elapsed, timed_out = run_trial(
                 case["prompt"], entry["allowed_tools"], max_turns, args.model,
                 timeout=args.timeout, claude_args=args.claude_arg, runtime=args.runtime)
             detail = {"trial": n, "elapsed_s": round(elapsed), "chars": len(t)}
             if timed_out or is_error_transcript(t):
                 detail["error"] = "timeout" if timed_out else "empty or limit message"
-                errors += 1
             else:
                 ok, graders, judge_error = grade(case, t, ws, no_judge=args.no_judge,
                                                  model=judge_model)
@@ -245,15 +251,32 @@ def main():
                     # The trial ran; the judge did not. Counting this as a
                     # failure would put a wrong rate in the record.
                     detail["error"] = f"judge unavailable ({judge_error})"
-                    errors += 1
                 else:
                     detail["pass"] = ok
-                    passes += int(ok)
-            trials.append(detail)
             keep(tdir, n, t, err, detail)
             state = detail.get("error") or ("PASS" if detail["pass"] else "FAIL")
-            print(f"  {entry['id']} trial {n}: {state} ({detail['elapsed_s']}s, "
-                  f"{detail['chars']} chars)", flush=True)
+            # One line at a time, or concurrent trials interleave mid-line and
+            # the run log stops being readable at the moment it matters most.
+            with PRINT_LOCK:
+                print(f"  {entry['id']} trial {n}: {state} ({detail['elapsed_s']}s, "
+                      f"{detail['chars']} chars)", flush=True)
+            return detail
+
+        # Trials inside one arm are independent and may run together. What must
+        # never overlap is the arm change: ablate.sh moves the installed
+        # knowledge tree between the arms, on a plugin cache every trial shares,
+        # and two runs sharing one cache disagreed with each other on
+        # 2026-09-21 and were both discarded. Within an arm the tree does not
+        # move, so concurrency here changes when trials run and nothing about
+        # what any one of them does.
+        if args.concurrency > 1:
+            with cf.ThreadPoolExecutor(max_workers=args.concurrency) as pool:
+                trials = list(pool.map(one_trial, range(1, args.trials + 1)))
+        else:
+            trials = [one_trial(n) for n in range(1, args.trials + 1)]
+        trials.sort(key=lambda d: d["trial"])
+        errors = sum(1 for d in trials if "error" in d)
+        passes = sum(1 for d in trials if d.get("pass"))
         valid = args.trials - errors
         v = verdict(passes, valid, case.get("pass_threshold", 0.8))
         v["id"] = entry["id"]
