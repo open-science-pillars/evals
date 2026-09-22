@@ -145,6 +145,18 @@ def main() -> int:
         if a["reproduce_prose"]:
             print("   " + ", ".join(a["reproduce_prose"]))
 
+    # An arm with no transcripts is not a clean arm, it is an unexamined one.
+    # Read literally, the sentence below would report zero reproductions over
+    # zero files and call that evidence the arm was off. A shard that pushed
+    # its results without its transcripts produced exactly that.
+    missing = [arm for arm in ("on", "off") if r[arm]["transcripts"] == 0]
+    if missing:
+        print(f"STOP: no transcripts for the {' and '.join(missing)} arm, so "
+              "there is nothing to audit. This is not a clean result; it is an "
+              "absent one. Look for the transcripts before reading anything "
+              "into the arm's rate.")
+        return 2
+
     off = r["off"]
     if off["reproduce_prose"]:
         print("STOP: a bundle-off transcript reproduces the cited concept's prose, "
