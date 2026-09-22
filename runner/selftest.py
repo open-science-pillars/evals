@@ -19,7 +19,7 @@ from judge import parse_judgement  # noqa: E402
 from stats import verdict  # noqa: E402
 from record import RUNTIMES, build_record, capability_record, runtime_record, value_digest  # noqa: E402
 from drivers import command_for  # noqa: E402
-from scoreboard import comparison, label, render  # noqa: E402
+from scoreboard import comparison, label, mismatched_rubrics, render  # noqa: E402
 
 # (checker_id, good transcript, bad transcript)
 CASES = [
@@ -308,6 +308,55 @@ def main():
     if "bundle off: rate" not in render(a, dict(a, bundle="off")):
         fails.append("ablation columns lost")
 
+    # The rubric a case names has to be the rubric that grades it. Nine cases
+    # across two repositories named documents that never existed and were
+    # graded by their notes without a word about it, so these check that a
+    # name which resolves to nothing now stops the run.
+    import tempfile
+    from run_evals import resolve_rubric
+    with tempfile.TemporaryDirectory() as td:
+        ws = Path(td)
+        (ws / "cap" / "evals").mkdir(parents=True)
+        (ws / "cap" / "evals" / "real.md").write_text("the written rubric")
+
+        def case(spec, notes="pass when the answer states the caveat outright"):
+            return {"id": "c", "_plugin": "cap", "notes": notes,
+                    "graders": [{"rubric": spec}]}
+
+        text, source = resolve_rubric(case("real.md"), ws)
+        if "the written rubric" not in text or not source.endswith("real.md"):
+            fails.append("a rubric file that exists is not read as the rubric")
+        text, source = resolve_rubric(case("notes"), ws)
+        if source != "notes" or "states the caveat" not in text:
+            fails.append("`rubric: notes` does not grade against the case's notes")
+        text, source = resolve_rubric(case("pass when it names the product"), ws)
+        if source != "inline" or "names the product" not in text:
+            fails.append("an inline rubric is not read as the rubric")
+        for spec, why in [("missing.md", "a rubric file that does not exist"),
+                          ("leakage-handling.md", "the rubric name that was never there")]:
+            try:
+                resolve_rubric(case(spec), ws)
+                fails.append(f"{why} resolved instead of stopping the run")
+            except ValueError:
+                pass
+        try:
+            resolve_rubric(case("notes", notes=""), ws)
+            fails.append("`rubric: notes` resolved on a case with no notes")
+        except ValueError:
+            pass
+
+    # Two arms graded by different text do not have a delta between them.
+    armed = dict(a, cases=[dict(a["cases"][0], rubric="notes")])
+    other = dict(armed, bundle="off",
+                 cases=[dict(a["cases"][0], rubric="cap/evals/real.md")])
+    if mismatched_rubrics(armed, other) != [a["cases"][0]["id"]]:
+        fails.append("a case graded differently in the two arms is not flagged")
+    try:
+        render(armed, other)
+        fails.append("a delta was rendered between arms graded by different rubrics")
+    except SystemExit:
+        pass
+
     if fails:
         print("SELFTEST FAILED:")
         for f in fails:
@@ -318,8 +367,9 @@ def main():
           f"mention over {probe_checks} phrasings and agree with {recorded} recorded transcripts; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
-          "verdict aggregation correct; the cross-runtime record, the drivers and the "
-          "scoreboard's runtime comparison behave")
+          "verdict aggregation correct; a rubric a case names but cannot resolve stops "
+          "the run and a delta between differently graded arms is refused; the "
+          "cross-runtime record, the drivers and the scoreboard's runtime comparison behave")
     print("evals runner selftest: PASSED")
 
 

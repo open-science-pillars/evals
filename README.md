@@ -51,8 +51,16 @@ whether a slimmed skill finds its concepts through discovery tools.
 
 A trial passes only if **every grader present agrees**: the programmatic
 predicate (a conservative gate) AND the rubric judge (authoritative, skeptical:
-partial compliance fails). A case's `notes` field is the default rubric; a
-dedicated `rubric:` file overrides it when a case needs more detail. A case
+partial compliance fails). A case's `rubric:` grader names the text
+that judges it: the word `notes` for the case's own notes, the rubric written
+out inline, or a path under the plugin's `evals/` directory. A path that does
+not exist stops the run. Until 2026-09-22 it fell through to the notes in
+silence, and thirteen cases across two repositories named rubric documents
+that have never existed, so the grader in force was never the one the case
+named. Each results file now records per case which text graded it, the
+scoreboard refuses a delta between two arms graded differently, and
+`merge_shards.py` refuses to add shards of a case that were graded
+differently. A case
 passes when its point-estimate pass rate meets its threshold (default 0.8); the
 Wilson 95% interval is reported for transparency and drives the ablation.
 
