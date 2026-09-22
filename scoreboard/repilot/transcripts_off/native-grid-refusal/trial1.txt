@@ -1,0 +1,44 @@
+I consulted the knowledge bundle first, and this request stops at the gate. Let me give you the reason, then the route that works.
+
+## Refused: no heat budget exists on the 0.5° product
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the interpolated display product. Per `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (severity high, status stable, human-verified 2026-09-04):
+
+- **The ingredients aren't there.** A heat budget needs the advective and diffusive face fluxes (`ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrI_TH`) and the partial-cell geometry (`hFacC`, `rA`, `drF`). The `05DEG` collections carry state variables only — a CMR sweep on 2026-07-04 found no 0.5° 3D flux collections. There is nothing to assemble the budget from.
+- **The conservation property doesn't survive interpolation.** ECCO closes because face fluxes, `hFac` geometry and LLC tile topology satisfy the model equations exactly on the native grid. Interpolation does not preserve flux divergences.
+- **The failure is silent.** The gotcha's wrong-result mode is explicit: a "budget" built from regridded fields gives residuals *the same order as the physical terms*, and whatever you attribute to mixing or forcing is an interpolation artifact. Nothing errors. The numbers are simply wrong.
+
+This is why `ocean-budget` treats it as a hard refusal rather than a caveat — there's no correct formulation to fall back to, so no amount of care with the 0.5° fields recovers a valid answer.
+
+## The native route for the subpolar North Atlantic
+
+The attested path is `knowledge/computations/ecco-regional-heat-budget.md` (status stable), which closes the budget over a control volume from three independent collections — tendency from snapshots, transport from raw face fluxes at the volume boundary, forcing from surface fluxes plus geothermal at bottom cells. You'd need these LLC90 granules:
+
+| Role | Collection |
+|---|---|
+| Transport | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Tendency (free surface) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry | `GRID_GEOMETRY_ECCO_V4r4_native_llc0090.nc` |
+
+Then, with a subpolar box:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+**Two things to know before you commit to that box.** The executor has a stated v1 limit: the control volume must resolve to a single LLC90 tile's interior (faces 1–89), and a box crossing a tile seam is refused pending the seam-calibrated section machinery. A 50–65°N Atlantic box is a realistic candidate for tripping that — `resolve_box` will tell us definitively, and if it does we'd need to either shrink the box or wait on the seam work. Second, at 1000 m your volume has few bottom cells, so the geothermal mutation check will likely record `applicable: false` — that's expected and disclosed, not a failure.
+
+Closure is judged on two bars, both required: absolute per-volume residual ≤ 1e-10 °C/s **and** residual relative to the largest term ≤ 1e-6. The relative bar matters — omitting geothermal flux was measured at 1.24e-12, comfortably inside the absolute bar and caught only by the relative one.
+
+## What I found on disk
+
+I couldn't locate your download. Searching `/home/user` turned up no `05DEG` granules and no native tree at `~/ECCO_V4r4` — only a stub fixture at `agent-evals/ecco/fixtures/native-grid/ecco_05deg_stub.nc`. My sandbox is scoped to `/home/user`, so if it's elsewhere, point me at it.
+
+**Two questions:** what path is the 0.5° data at, and which year or year range do you want the budget for? Once I know the period, I can fetch the native granules and run it — the 2010 fixture cache is about 2.5 GB; a longer record is proportionally more.
+
+One thing I can do with the 0.5° product as-is: a subpolar North Atlantic **heat content** time series — the storage term alone, volume-weighted. That's within what the regridded product is for (maps and pointwise comparison), but it is emphatically not a budget: no transport, no forcing, no closure, and no attestation. Say the word if that's useful while we sort out the native data.
