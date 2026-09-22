@@ -133,11 +133,22 @@ runtime with no driver here is refused rather than guessed.
 ## The ablation
 
 The headline experiment runs the gotcha-avoidance suite with the knowledge
-bundle installed (`--bundle on`) and with `knowledge/` removed
-(`--bundle off`), same model and N, and publishes the per-case rate delta with
-its interval. `scoreboard.py results_on.json results_off.json` renders the
-delta. Protocol and go/stop conditions are pre-registered in
+bundle installed (`--bundle on`) and with it removed (`--bundle off`), same
+model and N, and publishes the per-case rate delta with its interval.
+`scoreboard.py results_on.json results_off.json` renders the delta. Protocol
+and go/stop conditions are pre-registered in
 `marketplace/docs/phase2-preregistration.md`; the grader code is frozen before
 the bundle-off arm runs.
+
+What the off arm removes is derived, not assumed. Until 2026-09-21 it moved
+one tree aside, the capability's own, and thirteen of the suite's fourteen
+`concept_basis` citations name concepts in a dependency the arm never touched,
+so every delta it produced compared an arm holding the cited knowledge against
+an arm holding the cited knowledge. `ablation_scope.py` now walks the plugins
+the manifest's cases name plus every dependency those plugins declare, moves
+the installed knowledge tree of each, and refuses the run when a case cites
+knowledge outside that scope. A suite the arm cannot ablate stops rather than
+returning a number. The pilot that defect invalidated is withdrawn in place at
+`scoreboard/pilot/`.
 
 License: Apache-2.0.

@@ -1,3 +1,37 @@
+# WITHDRAWN 2026-09-22: this pilot measured nothing
+
+Everything below this notice is what was published on 2026-07-05. It is
+kept as published rather than deleted, and none of its numbers should be
+read as a result.
+
+**The bundle-OFF arm was never off.** It moved one knowledge tree aside,
+the ocean capability's own. Every case in this suite names its ground
+truth by `concept_basis`, and thirteen of the suite's fourteen citations
+name concepts in the provider knowledge bundle, a separate plugin
+installed into a separate cache that neither arm touched. A shard probe
+on 2026-09-21 proved it from the transcripts rather than from a reading
+of the harness: an off-arm trial cites both of its case's concepts by
+their paths in the provider bundle and opens "I read the bundle concepts
+before touching data, and they stop this computation as specified", in
+the arm where that knowledge is supposed to be gone.
+
+So the pooled 0.76 in both arms and the per-case delta of 0.00 below
+compared an arm holding the cited knowledge against an arm holding the
+cited knowledge. The identity between the arms is what the harness was
+bound to produce. The design conclusion the page draws from it, that the
+skills carry the gotcha rules and the concept files add nothing, does not
+follow: the pilot is no evidence for that reading and none against it.
+The confound may well be real and is an untested hypothesis again.
+
+The harness derives the arm's scope now instead of assuming it, walking
+the plugins the cases name plus every dependency those plugins declare,
+and it stops a run whose cases cite knowledge the arm cannot remove.
+`runner/ablation_scope.py` is that check. The withdrawal is recorded in
+the pre-registration's amendments under 2026-09-22, and the powered run
+will be the first measurement this experiment has made.
+
+---
+
 # Ablation pilot (underpowered, NOT the pre-registered result)
 
 A harness sanity check run 2026-07-05, N=3, model claude-opus-4-8 (the
