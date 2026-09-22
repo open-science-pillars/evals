@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 207,
+  "chars": 4522,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha by name, identifies the CRI filter product and its residual leakage, insists on whole-mascon (~300 km) rather than 0.5\u00b0 grid-cell interpretation, states the Greenland ice-loss leakage risk would invert the physics, and declines to quote a bare trend \u2014 offering instead a CRI-minus-unfiltered leakage bound alongside formal uncertainty terms."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 80,
+  "chars": 3548,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept explicitly with its path and physical rationale, offers no workaround on the 0.5\u00b0 fields, and lays out the constructive native-grid path naming the five llc90 collections including snapshots for tendency and the geothermal/surface forcing term."
+    }
+  },
+  "pass": true
+}

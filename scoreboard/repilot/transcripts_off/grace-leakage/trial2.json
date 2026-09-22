@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 118,
+  "chars": 4117,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha for nearshore Greenland, distinguishes the CRI mascon product from the 0.5\u00b0 grid and insists on mascon-scale (~300 km) interpretation, states explicitly that a shelf trend would be dominated by ice-sheet mass loss rather than ocean change, and frames any trend as needing both formal uncertainty and a CRI-minus-unfiltered leakage bound, quoting no bare number."
+    }
+  },
+  "pass": true
+}
