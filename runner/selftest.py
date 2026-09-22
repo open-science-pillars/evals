@@ -9,6 +9,8 @@ correct classification, then checks the binomial verdict. This exercises the
 runner logic without slow, flaky live agentic trials (the full N=20 live sweep
 is the CI job). Run: `uv run runner/selftest.py` (exit 0 = green).
 """
+import contextlib
+import io
 import sys
 from pathlib import Path
 
@@ -396,6 +398,27 @@ def main():
             fails.append("a copy wrapped across lines was not found, which is the "
                          "mistake the whitespace normalisation exists to prevent")
 
+        # Frozen mode is what a shard runs, where no concept is on the machine
+        # at all. It must reach the same verdict from hashes alone, and it must
+        # carry the fixture allowlist, because the case files are set aside by
+        # then and it cannot read them to learn what a case may expose.
+        from leak_check import freeze, load_frozen, scan_frozen
+        frozen_file = ws / "marks.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            freeze(ws, man, None, frozen_file)
+        if prose[:40] in frozen_file.read_text():
+            fails.append("the frozen fingerprints carry concept text, which is the "
+                         "leak they exist to close")
+        salt, size, frozen, frozen_allowed = load_frozen(frozen_file, ws)
+        if (ws / "ae" / "ecco" / "fx" / "stub.md").resolve() not in frozen_allowed:
+            fails.append("the frozen fingerprints lost the case's declared fixture")
+        fhits, _ = scan_frozen([ws], salt, size, frozen, {"c1"}, frozen_allowed)
+        fnames = {h[2].name for h in fhits}
+        if "copy.md" not in fnames or "x.md" not in fnames:
+            fails.append("frozen mode missed a copy that the text search found")
+        if "stub.md" in fnames:
+            fails.append("frozen mode reported a declared fixture as a copy")
+
         # A recorded answer beside the case contaminates both arms.
         ans = ws / "ae" / "ecco" / "results" / "run1" / "transcripts"
         ans.mkdir(parents=True)
@@ -440,7 +463,8 @@ def main():
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
           "verdict aggregation correct; a copy of a cited concept is found by its text "
-          "even when wrapped, and a recorded answer beside a case is reported; "
+          "even when wrapped and from frozen hashes alone, and a recorded answer "
+          "beside a case is reported; "
           "outages are reported per arm and an uneven "
           "loss flagged; a rubric a case names but cannot resolve stops "
           "the run and a delta between differently graded arms is refused; the "

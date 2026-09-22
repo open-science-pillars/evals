@@ -28,11 +28,16 @@ The full N=20 sweep is a CI job (hundreds of agentic invocations); on a laptop
 run a subset at low --trials to demonstrate the runner reproduces seed grades.
 """
 import argparse
+import atexit
 import concurrent.futures as cf
 import json
 import re
+import shutil
+import signal
 import subprocess
 import sys
+import tarfile
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -243,6 +248,14 @@ def main():
     ap.add_argument("--judge-model", default=None,
                     help="model for the rubric judge (default: --model); the judge is a Claude Code "
                          "call on every runtime, so grading is held constant")
+    ap.add_argument("--quarantine", action="append", default=[],
+                    help="a directory to set aside while the trials run and put back "
+                         "afterwards, repeatable. The directories holding the selected "
+                         "cases are always set aside and need not be named.")
+    ap.add_argument("--leak-check", default="",
+                    help="frozen concept fingerprints; with this, the run refuses to "
+                         "start if a cited concept or an answer to a case is readable "
+                         "once everything is set aside")
     ap.add_argument("--no-lock-check", action="store_true",
                     help="record the release lock without asking build-kit whether it is current")
     args = ap.parse_args()
@@ -260,10 +273,11 @@ def main():
     # case naming a rubric that resolves to nothing stops the run here instead
     # of being graded quietly by something else, and the text that grades a
     # case is fixed before any trial sees it.
-    rubrics, unresolved = {}, []
+    rubrics, loaded, unresolved = {}, {}, []
     for entry in selected:
         pre = yaml.safe_load((ws / entry["case"]).read_text())
         pre["_plugin"] = entry["plugin"]
+        loaded[entry["id"]] = pre
         try:
             rubrics[entry["id"]] = resolve_rubric(pre, ws)
         except ValueError as exc:
@@ -274,6 +288,82 @@ def main():
         for u in unresolved:
             print("  " + u)
         raise SystemExit(1)
+
+    # The arm decides what the check demands. Both arms must have no answer to a
+    # case readable, because an answer contaminates the rate itself; the bundle-off
+    # arm must also have no cited concept readable anywhere, which is what off
+    # means. The bundle-on arm is supposed to be able to read the installed
+    # bundle, so it is not asked to prove it cannot.
+    # Every case states, in its notes, what a passing answer has to contain. That
+    # is the rubric, and it is also the answer, sitting in the workspace where a
+    # trial reads it. The cases are loaded above and set aside here, along with
+    # anything else the caller names, and put back when the trials are done.
+    # Setting the trial's working directory would not do instead: a headless run
+    # whose working directory was an empty temporary directory read an absolute
+    # path under the workspace without difficulty, checked on 2026-09-22.
+    # Renaming a directory does not set it aside. Until 2026-09-22 the harness
+    # moved a knowledge tree to `knowledge.ABLATION_OFF` and called it removed;
+    # the tree is still there and a trial reading an absolute path reads it just
+    # as well under the new name. The leak check found exactly that in a
+    # rehearsal, in the tree the arm had just moved.
+    #
+    # So each one is written to a compressed archive outside the workspace and
+    # then deleted. The archive is not readable as text and cannot be opened by
+    # these cases, which are granted Read and Skill and no shell. That is the
+    # boundary and it is not a stronger one: a case granted a shell could expand
+    # the archive, and a case granted one should not be run this way.
+    aside = [(ws / e["case"]).parent for e in selected]
+    aside += [Path(q) for q in args.quarantine]
+    holding = Path(tempfile.mkdtemp(prefix="osp-quarantine-"))
+    moved = []
+    for n, path in enumerate(dict.fromkeys(p.resolve() for p in aside)):
+        if not path.is_dir():
+            continue
+        archive = holding / f"{n:02d}-{path.name}.tar.gz"
+        with tarfile.open(archive, "w:gz") as tf:
+            tf.add(path, arcname=path.name)
+        with tarfile.open(archive) as tf:
+            # Read it back before deleting the only copy.
+            if not tf.getmembers():
+                raise SystemExit(f"the archive of {path} is empty; nothing deleted")
+        shutil.rmtree(path)
+        moved.append((archive, path))
+        print(f"set aside {path}", flush=True)
+
+    def put_back():
+        for archive, path in moved:
+            if archive.is_file() and not path.exists():
+                with tarfile.open(archive) as tf:
+                    try:
+                        tf.extractall(path.parent, filter="data")
+                    except TypeError:   # the filter argument is newer than 3.11.4
+                        tf.extractall(path.parent)
+        if moved:
+            print(f"put back {len(moved)} director"
+                  f"{'y' if len(moved) == 1 else 'ies'}", flush=True)
+        shutil.rmtree(holding, ignore_errors=True)
+
+    atexit.register(put_back)
+
+    # atexit does not run when the process is signalled, and a run killed
+    # mid-arm would leave the workspace with its cases and its knowledge set
+    # aside. Turning the signal into an exit lets the restore happen.
+    def _exit_on_signal(signum, _frame):
+        raise SystemExit(128 + signum)
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, _exit_on_signal)
+
+    if args.leak_check:
+        probe = subprocess.run(
+            [sys.executable, str(Path(__file__).parent / "leak_check.py"), str(ws),
+             str(Path(args.manifest).resolve()), "--arm", args.bundle,
+             "--fingerprints", args.leak_check]
+            + (["--cases", args.cases] if args.cases else []))
+        if probe.returncode != 0:
+            print("the trials would read what this run is supposed to have taken "
+                  "away, so no trial is run")
+            raise SystemExit(1)
     record = build_record(ws, plugins, args.runtime, args.runtime_version, args.model,
                           judge_model, man["name"], args.trials, check_lock=not args.no_lock_check)
     out = {"manifest": man["name"], "model": args.model, "bundle": args.bundle,
@@ -285,8 +375,8 @@ def main():
         print(f"{name} {cap['version']}: {lock} ({current}) on {args.runtime} "
               f"({record['runtime']['version'] or 'version unknown'})", flush=True)
     for entry in selected:
-        case = yaml.safe_load((ws / entry["case"]).read_text())
-        case["_plugin"] = entry["plugin"]
+        # Read before the quarantine, because the file is not there now.
+        case = loaded[entry["id"]]
         case["_rubric"], rubric_source = rubrics[entry["id"]]
         max_turns = entry.get("max_turns", 20)
         tdir = troot / entry["id"] if troot else None

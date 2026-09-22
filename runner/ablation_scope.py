@@ -19,7 +19,16 @@ all of them. The cases are checked against that scope, and a case whose
 concept_basis falls outside it stops the run rather than quietly measuring
 nothing.
 
-  uv run runner/ablation_scope.py <workspace> <manifest>   # prints tree paths
+The installed cache is not the only copy. The workspace carries the same trees
+as ordinary checked-out files, and a trial reads those just as readily, so
+--workspace-trees names them too. They move aside for both arms rather than for
+the off arm alone: with them present the bundle-on arm is not reading the
+installed bundle either, and what the experiment manipulates has to be the only
+copy there is.
+
+  uv run runner/ablation_scope.py <workspace> <manifest>   # installed cache trees
+  uv run runner/ablation_scope.py <workspace> <manifest> --workspace-trees
+  uv run runner/ablation_scope.py <workspace> <manifest> --plugins
   uv run runner/ablation_scope.py <workspace> <manifest> --check
 """
 import sys
@@ -100,6 +109,18 @@ def main() -> int:
             print("ERROR: none of the plugins in scope has an installed knowledge tree")
             return 1
         print("every cited concept is inside a tree this arm removes")
+        return 0
+
+    if "--plugins" in sys.argv[3:]:
+        for name in plugins:
+            print(name)
+        return 0
+
+    if "--workspace-trees" in sys.argv[3:]:
+        for name in plugins:
+            tree = ws / name / "knowledge"
+            if tree.is_dir():
+                print(tree)
         return 0
 
     for found in trees.values():

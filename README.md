@@ -179,6 +179,25 @@ difference between the arms. Only the exact fixture files a case declares are
 allowed beside it.
 
 A run workspace is therefore prepared rather than cloned whole, and the check is
-what says it is prepared.
+what says it is prepared. `prepare_workspace.py` builds one and refuses to hand
+it over until the check passes on it.
+
+Two things the check found that nothing else was looking for. A tree renamed to
+`knowledge.ABLATION_OFF` is still there, and a trial reading an absolute path
+reads it under the new name just as well, so the harness had never actually
+taken a tree away. Each set-aside directory is now written to a compressed
+archive outside the workspace and deleted, then put back afterwards, on exit and
+on a signal. The archive is not readable as text and these cases are granted
+`Read` and `Skill` and no shell; that is the boundary, and a case granted a
+shell should not be run this way. The check also found a second copy of the
+provider bundle in the plugin cache, installed under a different marketplace
+name by an earlier qualification run, which would have defeated the off arm
+without appearing in the scope derivation at all.
+
+The runner owns all of this rather than the ablation script, because only the
+runner knows when it has finished loading the cases it is about to take away. A
+case's `notes` field states what a passing answer must contain, so a case file
+is an answer sheet sitting in the workspace; every run sets the case directories
+aside now, not only the ablation.
 
 License: Apache-2.0.
