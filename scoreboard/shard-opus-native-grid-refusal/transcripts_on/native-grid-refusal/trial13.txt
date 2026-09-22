@@ -1,0 +1,42 @@
+## I can't compute a heat budget from that product — and the reason is structural, not procedural
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. A property budget on regridded ECCO fields is a hard refusal in this plugin: it's owned by the `ecco` skill (`skills/ecco/SKILL.md`, "Must NOT"), gated again in `ocean-budget` step 0, and it fires before any consultation or computation. The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native LLC90 grid.
+
+Being transparent about one limit: this sandbox blocked me from opening that gotcha's text in the provider bundle (`nasa-daac-knowledge`) — directory listing outside the working dir is denied and I couldn't resolve its install path. I cite it by the path both skills name it under. The refusal itself doesn't depend on reading it; I did read `knowledge/computations/ecco-heat-budget.md` and `skills/ecco/references/budget-formulation.md` in full.
+
+**Why interpolation destroys the budget, concretely.** The four terms — tendency minus (advection + diffusion + forcing) — aren't derived from T and S. They're separate archived flux diagnostics on the Arakawa C-grid, staggered onto cell faces, with a volume element `rA · drF · hFacC` and a z* tendency correction. Three things break at once on the 0.5° grid:
+
+- **The flux terms don't exist in that collection.** `TEMP_SALINITY` carries THETA and SALT. The advective and diffusive flux variables aren't in it at any resolution, so three of four terms have no source.
+- **`hFacC` doesn't survive regridding.** Partial bottom cells are a native-grid quantity; interpolation smears them, so the volume element is unrecoverable.
+- **The tendency needs month-boundary snapshots**, not monthly means, plus the z* correction. Monthly-mean T alone gives you the wrong tendency even if you had the fluxes.
+
+Reconstructing advection as a finite difference of interpolated T would not be the model's advection — it would be a new, unclosed equation whose residual is an artifact of your own discretization. There's no tolerance to judge that against, which is exactly why the rule is a refusal and not a warning.
+
+## The native path
+
+The attested route binds to `knowledge/computations/ecco-heat-budget.md` (`status: stable`, four human-verified events, most recently maintainer PaulMRamirez 2026-09-20). Pass bar, read from the concept: `residual_max ≤ 1e-10` and `residual_p999 ≤ 1e-11` degC/s, pointwise at every wet cell and month — absolute, never a ratio against the dominant term. Baseline measurement was max 4.95e-11, p99.9 7.3e-12 degC/s over 3,341,772 cell-months, so the bar carries 2× headroom.
+
+For the subpolar North Atlantic specifically, you want the **regional** executor, not the whole-grid one:
+
+```bash
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to know before you run it:
+
+1. **Your box carries no anchor.** The only registered regions are `tile1-interior` and `southeast-atlantic-upper`. An explicit `--box` is disclosed by mask digest and gets no reference-configuration check (wet-cell count, volume, two-sided residual). That's a real weakening of the attestation and the report has to say so. Tell me your intended latitude/longitude bounds and depth — I used a placeholder above.
+2. **Geothermal flux.** For a heat budget reaching the bottom, the geothermal term is required and is *not* a PO.DAAC collection (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`). Dropping it drives deep-cell residuals orders above tolerance. If you cap at ~1000 m this may not bind, but it must be checked, not assumed.
+3. **The data tree must be stamped.** Every attester refuses a receipt whose `data.record` isn't the `RECORD.json` stamp left by `tools/science_record_verify.py`. One-time step after the first fetch.
+
+You'll also need the native collections — geometry is `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (one static granule, merged with everything), plus the monthly flux and month-boundary snapshot collections. I'd run `load-ecco` to resolve those ShortNames through the signed `fields/ecco-v4r4/` concepts rather than have me recall them; that's the one place I'd be guessing.
+
+## Two loose ends
+
+**I couldn't find your data.** Nothing matching `*ECCO*` exists under `/home/user/run/evals` — that directory holds an evals repo (`runner/`, `manifests/`, `scoreboard/`). Point me at the actual path and I'll check what variables the granules carry.
+
+**The 0.5° product isn't useless** — it's the right choice for heat *content* and its change, T/S maps, water-mass census, and comparison against Argo climatology. It's specifically budgets and transports it can't support. If what you actually want is "how much heat did the subpolar North Atlantic gain," that's an OHC question, and `ecco-ocean-heat-content` answers it — though also from native granules, and quoting the *change* between months, never the absolute value without the potential-temperature baseline caveat.
+
+Which do you want: the regional native budget with bounds you specify, or OHC change?

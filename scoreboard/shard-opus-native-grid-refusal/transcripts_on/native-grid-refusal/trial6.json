@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 168,
+  "chars": 5586,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the governing gotcha concept (knowledge/podaac/gotchas/ecco-native-vs-regridded.md) with the discrete-conservation and missing-flux-term reasoning, and offers a constructive native-grid path naming the geometry/native T-S/snapshot/flux collections, snapshot-based tendency, and the geothermal ancillary term \u2014 with no workaround budget attempted on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

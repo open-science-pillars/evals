@@ -1,0 +1,54 @@
+I can't compute this budget from the file you have, and the reason is a hard rule in the plugin rather than a judgment call of mine. Here's what I found and what will work.
+
+## The refusal
+
+A property budget on regridded ECCO fields is refused outright. The rule is owned by the `ecco` skill and gated again by `ocean-budget`:
+
+> Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. The mechanism behind the rule is concrete, not procedural fussiness:
+
+- **The budget's closure is a property of the discretization, not of the fields.** ECCO closes to machine precision because the four terms are evaluated on the same LLC90 C-grid cells the MITgcm integrated. Interpolation to 0.5° breaks the divergence theorem — the advective flux through a regridded cell face is no longer the flux the model actually moved.
+- **The flux terms don't exist in your file.** The budget needs `ADV*_TH`/`DF*_TH` face fluxes, `TFLUX`/`oceQsw`, and `ETAN`. The 0.5° temperature/salinity product carries `THETA` and `SALT` only. There is no formulation that recovers the missing terms from T and S.
+- **The volume element is gone.** The budget integrates over `rA * drF * hFacC`; partial-cell `hFacC` does not survive regridding.
+
+Anything I produced from this file would be a heat *content* time series with a residual silently absorbed into it, presented as a budget. The skill forbids that specifically ("never absorb a residual into a physical term").
+
+## The native path that does answer your question
+
+The plugin ships an attested regional budget executor that takes an arbitrary control volume — this is the right tool for a subpolar North Atlantic box.
+
+**Collections to fetch** (from the executor's declared inputs, `skills/ocean-budget/scripts/ecco_regional_budget.py:76-82`):
+
+| Collection | Supplies |
+|---|---|
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADV*_TH`, `DF*_TH` |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` at month boundaries |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` (free-surface scaling) |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1` |
+
+Plus **`geothermalFlux.bin`**, which is *not* a PO.DAAC collection — it comes from the ECCO v4 tutorial distribution. This matters for you specifically: the subpolar North Atlantic is deep, so your control volume will contain many bottom cells. The executor's own measurement notes that omitting geothermal still passes the absolute bar of 1e-10 and is caught only by the relative bar of 1e-6 — a dropped geothermal term is exactly the failure mode that looks like success.
+
+Then, once the tree is fetched and stamped:
+
+```bash
+uv run "$PLUGIN_ROOT"/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run "$PLUGIN_ROOT"/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two caveats on that box, both worth knowing before you fetch ~GBs:
+
+1. **Tile-seam limit.** V1 requires the volume to fall inside one LLC90 tile's interior (faces 1–89). A 50–65°N, 60–10°W box may straddle a seam or touch a tile edge, in which case the executor refuses by design (`ecco_regional_budget.py:142-155`) rather than returning a wrong answer. Worth testing first with a smaller box.
+2. **No anchor.** An explicit `--box` is disclosed by mask digest but carries no reference anchor; only `southeast-atlantic-upper` is registered. The attester still checks both bars and the mutation evidence, but the report has to say the volume is unanchored.
+
+## Two things I could not verify
+
+- **Neither dataset is on disk where I can see it.** Nothing under `/home/user/run/evals` matches the 0.5° product, and no `~/ECCO_V4r4` tree with a `RECORD.json` stamp exists. Tell me where you put the regridded files if you want me to inspect them; the native tree needs fetching either way, under an Earthdata Login.
+- **I could not read `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` itself.** The provider bundle (`nasa-daac-knowledge >=2026.9.2`) is a separate install and this session's sandbox blocks path enumeration outside the working directory, so I couldn't resolve its root. I've cited the rule from the skills that own and enforce it, and the mechanism above from the convention-derived reference — but I'm flagging that I'm citing the gotcha by path without having read it.
+
+**Concepts consulted:** `skills/ecco/SKILL.md` (owns the refusal), `skills/ocean-budget/SKILL.md` (the gate), `knowledge/computations/ecco-heat-budget.md` (stable, human-verified 2026-09-20), `skills/ecco/references/budget-formulation.md`.
+
+Your 0.5° file is still the right product for subpolar North Atlantic T/S maps, water-mass work, or a heat-content inventory — just not for a closed budget. Want me to go after the native collections, or to do one of those with what you have?

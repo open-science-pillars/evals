@@ -1,0 +1,39 @@
+## I can't compute a heat budget from that product — and the reason is the product, not the request
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the interpolated 0.5° version of ECCO v4r4. A property budget on regridded ECCO fields is a hard refusal in this plugin: there is no correct budget formulation on that grid. The rule is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, and it's carried verbatim as an invariant in both `skills/ecco/SKILL.md:52-55,237-239` and `skills/ocean-budget/SKILL.md` ("the one rule that fires without consulting anything").
+
+**One caveat on my citation:** the knowledge bundle's `knowledge/` tree is not readable in this session — `nasa-daac-knowledge@2026.9.5-6b0ef007a964` is installed but every path under `knowledge/podaac/` returns not-found, as does `ocean-science`'s `knowledge/computations/`. So I am applying the rule as the skill bodies state it and citing the concept by path; I have **not** read the concept text and am not quoting it.
+
+Why it fails physically, briefly:
+
+- The budget terms are **fluxes across cell faces** (`ADVx_TH`, `DFxE_TH`, …) on a staggered Arakawa C-grid. Interpolation to 0.5° destroys the face/centre relationship, so the divergence you'd compute is no longer the divergence the model took.
+- The 0.5° product carries **T and S only** — no advective or diffusive heat fluxes, no surface forcing terms, no snapshots. Three of the four budget terms simply aren't in the file.
+- The volume element `rA · drF · hFacC` and the partial-cell `hFac` weighting don't survive regridding, so even the storage term loses its exact volume integral.
+
+Anything I built from it would be a residual-dominated estimate dressed up as a budget, with the residual quietly absorbed into whichever term I chose to solve for. That's the failure mode the rule exists to prevent.
+
+## The native path
+
+Budgets close to machine precision on the native llc90 grid. For a subpolar North Atlantic control volume, the attested route is the regional budget executor, which takes an explicit box:
+
+```bash
+R=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to know before you run it:
+
+1. **That box is mine, not a registered region.** The only registered region for this executor is `southeast-atlantic-upper`. An explicit `--box` is disclosed by mask digest and **carries no reference anchor** — the attester checks the mutation evidence and recomputes the bars from the results, but it can't two-side-check the wet-cell count or volume against a known configuration. Tell me your preferred SPNA definition (the box above is a rough 45–65°N, 60–10°W) and I'll use it instead.
+2. **It's an open domain.** Subpolar North Atlantic heat storage is set largely by lateral transport, so the boundary transports are carried explicitly and are the interesting part of the answer, not an error term.
+3. **You need different granules than the ones you've downloaded** — geometry (`ECCO_L4_GEOMETRY_LLC0090GRID_V4R4`), native monthly means for the flux and forcing terms, and month-boundary **snapshots** for the tendency. I couldn't verify the exact ShortNames for the flux and snapshot collections in this session: CMR discovery wasn't approved and the `fields/ecco-v4r4/` concepts that own ShortName verification aren't readable, so I'm not going to guess them at you. `load-ecco` resolves them with its volume gate.
+
+The executor reads from `--data-root` — either the 2010 fixture cache (~2.5 GB, `~/ECCO_V4r4`) or the 1992–2017 science record (`~/ECCO_V4r4_record`). Either tree must carry the `RECORD.json` stamp from the provider's verify tool, or every attester refuses the receipt. I also found no ECCO files anywhere under `/home/user/run/evals`, so tell me where your download actually lives.
+
+## What the 0.5° product is still good for
+
+Don't delete it. Regridded T/S is the right tool for regional heat *content* and its tendency as a diagnostic, T–S structure and water-mass census, mixed-layer depth, and mapping — anything that doesn't require flux convergence to balance. If what you actually want is "how much did subpolar North Atlantic heat content change and when," I can do that from the file you have, reported as an inventory rather than a closed budget. If you want the *why* — advection vs. surface forcing vs. mixing — that has to be the native grid.
+
+Which do you want?

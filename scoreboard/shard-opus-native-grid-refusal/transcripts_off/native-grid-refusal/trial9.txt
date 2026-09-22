@@ -1,0 +1,31 @@
+I can't compute this one, and the reason is specific rather than procedural.
+
+## Refused: budgets don't close on the regridded grid
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is an interpolated product. The regridding is a diagnostic remap of scalars — it does not carry the LLC90 cell geometry (`rA`, `drF`, `hFacC`), the C-grid face-normal advective and diffusive flux variables (`ADVx_TH`, `DFxE_TH`, …), or the z\* free-surface bookkeeping. Without those, there is no term set whose divergence equals the tendency: any "budget" built on the 0.5° fields produces a residual comparable to the terms themselves, and the only way to make it look closed is to absorb the residual into a term. So the output would be a plausible-looking table that is physically meaningless — worse than no answer.
+
+This is a hard gate in the plugin, not my judgment call:
+- `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid
+- `skills/ocean-budget/SKILL.md` §"The native-grid rule (🔴, non-negotiable)" — fires before any computation, whatever the framing
+
+## The native path for the subpolar North Atlantic
+
+The plugin ships an **attested regional heat budget** that takes an explicit box, which is exactly your case:
+
+```bash
+uv run ${CLAUDE_PLUGIN_ROOT}/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run ${CLAUDE_PLUGIN_ROOT}/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to know before that runs:
+- **Inputs**: native LLC90 granules, not the 0.5° ones — the geometry granule `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (named in `skills/load-ecco/SKILL.md`), plus the native monthly T/S, the **snapshot** collection for the tendency bookends, the 3D temperature-flux collection, and the surface heat-flux collection. I'd resolve those exact ShortNames through `knowledge/podaac/fields/ecco-v4r4/` rather than from memory — the connector lookup that would have confirmed them wasn't permitted in this session.
+- **Geothermal flux** is not a PO.DAAC collection (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`). If your box reaches the bottom — and in the subpolar gyre it will unless you cap it shallow — that ancillary has to be staged or the budget fails closure at bottom cells.
+- **Open domain**: a lat/lon box in the subpolar gyre is not closed, so lateral transports across the faces are reported explicitly as terms, not netted away. An explicit `--box` also carries no reference anchor — the attester discloses it by mask digest only, and the report has to say so.
+
+## What I checked in your workspace
+
+`/home/user/run/evals` holds the eval harness (`manifests/`, `runner/`, `scoreboard/`) — no ECCO data. I couldn't look at `~` or `~/ECCO_V4r4`; this session's sandbox blocks listing outside the working directory. So I can't confirm whether you have native granules staged, or whether the tree carries the `RECORD.json` stamp every attester requires.
+
+**What I need from you:** the path to your downloaded data, the depth range you want (full column vs. upper 700 m changes whether geothermal matters), and the year or period. If the 0.5° product is genuinely all you have, it's still the right product for a subpolar-gyre heat *content* time series or a T/S climatology — just not for a closed budget, and I'd rather build you the former than fake the latter.

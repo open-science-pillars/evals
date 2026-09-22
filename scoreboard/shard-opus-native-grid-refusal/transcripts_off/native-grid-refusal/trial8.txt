@@ -1,0 +1,37 @@
+I stopped before computing. Here's why, and what to run instead.
+
+## The budget is refused on this product
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the **regridded** ECCO product — THETA and SALT interpolated from the native llc90 grid onto a 0.5° lat/lon mesh. A closed heat budget cannot be formulated there, under any framing of the request.
+
+The mechanism: ECCO's heat budget closes to machine precision because the four terms (tendency, advective convergence, diffusive convergence, forcing) are the *same discrete operators MITgcm actually stepped*, on the same C-grid cells, with the same `rA · drF · hFacC` volume elements. Interpolation to 0.5° breaks all of that at once — the flux divergences no longer correspond to the cell faces, the interpolation is not conservative, partial-cell `hFac` geometry is gone, and the regridded product ships only the two state variables anyway, with none of the advective/diffusive flux terms or the month-boundary snapshots a tendency needs. There is no correction that recovers closure; any "residual" you computed would be interpolation error wearing a physics label.
+
+This is a hard refusal the ECCO knowledge owns, not a judgment call I'm making:
+
+- `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid. **Caveat on my citation:** the sandbox in this session blocked me from opening the PO.DAAC bundle directly; I'm citing it as named and characterized by `skills/ecco/references/budget-formulation.md`, which I did read, plus the refusal as stated in `skills/ecco/SKILL.md` and the gate in `skills/ocean-budget/SKILL.md`. If you want the concept text itself quoted, grant directory access to the plugin cache and I'll read it.
+
+I also could not confirm where your download lives — the working directory `/home/user/run/evals` contains no ECCO files, and searches outside it were blocked. That doesn't change anything: the refusal fires on the product identity, before any inputs check.
+
+## The native path for a subpolar North Atlantic heat budget
+
+The attested route is `ecco-regional-heat-budget`, which takes an explicit control volume:
+
+```bash
+R=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to settle before that runs:
+
+1. **The box is yours to define.** I used 50–65°N, 60–10°W, 0–1000 m as a placeholder for "subpolar North Atlantic" — tell me the domain and depth range you actually want. Only `southeast-atlantic-upper` is a registered region; an explicit box is disclosed by mask digest and carries no reference anchor, so the attester checks the internal consistency bars but not a stored reference value. The report has to say that.
+2. **Native granules must be staged.** The executor reads from `--data-root` (the 2010 fixture cache, ~2.5 GB, or the 1992–2017 science record at `~/ECCO_V4r4_record`), and the tree needs the `RECORD.json` stamp from `tools/science_record_verify.py` — every attester refuses an unstamped tree. You'll need the geometry collection `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` plus the monthly-mean and month-boundary snapshot collections the computation concept names; `load-ecco` resolves those with its volume gate.
+3. **Depth matters for the forcing term.** If you extend the box to the seafloor, `knowledge/podaac/gotchas/ecco-geothermal-flux.md` applies — the geothermal input is not a PO.DAAC collection and has to be supplied separately, and it's the first suspect the budget auditor checks on a failed deep-water residual.
+
+## What the 0.5° product *is* good for
+
+It's the right product for heat **content** and its seasonal-to-interannual evolution over the subpolar gyre — a volume-integrated `THETA` diagnostic, and a storage term you can plot and trend. That is not a budget: it gives you one of the four terms with no attribution to advection, diffusion, or surface forcing, and even the integral inherits non-conservative interpolation error, so don't quote it against a native number. If you want the storage term done properly there's an attested native version (`ecco-ocean-heat-content`, `skills/ecco/scripts/ecco_ohc.py`), which reports the change between months and carries a potential-temperature baseline caveat that forbids quoting the absolute value.
+
+Tell me which you want — the native regional budget with a box you specify, or the heat-content diagnostic from the file you already have — and whether the native tree is staged, and I'll run it.

@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 91,
+  "chars": 4787,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, explicitly cites the `ecco-native-vs-regridded` gotcha and the skills' hard rule, offers no workaround on the 0.5\u00b0 fields, and gives a constructive native path naming the geometry collection, the native monthly-mean and snapshot collections for tendencies, and the geothermal consideration for full-depth budgets."
+    }
+  },
+  "pass": true
+}

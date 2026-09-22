@@ -1,0 +1,45 @@
+I can't compute this one as asked. Here's why, and the path that does work.
+
+## Refused: no budget on regridded fields
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. A property budget on regridded ECCO fields is a hard refusal in this plugin — it fires before any computation, whatever the framing (`ocean-science:ocean-budget`, "the native-grid rule"; `ocean-science:ecco`, "Must NOT"). The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`: budgets close only on the native llc90 grid. Interpolation breaks the discrete flux-divergence identity that makes ECCO's budgets close to machine precision, so a "residual" computed on the 0.5° grid is an interpolation artifact, not a physical imbalance — there is no correct formulation to write there.
+
+Full disclosure on sourcing: the provider bundle (`nasa-daac-knowledge`) isn't reachable from this session's sandbox, so I could not read that gotcha's text directly. I'm citing it by bundle path as the skills that own the refusal do, and I read the procedure that points at it — `skills/ecco/references/budget-formulation.md` (step 5: "Regridded input is refused before any of this, not diagnosed after").
+
+**Second, independent blocker:** even ignoring the grid, that product carries only THETA and SALT. A heat budget needs four terms, and three of them aren't in the file — no `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`, no `TFLUX`/`oceQsw`, and no month-boundary snapshots for the tendency (it's monthly means). Nothing in it could be approximated into those terms without silently inventing physics.
+
+## The native path
+
+The sanctioned regional executor reads these five inputs (names taken from the code itself, `skills/ocean-budget/scripts/ecco_regional_budget.py:109`):
+
+| role | collection |
+|---|---|
+| geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| advective + diffusive fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| tendency, `THETA` (13 snapshots bracketing the year) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| tendency, `ETAN` for the z* scale factor | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+
+Plus `geothermalFlux.bin`, which is **not a PO.DAAC collection** — it ships with the ECCO v4 tutorial distribution (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`). Omitting it passes the absolute bar and fails only the relative one, so a budget without it looks fine and isn't.
+
+Once the tree is fetched and stamped by the provider's verify tool (attesters refuse an unstamped tree), your region is an explicit box:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two things to expect, so they aren't a surprise:
+
+- **The box may be refused at a tile seam.** That executor's stated v1 limit is a control volume inside one tile's interior (faces 1–89). A subpolar North Atlantic box that wide plausibly crosses an llc90 seam; if it does, the run refuses cleanly and the options are a sub-box within one tile or waiting on the seam-calibrated section machinery. I'd rather tell you now than have it fail after the download.
+- **An explicit box carries no anchor.** Only the registered region (`southeast-atlantic-upper`) gets two-sided reference checks; your box is disclosed by mask digest, wet-cell count and volume, and the report has to say so. Worth eyeballing that the resolved mask is the water you meant.
+
+I also couldn't confirm whether you have any native granules — Bash here is confined to `/home/user/run/evals`, which holds no ECCO data, so I can't see `~/ECCO_V4r4` or wherever your download landed.
+
+## What the 0.5° product is still good for
+
+Maps and time series of T/S, sections, water-mass T–S structure, regional heat *content* (not a budget) with the potential-temperature baseline caveat. If a heat-content change for the subpolar gyre — rather than a closed four-term budget — is what you actually want, say so and I'll take the attested OHC route; that one is also native-grid, but it's a much lighter input set.
+
+Want me to line up the native download (collections, volume estimate, the verify-and-stamp step) through the load-ecco gate?

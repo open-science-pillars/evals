@@ -1,0 +1,39 @@
+I can't compute this budget from that product, and the reason is a hard gate rather than a judgment call. Here's where it stands.
+
+## The refusal
+
+Both the `ecco` and `ocean-budget` skills carry the same non-negotiable rule: **a property budget on regridded ECCO fields is refused outright**, under any framing, before any computation. From `skills/ecco/SKILL.md:238`:
+
+> Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)
+
+Two independent reasons this isn't a formality:
+
+1. **No correct formulation exists on the 0.5° grid.** The budget closes because the MITgcm's own discrete terms cancel exactly on the llc90 C-grid. Interpolation to a regular lat-lon grid is not a conservative remapping — the divergence of an interpolated flux is not the interpolated divergence, so the four terms no longer sum to zero and the residual you'd get would be interpolation error, not physics.
+
+2. **The terms aren't in the file.** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries `THETA` and `SALT` only. A heat budget needs `ADVx/y/z_TH` and `DFxE/yE/rE_TH` (3D temperature flux), `TFLUX` and `oceQsw` (surface heat flux), month-boundary `THETA` and `ETAN` **snapshots** for the tendency, the geometry granule for `rA`/`drF`/`hFacC`, plus `geothermalFlux.bin`. None of those exist in a regridded T/S collection at any resolution. There is no version of this that works with more effort on the files you have.
+
+**A disclosure on my sourcing:** the skills name the governing concept as `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, but I could not read it — Bash is sandboxed to `/home/user/run/evals` in this session, and the PO.DAAC knowledge bundle (`nasa-daac-knowledge >= 2026.9.2`, a declared dependency) isn't reachable at the paths the skills cite. So I'm stating the rule as the two skill files state it, not as the concept states it. I read `skills/ecco/SKILL.md` and `skills/ecco/references/budget-formulation.md` directly; I have **not** read the gotcha itself and am not claiming it as consulted.
+
+## The native path
+
+The attested route is `skills/ocean-budget/scripts/ecco_regional_budget.py`, which takes an explicit geographic box and runs a closed heat budget with three independent collections (tendency from snapshots, transport from raw face fluxes at the boundary, forcing from surface flux plus geothermal), against two bars — absolute ≤ 1e-10 °C/s per volume and relative ≤ 1e-6. Collections to fetch:
+
+| Purpose | ShortName |
+|---|---|
+| Advective/diffusive heat flux | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Free-surface scaling | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Geothermal | `geothermalFlux.bin` — tutorial distribution, **not** a PO.DAAC collection |
+
+Two things block running it right now, and you should know both before fetching ~GBs:
+
+- **No native tree is present.** Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` exists. The attester also refuses any receipt from a tree lacking the `RECORD.json` stamp, so the fetch is followed by a one-time `science_record_verify.py --stamp` run.
+- **The subpolar North Atlantic may hit the v1 tile-seam limit.** `ecco_regional_budget.py:142-155` refuses any box spanning more than one llc90 tile or touching a tile edge. The subpolar gyre (~50–65°N, 60–10°W) sits where the llc90 faces meet, so I'd expect it to refuse — but I can't confirm without the geometry granule to run `resolve_box` against, so treat that as likely, not settled. If it does refuse, a subpolar heat budget becomes a section-bounded problem (fluxes across the OSNAP-like boundary plus surface forcing), which is the `meridional-transport` skill's seam-calibrated machinery, not this executor.
+
+## What your existing download is good for
+
+The 0.5° product is the right tool for plenty — just not budgets. From what you have I can legitimately compute subpolar heat *content* and its change, the T/S seasonal cycle and stratification, water-mass census in T-S space, or mixed-layer depth. Those are diagnostics, not a closed budget: they tell you the ocean warmed, not what warmed it.
+
+How do you want to proceed — fetch the native collections and attempt the box (accepting it may refuse on the seam), go the section-bounded route for a properly subpolar domain, or have me compute subpolar heat content change from the 0.5° files you already have?

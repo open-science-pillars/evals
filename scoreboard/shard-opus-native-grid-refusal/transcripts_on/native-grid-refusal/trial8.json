@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 149,
+  "chars": 5360,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses up front, cites the ecco-native-vs-regridded gotcha as the structural reason, names the native llc90 collections including the snapshot collections for the tendency term and the geothermal gotcha as a non-PO.DAAC ancillary, and offers no workaround budget on the regridded fields."
+    }
+  },
+  "pass": true
+}

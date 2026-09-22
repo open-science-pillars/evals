@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 222,
+  "chars": 4659,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The refusal and gotcha citation are correct and snapshots for tendencies are mentioned, but the native-grid path is incomplete: the flux/forcing and snapshot collections are explicitly left unnamed and the geothermal ancillary flux requirement is never mentioned at all."
+    }
+  },
+  "pass": false
+}

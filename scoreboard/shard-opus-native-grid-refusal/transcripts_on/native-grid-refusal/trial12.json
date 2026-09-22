@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 154,
+  "chars": 4766,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept by path with the correct mechanism (C-grid face fluxes, hFacC partial cells, snapshot tendencies destroyed by interpolation), offers no workaround tolerance, and gives a full native-grid path naming the LLC90 flux/forcing/snapshot/geometry collections plus the geothermalFlux.bin ancillary."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,42 @@
+I'm not going to be able to do this from the product you downloaded, and I want to be straight about why rather than hand you numbers that look fine and aren't.
+
+## The refusal
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the regridded (interpolated) ECCO product. A heat budget on regridded fields is a hard refusal in the `ocean-science:ocean-budget` workflow — it fires before any computation, under any framing of the request. The cited concept is gotcha **`ecco-native-vs-regridded`**, owned by the `ocean-science:ecco` skill.
+
+The reason it's a refusal and not a warning: the budget terms are flux divergences defined on the Arakawa C-grid staggering. Advective and diffusive fluxes live on cell faces, tracers on cell centers, and the closure is an exact telescoping sum over the native LLC90 control volumes (`rA * drF * hFacC`). Interpolating T and S to a 0.5° lat-lon mesh destroys that discrete identity — the fluxes that would close the budget were never regridded with it, and no correct budget formulation exists on the target grid. What you'd get is a residual dominated by interpolation error, with no way to distinguish that from missing physics. There's no correction factor that recovers it.
+
+Also worth noting independently: the 0.5° product carries T and S only. Even setting the grid problem aside, it contains none of the flux terms a budget needs — no `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no `DFxE_TH`/`DFrI_TH`, no `TFLUX`, and no snapshots for the tendency bookends. Three of the four terms simply aren't in the file.
+
+## The native path
+
+The attested route for a regional heat budget is the sanctioned executor, which takes an explicit box:
+
+```bash
+R=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two things to flag on that. Only `southeast-atlantic-upper` is a registered region, so a subpolar box is disclosed by mask digest and carries no reference anchor — the attester checks the mutation oracles and recomputes the bars, but not the two-sided reference checks. And the subpolar gyre is an **open domain**: the domain-integrated closure holds only with the lateral boundary transports carried explicitly as a term, not folded into the residual.
+
+The native collections this needs (standard ECCO v4r4 budget set — the authoritative list is in `knowledge/computations/ecco-regional-heat-budget.md`, which I could not read; the sandbox blocked the knowledge tree, so confirm against it before fetching):
+
+- `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` — `rA`, `drF`, `hFacC`
+- `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` — `THETA` tendency bookends
+- `ECCO_L4_SEA_SURFACE_HEIGHT_LLC0090GRID_SNAPSHOT_V4R4` — `ETAN`, for the s\* free-surface scaling
+- `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` — advective and diffusive terms
+- `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` — `TFLUX`, `oceQsw`
+- `ECCO_L4_FRESH_WATER_FLUX_LLC0090GRID_MONTHLY_V4R4` — `oceFWflx`
+
+If your box reaches the bottom, the **geothermal flux** is a separate ancillary and is the first thing the auditor checks on a deep heat-budget failure — it is not in the monthly heat-flux collection.
+
+I couldn't verify your native tree: `ls ~/ECCO_V4r4` was blocked by the sandbox, as was the CMR lookup I tried to use to confirm those short names. The attesters refuse a receipt from a tree without the `RECORD.json` stamp, so if you haven't run `science_record_verify.py --stamp` on it once, that's the first step.
+
+## What the 0.5° product *is* good for
+
+Don't throw it away — it's the right product for a subpolar **ocean heat content** diagnostic: volume-integrated OHC over 50–65°N, 60°W–10°W, its seasonal cycle and its trend. That's an integral of a state variable, which regridding degrades mildly and predictably, rather than a closure identity, which regridding breaks. It gives you the tendency — the left-hand side alone — with no attribution to advection, diffusion, or surface forcing.
+
+Say the word and I'll compute that from what you have, labeled as an OHC time series and explicitly not a closed budget. Or, if you want the actual budget with the terms attributed, point me at your native tree and I'll run the attested path.

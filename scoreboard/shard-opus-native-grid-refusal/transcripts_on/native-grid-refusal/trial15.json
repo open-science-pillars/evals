@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 118,
+  "chars": 4570,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha concept with its mechanism, and offers the native llc90 path naming the flux/heat-flux/snapshot/geometry collections plus the geothermal flux ancillary, without offering any workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

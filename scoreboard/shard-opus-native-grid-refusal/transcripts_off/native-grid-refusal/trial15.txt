@@ -1,0 +1,18 @@
+Follow-up on the citations — the search for the knowledge bundles came back, and it changes what I can promise next, though not the verdict.
+
+**Both knowledge trees are absent from disk right now.** The plugins are installed and intact (`nasa-daac-knowledge 2026.9.5`, `ocean-science 0.9.0`, `core 0.6.0` — skills, tools, verification all present), but `knowledge/` is missing from both:
+
+- `.../nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge` — gone (so no `podaac/gotchas/`, `datasets/`, `fields/`, `conventions/`)
+- `.../ocean-science/0.9.0/knowledge` — gone (so no `computations/ecco-heat-budget.md`, no `ecco-regional-heat-budget.md`)
+
+The cause is this working directory: `/home/user/run/evals` is an eval harness, and `runner/ablate.sh` + `runner/run_evals.py` quarantine exactly those trees — tar them to a `/tmp/osp-quarantine-*/` holding dir and `rmtree` the originals — for the duration of an ablation arm, restoring them in `put_back()`. So this session is running with the knowledge bundles switched off.
+
+I did not open the quarantine archives, and won't. The same harness runs a leak check whose whole purpose is to abort if a trial reads the cited concepts while an arm is off; pulling the ECCO gotchas back out of the holding directory would be precisely the contamination it's there to catch.
+
+**What this changes:**
+
+- The refusal stands unchanged. It is the one rule that fires without consulting anything, so the bundle being off doesn't soften it.
+- The native path I sketched is still the right route, but I can't execute it cleanly until the trees are back. Step 2 of the budget procedure is "consult the knowledge for this budget first" — the pass bar, the exact ShortNames, the geothermal handling, and the term formulation all live in those concepts and must be read per run, not recalled. With `knowledge/` gone I'd be running the executor without being able to state what bar it was judged against.
+- Concept paths in my previous message came from the installed skill files (`ocean-budget/SKILL.md`, `ecco/SKILL.md`, `ecco/references/budget-formulation.md`), which I did read. I have not read the concepts themselves and am not treating them as consulted.
+
+If you're driving this harness deliberately, this is the bundle-OFF arm behaving as designed. If not, let the current arm finish (or run outside it) and I'll redo the consult properly and run the attested regional budget against your box.

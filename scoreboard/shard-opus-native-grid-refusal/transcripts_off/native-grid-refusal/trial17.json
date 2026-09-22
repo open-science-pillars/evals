@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 139,
+  "chars": 5248,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the native-vs-regridded gotcha concept (and the missing flux/snapshot terms), offers no workaround on the 0.5\u00b0 fields, and gives a constructive native-grid path naming the geometry/THETA/flux/forcing collections, month-boundary snapshots for the tendency, and the geothermal flux requirement."
+    }
+  },
+  "pass": true
+}

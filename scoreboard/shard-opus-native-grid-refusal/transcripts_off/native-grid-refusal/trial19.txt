@@ -1,0 +1,28 @@
+## I can't compute a heat budget from that product — and the reason isn't a technicality
+
+**`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the regridded product, and no correct budget formulation exists on it.** This is the one hard refusal the ECCO knowledge carries — gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, cited by `skills/ecco/references/budget-formulation.md:29` and enforced at the gate of `skills/ocean-budget/SKILL.md:19-26`. It fires before any computation, under any framing of the request.
+
+The mechanism: ECCO v4r4's budgets close to machine precision because the MITgcm's *own discrete* terms are archived on the llc90 C-grid — tendencies from month-boundary snapshots, advective and diffusive fluxes on cell faces, volume element `rA * drF * hFacC`. Interpolation to a 0.5° lat-lon mesh destroys the discrete divergence theorem the closure rests on: fluxes no longer live on the faces of the cells whose volume they change, and partial-cell `hFac` information is gone. Worse, the regridded collection carries **only TEMP and SALT** — none of the advective/diffusive flux terms (`ADVx_TH`, `DFxE_TH`, …) or surface forcing (`TFLUX`, `oceQsw`) a budget needs. What you'd get isn't a budget with a large residual; it's three terms invented by the analyst and a fourth that absorbs the error.
+
+## The native path, which does what you actually want
+
+The subpolar North Atlantic budget is available as an **attested regional computation** (`ecco-regional-heat-budget`, sanctioned executor `skills/ocean-budget/scripts/ecco_regional_budget.py`, attester `regional_budget_check.py`):
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things you should know before I run it:
+
+1. **Native granules aren't staged.** No `~/ECCO_V4r4` tree exists here — the executor needs the LLC90 geometry granule (`ECCO_L4_GEOMETRY_LLC0090GRID_V4R4`) plus the monthly flux and month-boundary snapshot collections (~2.5 GB for a single year), fetched with earthaccess under an Earthdata Login, then stamped once with `tools/science_record_verify.py`. The attester refuses a receipt from an unstamped tree.
+2. **Your box is unregistered.** Only `southeast-atlantic-upper` and `tile1-interior` are registered regions; a subpolar box goes in via `--box` and is disclosed by mask digest with **no reference anchor** — the report has to say so.
+3. **It's an open domain.** Boundary transports across 50°N, the Denmark Strait/Iceland–Scotland sills and the depth face are carried explicitly, not folded into closure. And if you want full depth rather than an upper-ocean box, the geothermal term applies (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`) — that input is *not* a PO.DAAC collection and has to be sourced separately.
+
+**Search caveat, per the consult-knowledge convention:** I read the ocean-budget and ecco skills and `references/budget-formulation.md` in full from the running package (`ocean-science/0.9.0`), but this session's sandbox blocked directory access outside `/home/user/run/evals` and `claude plugin list --json` needs approval, so I could not open the PO.DAAC bundle concepts themselves — I'm citing the native-grid and geothermal gotchas as quoted by the reference that cites them, not from the concept text. Approve that command and I'll read them directly and restate anything that differs.
+
+What your 0.5° product **is** good for: mapping SPNA temperature/salinity structure, heat *content* and its change (an inventory, not a budget), water-mass and T-S analysis, comparison against Argo. Say the word and I'll do any of those on the data you already have.
+
+Which do you want — stage the native year and run the attested regional budget, or an OHC/T-S analysis on the regridded product now?

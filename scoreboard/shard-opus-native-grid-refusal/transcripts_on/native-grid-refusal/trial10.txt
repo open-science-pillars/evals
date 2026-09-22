@@ -1,0 +1,36 @@
+## I can't compute that budget from this product — and it isn't a resolution compromise, it's that no correct formulation exists there
+
+The refusal is a hard rule in the ECCO skill, and it fires before any computation: *never compute a budget on regridded ECCO fields, under any framing* (`skills/ecco/SKILL.md`, "Must NOT"; `skills/ocean-budget/SKILL.md`, "The native-grid rule"). The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid.
+
+**Disclosure:** I read that gotcha's rule through the two skill files and `skills/ecco/references/budget-formulation.md`, which name it; I could not read the concept file itself. This session's permissions block directory listing and `claude plugin list --json` outside `/home/user/run/evals`, so I couldn't resolve the PO.DAAC provider bundle's install path. The rule is not in doubt — it is stated identically in three places I did read — but I'm citing it at one remove.
+
+Two concrete reasons it can't work, both visible in what `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` contains:
+
+1. **The terms aren't in it.** A heat budget is tendency = advection + diffusion + forcing. That needs `ADVx/y/r_TH` and `DFxE/yE/rE/rI_TH` (3D temperature flux collection), `TFLUX` and `oceQsw` (heat flux collection), month-boundary `THETA` and `ETAN` *snapshots* for the tendency, and `rA`, `drF`, `hFacC` from the geometry granule. The 0.5° product carries monthly-mean `THETA` and `SALT` and nothing else — five of the six inputs are simply absent.
+2. **Interpolation is not conservative.** Even given fluxes, regridded cell faces don't correspond to the model's C-grid face transports, so the divergence of interpolated fluxes is not the model's divergence. The residual would land at the scale of the terms themselves, not the 1e-10 degC/s pass bar. That isn't a budget with error bars; it's a residual that means nothing.
+
+## The native path for the subpolar North Atlantic
+
+There's an attested route that does what you want — `ecco-regional-heat-budget`, a closed budget over an explicit lat/lon control volume (`skills/ocean-budget/scripts/ecco_regional_budget.py`, attester `regional_budget_check.py`). Collections to fetch, on the native llc90 grid:
+
+| Role | Collection |
+|---|---|
+| Advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Free-surface scaling | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Geothermal | `geothermalFlux.bin` — **not a PO.DAAC collection**; it ships with the ECCO v4 tutorial distribution |
+
+That last row is the one that bites. Per `knowledge/podaac/gotchas/ecco-geothermal-flux.md` (named by the same references), a budget without geothermal at bottom wet cells fails the relative bar — and the executor's own measurement records that omitting it still *passes* the absolute 1e-10 bar, so it's caught only by the 1e-6 relative bar. A subpolar North Atlantic box reaching the deep basin will have plenty of bottom cells, so this term is live for you, not negligible. Also note `ecco-velmass-hfac-double-count.md`: the MASS velocities and flux variables already carry hFac.
+
+**Two things to settle before I run it:**
+
+- **The native tree isn't staged.** Every attester refuses a receipt from a tree without the `RECORD.json` stamp the provider's verify tool leaves. I checked for that stamp at both plausible default roots and it isn't there. Fetching is a separate credentialed step (earthaccess + Earthdata Login), then one `science_record_verify.py --stamp` pass.
+- **The tile-seam limit is a real risk for your domain.** The v1 executor resolves an explicit box to *one* tile's interior (indices 1–89) and refuses a seam-crossing box by design. A box like 50–65°N, 60–10°W may well straddle an LLC90 seam. I won't guess which tile it lands on — the executor resolves it against actual `XC`/`YC` and says so plainly. If it refuses, the honest fallback is the seam-calibrated section machinery (transport-analysis), not a hand-patched rim.
+
+## What the 0.5° product you have *is* good for
+
+It will give you a subpolar North Atlantic heat *content* time series — a volume-integrated inventory and its change. That's a legitimate use of the regridded fields, and it's a different quantity from a budget: it tells you the ocean warmed or cooled, not which term did it. No closure check applies, and it wouldn't be attested. Say the word and I'll compute it, labeled as an inventory rather than a budget.
+
+Tell me which you want: stage the native collections for the real budget, or the inventory from what's on disk now. For the budget I also need a year (the executor binds one calendar year) and your preferred box and depth.

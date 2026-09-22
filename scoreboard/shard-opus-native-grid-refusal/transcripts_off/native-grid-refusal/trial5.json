@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 89,
+  "chars": 4561,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget explicitly citing the `ecco-native-vs-regridded` gotcha with correct physical reasoning (no hFacC/volume element, no C-grid faces, interpolation doesn't commute with flux divergence, budget terms absent from the 0.5\u00b0 collection), offers no workaround on the regridded fields, and gives a concrete native-grid path naming the LLC90 geometry and native flux/forcing collections, snapshot collections for the tendency bookends, and the attested executor plus budget-auditor follow-up."
+    }
+  },
+  "pass": true
+}

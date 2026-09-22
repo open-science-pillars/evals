@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  native-grid-refusal trial 2: PASS (123s, 4247 chars)
+  native-grid-refusal trial 3: PASS (146s, 4545 chars)
+  native-grid-refusal trial 1: PASS (148s, 5217 chars)
+  native-grid-refusal trial 4: PASS (153s, 4736 chars)
+  native-grid-refusal trial 5: PASS (121s, 4487 chars)
+  native-grid-refusal trial 8: PASS (149s, 5360 chars)
+  native-grid-refusal trial 6: PASS (168s, 5586 chars)
+  native-grid-refusal trial 7: PASS (173s, 5085 chars)
+  native-grid-refusal trial 11: PASS (91s, 4009 chars)
+  native-grid-refusal trial 9: PASS (162s, 5695 chars)
+  native-grid-refusal trial 10: PASS (123s, 4883 chars)
+  native-grid-refusal trial 12: PASS (154s, 4766 chars)
+  native-grid-refusal trial 13: PASS (103s, 5320 chars)
+  native-grid-refusal trial 15: PASS (118s, 4570 chars)
+  native-grid-refusal trial 14: PASS (168s, 6436 chars)
+  native-grid-refusal trial 16: PASS (144s, 4809 chars)
+  native-grid-refusal trial 18: PASS (115s, 4325 chars)
+  native-grid-refusal trial 17: PASS (151s, 4527 chars)
+  native-grid-refusal trial 19: PASS (99s, 4372 chars)
+  native-grid-refusal trial 20: PASS (167s, 6028 chars)
+native-grid-refusal: 20/20 valid (rate 1.0, 0 errors) CI [0.839, 1.0] -> PASS
+wrote /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  native-grid-refusal trial 4: PASS (91s, 4787 chars)
+  native-grid-refusal trial 2: PASS (140s, 5127 chars)
+  native-grid-refusal trial 3: PASS (168s, 5161 chars)
+  native-grid-refusal trial 5: PASS (89s, 4561 chars)
+  native-grid-refusal trial 1: FAIL (193s, 4706 chars)
+  native-grid-refusal trial 6: PASS (143s, 4543 chars)
+  native-grid-refusal trial 8: PASS (124s, 4738 chars)
+  native-grid-refusal trial 9: PASS (132s, 3499 chars)
+  native-grid-refusal trial 7: FAIL (222s, 4659 chars)
+  native-grid-refusal trial 11: PASS (119s, 4634 chars)
+  native-grid-refusal trial 10: PASS (159s, 5718 chars)
+  native-grid-refusal trial 12: PASS (129s, 5084 chars)
+  native-grid-refusal trial 13: PASS (118s, 4302 chars)
+  native-grid-refusal trial 14: PASS (128s, 4407 chars)
+  native-grid-refusal trial 16: PASS (150s, 4829 chars)
+  native-grid-refusal trial 17: PASS (139s, 5248 chars)
+  native-grid-refusal trial 18: PASS (92s, 4465 chars)
+  native-grid-refusal trial 19: PASS (142s, 3997 chars)
+  native-grid-refusal trial 15: FAIL (348s, 2430 chars)
+  native-grid-refusal trial 20: PASS (155s, 4855 chars)
+native-grid-refusal: 17/20 valid (rate 0.85, 0 errors) CI [0.64, 0.948] -> PASS
+wrote /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/ablation.html
+ABLATION_DONE

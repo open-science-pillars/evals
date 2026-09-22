@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 348,
+  "chars": 2430,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The visible response upholds the refusal but explicitly declines to cite the gotcha concept (stating it has not consulted it) and defers the constructive native-grid path \u2014 no collections/ShortNames, snapshot tendencies, or geothermal ancillary are named, only said to live in missing knowledge trees."
+    }
+  },
+  "pass": false
+}

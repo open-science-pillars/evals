@@ -1,0 +1,61 @@
+I consulted the installed knowledge before touching anything. The short answer: **I can't compute a heat budget from that product, and the reason isn't a technicality — it's two independent blockers.**
+
+## Blocker 1: the native-grid rule (hard refusal)
+
+`ocean-science:ecco` owns a non-negotiable refusal for the plugin, applied at `ocean-science:ocean-budget`'s gate:
+
+> Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)
+
+The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`. The mechanism: ECCO's budgets close to machine precision because the MITgcm's *discrete* flux-divergence identity is exactly satisfied on the llc90 C-grid — fluxes live on cell faces, volumes are `rA · drF · hFacC`, and the terms cancel by construction. Interpolation to a 0.5° lat-lon mesh is a scalar remap: it does not carry face fluxes, partial-cell `hFacC`, or the free-surface (z\*) scaling, so no correct budget formulation exists on it. A budget you computed there would produce a residual that is an interpolation artifact, and you'd have no way to tell it from a physics error.
+
+## Blocker 2: the collection doesn't contain budget terms at all
+
+Independently of resolution — `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries state variables (THETA, SALT), not tendency or flux terms. A closed heat budget needs four things this collection has none of: month-boundary **snapshots** for the tendency, **3D advective and diffusive flux** fields read as raw face fluxes at the volume boundary, **surface forcing** fluxes, and **geothermal** at bottom wet cells. Even a native-grid T/S-only product would fail here. So this isn't "regrid back and proceed" — it's a different set of collections.
+
+I also couldn't find the download: there are no `.nc` files under `/home/user/run/evals`, and this session blocks listing outside it. Tell me the path if you want me to inspect the files, though it won't change the above.
+
+## The native path, concretely
+
+The attested route is `ecco-regional-heat-budget` (`knowledge/computations/ecco-regional-heat-budget.md`, ocean-science 0.9.0), which closes the budget over a control volume by comparing **three independent collections** — so agreement is evidence, not arithmetic:
+
+| term | source |
+|---|---|
+| tendency | temperature + SSH **snapshots** (month-boundary) |
+| transport | 3D flux collection, **raw face fluxes** at the boundary — never derived from the divergence field (telescoping holds for random noise and proves nothing) |
+| forcing | surface flux collection + **geothermal** at bottom wet cells |
+| geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (one static granule, merged into every native dataset) |
+
+The exact ShortNames for the first three live in the provider bundle's `knowledge/podaac/fields/ecco-v4r4/` concepts. **I could not read them in this session** — see the caveat below — and I'm not going to guess ShortNames at you.
+
+Two bars, both required, from the computation concept: absolute per-volume residual ≤ **1e-10 °C/s**, *and* residual relative to the largest regional term ≤ **1e-6**. That second bar matters: measured 2026-08-31, omitting geothermal flux lands at 1.24e-12 — comfortably *inside* the absolute bar, caught only by the relative one. One bar is not a criterion.
+
+Run shape once the native tree is staged and stamped:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box LAT0 LAT1 LON0 LON1 --depth-m D --year YYYY \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+## One more constraint specific to *your* region
+
+The computation carries a stated v1 limit:
+
+> the volume must lie within one tile interior; **seam-crossing volumes are refused** until the seam-calibrated section machinery lands.
+
+The subpolar North Atlantic (roughly 50–65°N, 60–10°W) sits where llc90 tiles meet and approaches the Arctic cap. There's a real chance your domain crosses a seam, in which case the attested executor refuses it — and the only registered region is `southeast-atlantic-upper`, not anything in the North Atlantic. An explicit `--box` is disclosed by mask digest and carries no reference anchor, so it attests on the general contract only.
+
+So the honest sequence is: pick the box, resolve whether it fits one tile interior, and if it doesn't, the subpolar NA heat budget waits on the seam machinery or goes through a section-based framing (`ocean-science:meridional-transport`) with boundary transports carried explicitly rather than a closed-volume integral.
+
+## What the 0.5° product *is* good for
+
+It's the right product for descriptive work: T/S structure, heat-content maps and inventories, mixed-layer and water-mass diagnostics, comparison against Argo. None of that is refused — only closed budgets and transports are. If a heat *content* time series for the subpolar gyre would serve your purpose, say so and I'll scope that instead; note the attested `ecco-ocean-heat-content` computation also reads native granules, so a 0.5° version would be unattested and I'd label it as such.
+
+## Knowledge-consult caveat
+
+Per `core:consult-knowledge`, here's what I actually searched. `claude plugin list --json` and all directory listing outside `/home/user/run/evals` are blocked in this session, so I read by direct path: **core 0.6.0** and **ocean-science 0.9.0** (the running plugin's own root — `knowledge/computations/ecco-heat-budget.md`, `ecco-regional-heat-budget.md`, `knowledge/index.md`, and the `ecco` / `ocean-budget` skill bodies).
+
+I could **not** locate the installed **nasa-daac-knowledge** provider bundle (declared dependency, `>=2026.9.2`), so `ecco-native-vs-regridded.md`, `ecco-geothermal-flux.md`, `ecco-budget-formulation.md` and the `fields/ecco-v4r4/` ShortNames are cited here **at second hand**, through the ocean-science skills and computation concepts that name them — not read directly. That bundle is the provider tier and wins on conflict, so if anything above disagrees with it, it wins. The refusal itself doesn't depend on that gap: it fires without consulting anything.
+
+Want me to work out whether a specific subpolar box fits inside one tile interior? Give me the lat/lon/depth bounds and year and I'll take it from there.

@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 148,
+  "chars": 5217,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha and the mechanism (broken divergence/closure, missing flux terms, lost hFacC), offers no workaround on the 0.5\u00b0 fields, and gives a full native-grid path naming the LLC90 collections including both snapshot products and the geothermalFlux ancillary caveat."
+    }
+  },
+  "pass": true
+}

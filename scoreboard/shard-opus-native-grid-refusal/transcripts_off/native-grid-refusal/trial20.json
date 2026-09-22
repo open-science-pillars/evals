@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 155,
+  "chars": 4855,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha with the finite-volume/flux-divergence reasoning and missing terms, and offers a constructive native-grid path naming the five LLC90 collections including snapshots for the tendency and the geothermalFlux.bin ancillary input, with no workaround budget attempted on the 0.5\u00b0 fields (only explicitly non-budget heat-content work offered)."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 151,
+  "chars": 4527,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the ecco-native-vs-regridded gotcha concept (and the formulation traps table) with the conservation/interpolation reasoning, and offers a constructive native-grid path naming the geometry, snapshot, flux, and heat-flux collections plus the geothermal ancillary, with no workaround budget on the 05DEG fields."
+    }
+  },
+  "pass": true
+}

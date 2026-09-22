@@ -1,0 +1,48 @@
+I can't compute this from the 0.5° product — that's a hard refusal in this plugin, not a judgment call I can override. Here's what applies and what the working path is.
+
+## Refused: no budget on regridded fields
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the interpolated product. The rule is owned by the `ecco` skill and gated by `ocean-budget` (🔴, "fires before any computation, whatever the framing of the request"), citing gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid.
+
+The physics behind it, concretely for your case:
+
+- The 0.5° collection carries **THETA and SALT only**. It has no `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no `DFxE_TH`/`DFyE_TH`/`DFrE_TH`, no `TFLUX`/`oceQsw`, and no snapshots. Three of the four budget terms simply aren't in the file — the only way to "get" them is to infer them as a residual, which is the exact move the skill forbids (never absorb a residual into a physical term).
+- Interpolation is not conservative. The divergence of interpolated fluxes is not the interpolated divergence, and the 0.5° cells have no `rA`, `drF`, `hFacC` corresponding to the volumes the model actually integrated. The residual would be the same order as the terms, and would read as spurious "mixing."
+
+So a number produced this way wouldn't be a heat budget with a large error bar; it would be an artifact.
+
+## The native path for the subpolar North Atlantic
+
+Collections required (read from the sanctioned executor `skills/ocean-budget/scripts/ecco_regional_budget.py`):
+
+| Input | Supplies |
+|---|---|
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1` (one static granule) |
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADV*_TH`, `DF*_TH` — read as raw face fluxes at the rim |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` (with shortwave penetration) |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` month-boundary snapshots for the tendency |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` for the z\* free-surface scaling |
+| `geothermalFlux.bin` | **not a PO.DAAC collection** — ECCO v4 tutorial distribution; omitting it passes the absolute bar and is caught only by the relative bar |
+
+Then the attested run, with the box and year bound:
+
+```bash
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Bars are the executor's, both required: absolute `|residual|/volume ≤ 1e-10 degC/s`, relative `|residual|/largest term ≤ 1e-6`. I'd quote nothing from the receipt until `regional_budget_check.py` returns PASS.
+
+## Two things to expect before you run it
+
+**Your box probably spans a tile seam.** The executor's V1 limit is that the control volume lies inside *one* llc90 tile's interior (faces 1–89); an explicit box that resolves across tiles is refused by design ("volumes crossing a tile seam need the seam-calibrated section machinery"). A 50–65N × 60–10W box over the subpolar gyre is a strong candidate for that refusal. If it refuses, the options are: shrink to a sub-basin that fits one tile's interior (an Irminger or Labrador box), or treat the subpolar gyre as an **open** domain and get the heat convergence from bounding sections via the `meridional-transport` / `transport-analysis` skills — which is closer to how OSNAP frames it anyway.
+
+**Only `southeast-atlantic-upper` is a registered region.** A `--box` run is the explicit tier: no reference anchor, disclosed by resolved index bounds, wet-cell count, volume and a sha256 of the wet mask. The report has to say so.
+
+## What I couldn't verify here
+
+This session's shell is confined to `/home/user/run/evals` (an evals repo — no ECCO data in it), so I could not check your downloaded files, look for a native tree at `~/ECCO_V4r4` / `~/ECCO_V4r4_record`, or confirm the `RECORD.json` stamp that `science_record_verify.py` must leave — every attester refuses a receipt from an unstamped tree. For the same reason I read the skills, the budget-formulation reference and the executor directly, but could not open the knowledge concepts themselves (`knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, `knowledge/computations/ecco-heat-budget.md`); I'm citing them as the skills name them, not as text I read.
+
+Tell me the depth range and years you want and whether you can fetch the native collections, and I'll run the inputs gate and the attested budget. Separately — if what you actually need is subpolar heat *content* and its seasonal cycle rather than a closed budget, the 0.5° product you already have is fine for that, and I can do it now.

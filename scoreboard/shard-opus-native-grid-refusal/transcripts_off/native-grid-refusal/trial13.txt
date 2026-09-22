@@ -1,0 +1,34 @@
+I stopped before computing anything. Here's the parse-back and why this one doesn't proceed as asked.
+
+**Request as I read it:** heat budget, subpolar North Atlantic, from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` (0.5° regridded). Period and depth range unspecified.
+
+## I can't compute a budget from that product
+
+**The native-grid rule (hard refusal).** A property budget on regridded ECCO fields is refused — no correct budget formulation exists there. The regridding is a scalar interpolation onto a lat/lon mesh; it does not carry the C-grid cell geometry (`rA`, `drF`, `hFacC`), the staggered face areas, or the flux divergences that the terms are defined on. Terms computed there don't close and can't be made to. This is stated as invariant and universal in `skills/ecco/SKILL.md` and at the gate of `skills/ocean-budget/SKILL.md`, both of which cite `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`.
+
+**Independently: the product doesn't contain the terms.** `TEMP_SALINITY_05DEG` carries THETA and SALT monthly means. A heat budget needs the tendency from month-boundary *snapshots*, the advective flux terms, the diffusive flux terms (explicit and implicit), and surface forcing including shortwave penetration. None of those are in this collection. So even waiving the grid rule there is nothing to difference — I'd be reconstructing three of four terms by assumption and calling the leftover "mixing," which is exactly the failure mode the rule exists to prevent.
+
+## What the 0.5° product *is* good for
+
+Ocean heat *content* and its change — a volume integral of THETA, not a budget. That's legitimate on the regridded grid (area-weighted, with the potential-temperature baseline caveat), and it answers "how much did the subpolar North Atlantic warm," just not "why." Say the word and I'll do that instead.
+
+## The native path to an actual budget
+
+The sanctioned route for an arbitrary region is the attested regional budget executor, which takes an explicit box:
+
+```bash
+uv run $PLUGIN_ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $PLUGIN_ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+An explicit box is disclosed by mask digest and carries no reference anchor (only `southeast-atlantic-upper` is a registered region), so the report would say so. Needed first: the LLC90 geometry granule `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` merged with the native monthly flux and forcing collections plus the THETA/ETAN snapshot collections — I'd resolve those exact ShortNames through `load-ecco` and the `fields/ecco-v4r4/` concepts rather than quote them from memory.
+
+**Three blockers I hit checking your setup:**
+
+1. **No native data staged.** There's no `RECORD.json` at `~/ECCO_V4r4` or `/root/ECCO_V4r4`, so no verified native tree exists — and every attester refuses a receipt from an unstamped tree.
+2. **I couldn't find your downloaded 0.5° files either.** Nothing matching `*ECCO*`, `*.nc`, or `*.zarr` under `/home/user/run/evals`. Bash in this session is restricted to that directory, so if the data is elsewhere, tell me where.
+3. **Partial knowledge consult.** Same restriction blocked `claude plugin list --json` and any glob of the bundle roots, so I read the ocean-science skill bodies and `skills/ecco/references/budget-formulation.md` directly but could not open the PO.DAAC provider bundle (`knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, `conventions/ecco-budget-formulation.md`) or the computation concept `knowledge/computations/ecco-heat-budget.md`. I'm citing those by bundle path as the skills name them, not from having read them this session. The refusal doesn't depend on them — it's the one rule that fires without consulting anything — but the pass bars and term definitions for an actual run do, and I'd read them before computing.
+
+**To move forward, I need:** your region bounds and depth range (I used 50–65°N, 60–10°W above as a placeholder), the year or period, and either approval to fetch and stamp the native tree, or a pointer to one you already have. Alternatively, say "heat content instead" and I'll work with the 0.5° product you've got.

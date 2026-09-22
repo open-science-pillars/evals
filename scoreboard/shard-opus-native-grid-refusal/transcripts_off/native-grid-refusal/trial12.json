@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 129,
+  "chars": 5084,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha with the C-grid discretization rationale, and offers a constructive native-grid path naming the LLC0090GRID collections including the snapshot product for the tendency and the separately-staged geothermal flux, while offering only heat content (not a budget) from the 0.5\u00b0 product."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 119,
+  "chars": 4634,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The trial refuses the regridded budget outright, names and explains the native-vs-regridded gotcha concept (non-conservative remapping breaking discrete closure) plus the missing flux terms, and offers a full constructive native-grid path with llc90 collections named, snapshot collections for the tendency, and geothermalFlux.bin as the ancillary \u2014 with no workaround budget attempted on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 121,
+  "chars": 4487,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) and skill rules with the correct scientific reasoning about discrete operator closure, names the missing native collections/variables including snapshots for tendencies and the geothermal term, and offers a constructive native-grid path with no workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

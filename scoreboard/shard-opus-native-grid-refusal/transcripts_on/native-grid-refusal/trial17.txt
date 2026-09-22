@@ -1,0 +1,41 @@
+## I can't compute a heat budget from that product — and the reason isn't a technicality
+
+**Request as parsed:** heat budget, subpolar North Atlantic, from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`, period and depth range unspecified.
+
+That input hits a hard refusal in the ECCO workflow, so I stopped before computing anything.
+
+`knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (**stable**, human-verified 2026-09-04 by the maintainer; severity high) names your exact collection in its sources. Two independent reasons:
+
+1. **Interpolation destroys the conservation.** ECCO's closure is a property of the native formulation — face fluxes (`ADV*`, `DF*`), partial-cell geometry (`hFac`), and llc tile topology together satisfy the model equations exactly. The `05DEG` collections are interpolated for display and comparison; interpolation does not preserve flux divergences.
+2. **The ingredients don't exist at 0.5°.** A CMR sweep on 2026-07-04 found **no 05DEG 3D flux collections**. The `05DEG` family carries state variables only. The four-term budget isn't merely inaccurate there — it isn't assemblable.
+
+The failure mode is the dangerous kind: **nothing errors.** You get residuals the same order as the physical terms, and the tendencies you'd attribute to mixing or forcing are interpolation artifacts. The formulation traps table in `knowledge/podaac/conventions/ecco-budget-formulation.md` (**stable**) lists this row as "closure fails everywhere, by construction."
+
+Your 0.5° product is the right tool for maps, time series, and pointwise comparison against gridded observations. Just not for a budget.
+
+## The native path
+
+Same science question, valid route. Collections (ShortNames and DOIs from the signed fields concepts under `knowledge/podaac/fields/ecco-v4r4/`, all CMR-verified 2026-08-30):
+
+| Role | ShortName | DOI |
+|---|---|---|
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | 10.5067/ECL5A-GRD44 |
+| Tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | 10.5067/ECL5S-OTS44 |
+| Advective + diffusive fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-3TF44 |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-HEA44 |
+
+One ancillary that is **not** a PO.DAAC collection: the static geothermal flux (`geothermalFlux.bin`, ECCO v4 tutorial repo `misc/`), applied at the bottom wet cell. Per `knowledge/podaac/gotchas/ecco-geothermal-flux.md` (**stable**, human-verified), omitting it is silent — surface layers close, deep cells fail. For a subpolar North Atlantic budget with any real depth extent, this term is not optional.
+
+The tendency also needs snapshots, not monthly means, with the z* scale factor `s* = 1 + ETAN/Depth`; and the vertical diffusive term needs `DFrE_TH` **plus** `DFrI_TH`.
+
+## Two things to decide before I run it
+
+**Region.** `knowledge/computations/ecco-regional-heat-budget` has a sanctioned executor, but the only registered region is `southeast-atlantic-upper`. Subpolar North Atlantic would go in as an explicit `--box LAT0 LAT1 LON0 LON1 --depth-m`. The attester still runs and still checks the mutation oracles, but an explicit box is disclosed by mask digest only and carries **no reference anchor** — the report has to say so. Give me your box (e.g. 50–65°N, 60–10°W) and depth range, or I'll propose one.
+
+Also note: the subpolar gyre is an **open** domain. Domain-integrated closure is only assertable on closed domains, so boundary transports travel explicitly in the result. Pointwise closure holds regardless.
+
+**Data.** No native tree is staged — neither `~/ECCO_V4r4` (2010 fixture cache, ~2.5 GB) nor `~/ECCO_V4r4_record` (1992–2017) exists here. Fetching needs an Earthdata Login, and the tree then needs one `science_record_verify.py --stamp` pass; every attester refuses a receipt from an unstamped tree. Tell me the year or period and I'll size the pull before downloading anything.
+
+Give me the box, depth range, and period, and I'll run the sanctioned executor and attest the receipt before quoting a single number.
+
+<sub>One knowledge-hygiene note: `knowledge/computations/ecco-heat-budget.md` carries `status: stable` with a maintainer verified event of 2026-09-20 citing the merge PR, but a leftover placement paragraph in its body still says "the concept sits at `status: draft`." Frontmatter governs, so I've voiced it as stable — the stale sentence is worth an issue against the bundle.</sub>

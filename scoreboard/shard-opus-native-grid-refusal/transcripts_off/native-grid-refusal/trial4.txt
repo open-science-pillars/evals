@@ -1,0 +1,41 @@
+I checked the plugin's budget guidance before touching any data, and this one stops at the gate. I'm not going to compute it from that product.
+
+## Why this is refused
+
+Both `ocean-science:ocean-budget` and `ocean-science:ecco` carry the same non-negotiable rule, citing gotcha `ecco-native-vs-regridded` (in the PO.DAAC bundle under `knowledge/podaac/gotchas/`):
+
+> Never compute any budget on regridded fields, under any framing. (Hard refusal: invariant, universal; the one rule that fires without consulting anything.)
+
+This isn't procedural fussiness — there is no correct budget formulation on that grid:
+
+- **The flux terms don't exist in that collection.** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries interpolated `THETA` and `SALT` and nothing else. A heat budget needs the advective and diffusive flux convergences, the surface forcing, and the shortwave penetration term. None of them are in the file, so any budget built from it would be reconstructing three of the four terms by finite-differencing a temperature field — which is not the model's heat budget, it's a different calculation that happens to have the same units.
+- **Interpolation is not conservative.** ECCO closes to machine precision because the fluxes are the ones the MITgcm actually used across C-grid cell faces. Bilinear interpolation to 0.5° does not commute with divergence, so even given the fluxes, the divergence of the regridded flux ≠ the regridded divergence. The residual you'd get back would be interpolation error, and you'd have no way to separate it from physics.
+- **The volume element is gone.** The budget integrates over `rA * drF * hFacC`; the regridded product has no `hFacC` partial-cell factors and no native cell areas, so the vertical integral and the bottom-cell treatment (where the geothermal term enters for a full-depth budget) are both undefined.
+
+A residual computed that way would be dominated by regridding artifacts and would be uninterpretable — which is worse than no number, because it looks like a result.
+
+## What that product *is* good for
+
+It's the right choice for exactly what it was regridded for: subpolar North Atlantic T/S maps and sections, mixed-layer depth, water-mass T-S census, heat *content* and its time change, and comparison against gridded observational products. Heat content change over your region is a perfectly sound thing to compute from it — it just isn't a budget, because it can't tell you which terms produced the change.
+
+## The native path, for the budget you actually asked for
+
+The plugin has an attested regional heat budget that takes an arbitrary box, which is what the subpolar gyre needs (the registered regions don't include it):
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to know before you run it:
+
+1. **You need the native granules, not the 0.5° ones.** Geometry is `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (one static granule, merged into every native dataset); alongside it you need the native LLC0090 monthly means for the temperature flux and surface forcing terms, plus the **snapshot** collection for the tendency bookends — a monthly-mean tendency does not close. I'd resolve those exact ShortNames through the fields concepts under `knowledge/podaac/fields/ecco-v4r4/` or the `load-ecco` workflow rather than have me recall them; my sandbox is scoped to `/home/user/run/evals`, so I couldn't read the bundle or check where your download landed, and the Earthdata connector call wasn't approved.
+2. **The tree must be stamped.** Every attester refuses a receipt from a tree without the `RECORD.json` stamp from `tools/science_record_verify.py`. Run that once after fetching.
+3. **Geothermal matters if you go full-depth.** It's the first thing the auditor checks on a failing heat budget. If you only want the upper ocean, set `--depth-m` and it's moot.
+
+An explicit box is disclosed by mask digest and carries no reference anchor, so the attester checks the residual bars but not the two-sided reference values it has for `southeast-atlantic-upper` — the report will say so.
+
+Tell me which year (or range) and depth you want and whether you have the native record staged, and I'll run it and put the receipt through the attester. If what you actually want is heat-content change over the subpolar gyre rather than a term-by-term budget, say so — that one I can do from what you've already downloaded.

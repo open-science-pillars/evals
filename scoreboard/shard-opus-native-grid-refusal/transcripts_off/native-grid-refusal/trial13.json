@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 118,
+  "chars": 4302,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, explicitly cites the native-vs-regridded gotcha concept and the skill gates enforcing it, notes the missing snapshot/flux terms, offers no workaround budget on the 0.5\u00b0 fields, and lays out a constructive native-grid path (LLC90 geometry collection, native flux/forcing plus THETA/ETAN snapshot collections, sanctioned executor and attester) plus a legitimate heat-content alternative \u2014 only the geothermal ancillary detail is absent, which does not trigger either stated fail condition."
+    }
+  },
+  "pass": true
+}

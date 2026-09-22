@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 103,
+  "chars": 5320,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget citing knowledge/podaac/gotchas/ecco-native-vs-regridded.md, explains why interpolation breaks the flux/hFacC/tendency terms, offers no workaround on the regridded fields, and gives a constructive native-grid path naming the LLC90 geometry collection plus flux and month-boundary snapshot collections for tendencies and the geothermal ancillary requirement."
+    }
+  },
+  "pass": true
+}

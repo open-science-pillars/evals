@@ -1,0 +1,42 @@
+## I can't compute a budget from that product — and the refusal is the plugin's hard rule, not a judgment call
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the regridded 0.5° interpolation of ECCO v4r4. A property budget on regridded ECCO fields is refused outright, before any computation, whatever the framing:
+
+> "Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)"
+> — `skills/ecco/SKILL.md`, which owns this refusal for the plugin; `skills/ocean-budget/SKILL.md` applies it at its gate
+
+The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` ("budgets close only on the native llc90 grid"), named by `skills/ecco/references/budget-formulation.md:26-27`.
+
+**The physical reason**, independent of the rule: ECCO's budgets close to machine precision because the terms are the model's own discrete flux divergences on the Arakawa C-grid — advective and diffusive fluxes live on cell faces, the tendency comes from z\* volume-corrected snapshots, and the volume element is `rA * drF * hFacC`. Interpolation to a 0.5° lat–lon mesh destroys that discrete correspondence: fluxes and their divergences are no longer consistent, partial cells are gone, and the residual you'd get would be interpolation error, not physics. There is no correct budget formulation on that grid to apply.
+
+Separately, that collection carries only THETA and SALT. Even ignoring the grid, it holds none of the advective flux, diffusive flux, or surface forcing terms, and no month-boundary snapshots — three of the four terms simply aren't in the file.
+
+## What I searched
+
+Per `core:consult-knowledge`: I read the **ocean-science** bundle root (`knowledge/index.md`, `knowledge/computations/ecco-heat-budget.md`) and the `ecco` / `ocean-budget` skills. I could **not** reach the **nasa-daac-knowledge** provider bundle root in this session — `claude plugin list --json` and filesystem listing outside `/home/user/run/evals` are both blocked here. So the `ecco-` gotchas below are cited by bundle path as the ocean-science skills name them; I have not read their text and am not paraphrasing their content.
+
+## The native path, with the exact route
+
+The attested route for a regional heat budget is `ecco-regional-heat-budget`, run through its sanctioned executor (never edited — the attester hashes it):
+
+```bash
+uv run $PKG/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+uv run $PKG/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+(`$PKG` = `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`)
+
+Three things you should know before we run it:
+
+- **Your box is not a registered region.** Only `southeast-atlantic-upper` is registered. An explicit `--box` is disclosed by mask digest and carries no anchor, so the attester's two-sided reference checks (wet-cell count, volume, residual per volume) don't apply — it recomputes the bars from the results and checks the mutation flags. The report has to say so. Box above is a placeholder for the subpolar gyre; tell me the bounds and depth range you actually want.
+- **Open domain.** The subpolar North Atlantic is not closed, so domain-integrated closure is asserted only with the boundary transports carried explicitly — the residual is not a closure statement on its own.
+- **Geothermal, if you go to the bottom.** A deep heat budget needs the geothermal flux at the bottom cell, and `knowledge/podaac/gotchas/ecco-geothermal-flux.md` records that this input is *not* a PO.DAAC collection — it has to be staged separately. Omitting it drives bottom-cell residuals orders above tolerance. Also applicable: `knowledge/podaac/gotchas/ecco-velmass-hfac-double-count.md`.
+
+## What I need from you
+
+1. **Do you have the native granules?** The executors read `--data-root` (`~/ECCO_V4r4` 2010 fixture, or `~/ECCO_V4r4_record` for 1992–2017), and the tree must carry the `RECORD.json` stamp from the provider's verify tool — every attester refuses an unstamped tree. I can't check those paths from here; tell me the path, or say the word and I'll walk the `load-ecco` fetch (geometry `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` plus the monthly and snapshot collections the concept names, volume gate and all).
+2. **Domain, depth range, and period.**
+
+Your 0.5° download isn't wasted — it's the right product for descriptive work over the same region (T/S maps and sections, water-mass structure, a heat-content time series as an unattested diagnostic). It just can't carry a budget. Want me to do that with it while we sort out the native fetch?
