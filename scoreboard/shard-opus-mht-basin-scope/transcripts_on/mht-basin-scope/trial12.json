@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 142,
+  "chars": 3641,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response uses the Atlantic atlExt value (~0.666/0.67 PW) as the RAPID-comparable figure with scope explicitly named, refuses to compare the 1.098 PW full-circle number to RAPID, and cites both the basin-scope gotcha and the ecco-mht-26n recipe concept."
+    }
+  },
+  "pass": false
+}

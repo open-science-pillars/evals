@@ -1,0 +1,17 @@
+## I can't give you that headline number, and the reason is the interesting part
+
+Two blockers, one operational and one scientific.
+
+**The computation can't run.** The sanctioned executor is on disk (`skills/transport-analysis/scripts/ecco_section_transport.py`), but the ECCO data isn't: no `~/ECCO_V4r4` tree and no `RECORD.json` stamp, which every attester in this plugin refuses a receipt without. The knowledge bundle is also absent — `knowledge/index.md` and all of `knowledge/computations/` are gone from both the plugin cache and `/home/user/run/ocean-science/`, while `skills/` reads fine. So I have no recipe concept for an expected range and no attested receipt to quote.
+
+**More importantly, the attested route doesn't answer your question.** I read the section registry directly out of the executor (`ecco_section_transport.py:53-62`, 91-98). There is exactly one registered section at this latitude:
+
+- `global-26.5n` — *"the full latitude circle at 26.5 north, closed and seam-crossing"*, anchored at **1.098 PW** for the 2010 mean (independent implementation via `ecco_v4_py.calc_meridional_heat_trsp`, cross-implementation band ±0.03 PW).
+
+That's a **global** latitude circle. RAPID-MOCHA measures the **Atlantic-only** section, Florida to Africa. They are not the same quantity, and quoting 1.098 PW against RAPID would be a basin-scope error — it produces a plausible-looking number that's wrong, rather than an obviously broken one. Note the executor's sibling computation `ecco-amoc-26n` *does* bind an explicit `atlantic` scope, which is exactly the distinction that matters here; no such Atlantic scope is registered for section heat transport. And the workflow skill states that `ecco-mht-26n` is a draft contract with **no sanctioned executor** at all.
+
+To be clear about provenance: 1.098 PW is the reference anchor written into the executor's source, not a run I performed. I did not compute anything, and I'm not attaching a RAPID value from memory since no concept is available to cite for one.
+
+**What would unblock it:** stage the ECCO fixture tree and stamp it (`tools/science_record_verify.py --stamp`), and restore the `knowledge/` trees under `ocean-science` and `nasa-daac-knowledge`. Then the honest path to a RAPID comparison is the `ecco-amoc-26n` executor at `--scope atlantic` run through the compare-obs confrontation attester, over a period matching the array's record — not the global section transport.
+
+One caveat on the environment: your working directory is the open-science-pillars eval harness, and the missing knowledge trees match its bundle-OFF ablation scope for the `mht-basin-scope` case. If this is a deliberate trial, this report is the answer. If a harness run leaked its quarantine into your live session, that's an operational fix — `ablate.sh` keeps its holding directory under the system temp dir. Want me to check whether the trees are recoverable there?

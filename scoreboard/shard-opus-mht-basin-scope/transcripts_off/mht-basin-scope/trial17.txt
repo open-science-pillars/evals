@@ -1,0 +1,31 @@
+## I can't give you that headline number, and the reason is worth a minute
+
+Four things block it, in increasing order of how much they matter.
+
+**1. No data is staged.** All three trees the sanctioned executors read are absent:
+
+| tree | status |
+|---|---|
+| `~/ECCO_V4r4` (2010 fixture cache) | absent |
+| `~/ECCO_V4r4_record` (1992–2017) | absent |
+| `~/RAPID_26N` (RAPID v2024.1a) | absent |
+
+No `RECORD.json` stamp either, and every attester in this package refuses a receipt from an unstamped tree by construction. The executor call is also permission-gated in this session — it was denied.
+
+**2. The knowledge bundle isn't installed.** `knowledge/` is missing from the running plugin root (`.../ocean-science/0.9.0/`), so the recipe and gotcha concepts that own the expected range, the spread, and the comparison discipline can't be read or cited. `claude plugin list --json` is permission-gated, so I couldn't check the installer record to see whether this is a broken install or a stale cache — flagging it rather than treating it as a real knowledge gap.
+
+**3. There is no sanctioned executor for the quantity you asked about.** Per `skills/transport-analysis/SKILL.md:134`, `ecco-mht-26n` — Atlantic MHT at 26.5°N — is *a draft contract with no sanctioned executor yet*. The attested RAPID confrontation that does ship (`ecco-rapid-amoc-confrontation`) compares **overturning in Sv**, not heat transport in PW.
+
+**4. The scope mismatch — this is the one that would have bitten.** The only attested heat-transport route at 26.5°N is the section `global-26.5n`, and the executor's own registry (`ecco_section_transport.py:92`) defines it as `(YC >= 26.5)` — **the full latitude circle, all basins**. RAPID-MOCHA measures the Atlantic only, Florida to Africa.
+
+So the number sitting right there in the sanctioned code — `HEAT_ANCHOR_PW = 1.098`, the 2010 mean from an independent `ecco_v4_py` implementation — is a *global* 26.5°N heat transport. Set against RAPID's Atlantic value it would read as a model low bias of roughly a tenth of a petawatt. That difference would be basin scope, not model skill. It's the same trap the AMOC executor guards against by making `atlantic` vs `atlantic-with-gulf-of-mexico` an explicit bound parameter rather than a silent default.
+
+I'm deliberately not quoting a RAPID figure to difference against it. The published RAPID-MOCHA Atlantic MHT at 26.5°N is order 1.2–1.3 PW from general literature, but that's my own recall, not a consulted concept, and pairing it with 1.098 PW would manufacture exactly the false headline this analysis should prevent.
+
+## What would unblock it
+
+- **Fastest honest number, wrong comparison:** stage `~/ECCO_V4r4` + stamp it, approve the executor, and I'll give you attested *global* 2010 MHT at 26.5°N with its receipt — useful, but it does not compare to RAPID.
+- **The comparison you actually want:** needs an Atlantic-scoped section added to the section-transport registry and `ecco-mht-26n` promoted from draft to a sanctioned executor with an attester. That's a change to the package, not something I should improvise around by editing an executor — its attester hashes it, so a hand-rolled version fails by design.
+- **Available today with data staged:** the attested ECCO-vs-RAPID **overturning** confrontation at 26.5°N (Sv, bias/RMSD/correlation each with intervals, pinned to RAPID v2024.1a). If AMOC strength answers your underlying question, that path is fully attested and I can run it.
+
+Which of those three do you want?

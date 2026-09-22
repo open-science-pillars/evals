@@ -1,0 +1,27 @@
+## Headline number
+
+**ECCO v4r4 Atlantic MHT at 26.5°N, 2010: 0.67 PW — about 0.66 PW below RAPID/MOCHA's observed ~1.33 PW, i.e. roughly half.**
+
+That is the only RAPID-comparable framing, and it comes with a caveat that matters more than the number.
+
+## Two things you should know before using it
+
+**1. I could not run the computation in this session.** The sanctioned executor is permission-gated here (`uv run .../ecco_section_transport.py` and `claude plugin list --json` both returned "requires approval"), and the data root `/root/ECCO_V4r4` is outside the sandbox's allowed directory. Separately, the MHT computation itself has no sanctioned executor to run: `ocean-science/knowledge/computations/ecco-mht-26n.md` is **status: draft**, an unfilled contract. So 0.666 PW is the recorded, human-verified anchor from `podaac/recipes/ecco-mht-26n.md` (status: stable, verified human:PaulMRamirez 2026-09-04, validation run 2026-07-04 against live PO.DAAC), **not a number I computed just now**.
+
+**2. The scope trap.** `calc_meridional_heat_trsp(ds, lat_vals=26.5)` with no `basin_name` returns the **full latitude circle** — Atlantic + Pacific + Indian — which for 2010 is **1.098 PW** (= atlExt 0.666 + pacExt 0.430 + indExt 0.002). That number looks reassuringly close to RAPID's 1.33 PW, and quoting it would be a scope error: RAPID observes the Atlantic section only (`basin_name="atlExt"`). This is `podaac/gotchas/ecco-mht-basin-scope.md`, severity **high**, stable, human-verified. The attested route that *is* runnable here — `ecco-section-transport --section global-26.5n` — computes exactly that global circle (reference run: +1.0963 PW), so it would not have given you a RAPID-comparable answer either.
+
+## Why the 0.66 PW gap is not a clean skill statement
+
+- **Periods don't match.** The RAPID figure is 1.33 ± 0.40 PW over **2004–2007** (Johns et al. 2011, doi:10.1175/2010JCLI3997.1). You asked for **2010**. Nothing here is a matched-window comparison.
+- **2010 is the documented AMOC-minimum year.** The recipe flags 0.666 PW as deliberately *below* the multi-year expected band of 0.8–1.4 PW for that reason, and single-year means carry a wider envelope than that band. Atlantic 2010 monthlies span +0.09 to +1.14 PW.
+- **The offset direction is expected, not anomalous.** The recipe states plainly that ECCO v4 Atlantic means sit low of the observed mean.
+
+So 0.66 PW exceeds RAPID's ~0.4 PW temporal spread, but between the period mismatch and the AMOC-minimum year I would not read it as a measured ECCO bias. For that you'd want a matched multi-year window.
+
+## If you want this properly
+
+Two options, both needing the permission gate opened:
+- **Matched-period MHT** — no attested path exists yet; the executor has to be extracted from the golden `verification/transport_analysis.py` first.
+- **Overturning instead of heat** — `ecco-rapid-amoc-confrontation` *is* fully attested (executor + attester, RAPID v2024.1a pinned by DOI, 165 months of overlap 2004-04 to 2017-12). If AMOC strength in Sv answers your question, that route gives you a receipted bias/RMSD/correlation rather than two numbers subtracted by hand.
+
+Citations for anything you publish from this: ECCO Consortium per-collection DOIs, plus MOCHA MHT v.2020 (doi:10.17604/3nfq-va20) and the RAPID-MOCHA funding acknowledgment.

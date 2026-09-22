@@ -1,0 +1,24 @@
+## No headline number — the comparison has no valid route here
+
+I couldn't compute it, and the reason is worth more than a number would be.
+
+**Blocker 1: nothing to compute from.** No `~/ECCO_V4r4` fixture cache, no `~/ECCO_V4r4_record`, no `~/RAPID_26N` tree. Also, the plugins' `knowledge/` trees are absent from both `ocean-science/0.9.0` and `nasa-daac-knowledge` — so every concept the workflow is required to cite (expected ranges, spread, scope rules, ECCO's uncertainty framing) is unreadable. The stamping manifests live inside that missing tree, so even a fresh download couldn't be stamped, and every attester refuses an unstamped tree. This looks like a deliberate bundle-off ablation arm — `runner/ablation_scope.py` in your working directory deletes exactly those `*/knowledge` paths. Recorded answers under `scoreboard/` and `concept-fingerprints.json` were left unread.
+
+**Blocker 2 — the real one, and it survives restoring the data.** The attested 26.5N heat transport is the **global** latitude circle:
+
+> `global-26.5n`: the full latitude circle at 26.5 north … 2010 global mean meridional heat transport **1.098 PW**
+> — `skills/transport-analysis/scripts/ecco_section_transport.py:53-58`
+
+Its indicator is `YC >= 26.5` across all 13 tiles — Pacific and Indian included. RAPID-MOCHA measures the **Atlantic only**, Florida to Africa. Those are different physical quantities; 1.098 PW is not an ECCO-vs-RAPID number, and presenting it as one would be a basin-scope error. The Atlantic-only MHT contract, `ecco-mht-26n`, is explicitly *"a draft contract with no sanctioned executor yet."*
+
+**Blocker 3:** the one attested ECCO↔RAPID confrontation that does exist (`ecco-rapid-amoc-confrontation`) compares **overturning in Sverdrups**, not heat in petawatts. No RAPID heat-transport value or uncertainty is recorded anywhere on this machine — only the overturning uncertainty (1.5 Sv RMS ten-day, 0.9 Sv annual, McCarthy et al. 2015).
+
+Your 2010 window itself is fine: it sits inside RAPID's 2004-04 onward coverage. A single-year mean would need the wider single-year envelope — but the concept pinning that envelope is among the missing files.
+
+### What I can do instead
+
+1. **Restore the bundles** (reinstall `ocean-science` and `nasa-daac-knowledge`, or have the harness put the trees back), stage the ~2.5 GB fixture cache under an Earthdata Login, and I'll re-run this properly.
+2. **Run the attested confrontation in Sv** — ECCO AMOC strength at 26.5N vs RAPID, which *is* a sanctioned like-for-like comparison. Needs the science record plus the RAPID v2024.1a tree.
+3. **Compute an Atlantic-only MHT myself** on native faces with basin codes `["atl"]` — but it would be unvalidated by construction, with no expected range to judge it against and no recorded RAPID PW value to compare to. I'd report it flagged as such, not as a result.
+
+Tell me which, and whether you have Earthdata credentials available.

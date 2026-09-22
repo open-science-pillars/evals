@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 290,
+  "chars": 3638,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response uses the Atlantic atlExt value (0.666 PW) for the RAPID comparison with the scope explicitly named, correctly flags the 1.098 PW full-circle figure as not RAPID-comparable, and cites both the gotcha concept and the recipe (including its 0.8\u20131.4 PW band)."
+    }
+  },
+  "pass": false
+}

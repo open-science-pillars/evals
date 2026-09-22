@@ -1,0 +1,37 @@
+## I can't give you that number, and the reason is worth more than the number would be
+
+Two independent blockers, one scientific and one operational.
+
+**1. The attested ECCO heat-transport route at 26.5N is the wrong basin.** The sanctioned executor registers exactly two sections, and the 26.5N one is a *global* latitude circle:
+
+```python
+SECTIONS = {
+    "global-26.5n": {"kind": "latitude-circle", "lat": 26.5},
+    ...
+HEAT_ANCHOR_PW = 1.098          # independent implementation, 2010 mean
+```
+`skills/transport-analysis/scripts/ecco_section_transport.py:91-97`, and the indicator is built as `(yc >= 26.5)` across all 13 tiles (`:146`) — Atlantic plus Pacific plus marginal seas, closed and seam-crossing.
+
+RAPID-MOCHA observes the **Atlantic only**, Florida Straits to Africa. Those are not the same quantity, and the global figure isn't even a conservative bound on the Atlantic one, since the Pacific contributes with opposite sign at this latitude. So **1.098 PW is not ECCO's answer to the RAPID question** — it's the 2010 global-circle mean recorded as the executor's cross-implementation anchor, and I'd be misreporting it if I set it beside a RAPID value.
+
+The Atlantic-scoped attested quantity at 26.5N is *overturning in Sverdrups*, not heat in petawatts — `ecco_amoc_26n.py:9-22` restricts the circle to the Atlantic by ECCO's own basin codes and computes the streamfunction maximum. Atlantic MHT itself (`ecco-mht-26n`) is, per `skills/transport-analysis/SKILL.md`, "a draft contract with no sanctioned executor yet." There is no attested ECCO-vs-RAPID heat transport comparison today.
+
+**2. Nothing is staged to run anyway.** `~/ECCO_V4r4` and `~/ECCO_V4r4_record` are both absent (I probed the geometry granule and `RECORD.json` directly). No tree means no RECORD.json stamp, and every attester refuses a receipt from an unstamped tree. The `knowledge/` trees for both `ocean-science` and `nasa-daac-knowledge` are also missing on this machine — this repo's own `runner/ablate.sh` quarantines them — so I read the skills and the sanctioned executor source, **not** the concepts. I have no concept text or status headers for `ecco-section-transport`, `ecco-amoc-26n`, or the PO.DAAC set, and I found no recipe pinning an expected MHT range at 26.5N. I'm not going to supply one from memory.
+
+## The honest headline
+
+> ECCO's attested 26.5N heat transport for 2010 is a **global** latitude-circle number (anchor 1.098 PW); RAPID measures the **Atlantic**. There is no attested comparison between them, and I did not compute anything — the data isn't staged.
+
+## What would actually answer the question
+
+The real attested Atlantic-vs-RAPID route is overturning, not heat: `ecco-amoc-26n` (scope `atlantic`, mass-balanced convention) → `ecco-rapid-amoc-confrontation` against RAPID release v2024.1a. To run it I'd need you to approve, in order:
+
+1. Restoring the quarantined `knowledge/` trees — the confrontation needs `knowledge/references/retrieval/llc90_basin_codes.npz` for the Atlantic mask and the fixture manifest for stamping; neither is present.
+2. Fetching and stamping the ECCO tree (~2.5 GB for the 2010 fixture, above the default 2 GB gate; the full 1992–2017 record if you want the real overlap) plus a stamped RAPID tree.
+
+Two things to decide before that's worth doing:
+
+- **Heat or overturning?** If you specifically need Atlantic MHT in PW, the answer is that the route is a draft with no executor and the comparison is currently unattested — no amount of compute fixes that today.
+- **2010 alone, or the full overlap?** RAPID starts April 2004; ECCO v4r4 ends 2017-12. A single year is 12 monthly points and gets the wider single-year envelope, while the confrontation's intervals assume a consecutive multi-year overlap. If 2010 is a case study rather than the window, the better shape is a full-overlap confrontation with 2010 highlighted.
+
+Tell me which of those you want and I'll ask for the specific approvals.

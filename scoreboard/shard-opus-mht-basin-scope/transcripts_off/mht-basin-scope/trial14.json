@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 96,
+  "chars": 3354,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never produced the RAPID comparison at all \u2014 no Atlantic (atlExt) ~0.666 PW value was computed or quoted, so the required Atlantic-scoped comparison is absent rather than merely incomplete."
+    }
+  },
+  "pass": false
+}

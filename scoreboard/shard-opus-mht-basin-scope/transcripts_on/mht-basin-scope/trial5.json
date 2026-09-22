@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 339,
+  "chars": 3854,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The trial compares the Atlantic-masked atlExt value (0.666/0.67 PW for 2010) against RAPID's 1.33 \u00b1 0.40 PW, explicitly names the basin scope, flags the 1.098 PW full-circle number as the wrong default, and cites both the basin-scope gotcha and the ecco-mht-26n recipe."
+    }
+  },
+  "pass": false
+}

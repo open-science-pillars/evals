@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 150,
+  "chars": 3225,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response identifies 0.666 PW (atlExt, Atlantic-only) as the RAPID-comparable value with scope explicitly named, explicitly flags that quoting the 1.098 PW global latitude-circle value against RAPID would be the key error, and cites both the ecco-mht-26n recipe and the ecco-mht-basin-scope gotcha; it never mislabels the full-circle number as the 26.5N transport."
+    }
+  },
+  "pass": true
+}

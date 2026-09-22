@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 371,
+  "chars": 3954,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response correctly avoids equating the 1.098 PW global-circle value with RAPID, but it never produces the required Atlantic (atlExt) ~0.666 PW value or any RAPID comparison, and it explicitly states it could not cite the gotcha or recipe concepts because the knowledge trees were missing."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,28 @@
+I can't give you that headline number honestly. Here's why, and what I'd need.
+
+## The quantity mismatch
+
+RAPID-MOCHA's MHT at 26.5°N is **Atlantic-only** — Florida Straits to Africa. The only attested 26.5°N heat transport in the installed ocean-science bundle is `global-26.5n`, which the executor's section registry defines as *"the full latitude circle at 26.5 north, closed and seam-crossing"* — all basins, Pacific and Indian included (`skills/transport-analysis/scripts/ecco_section_transport.py:91-95`).
+
+Those are different quantities. Differencing them would be a basin-scope error dressed up as a validation, and it's exactly the trap the transport skill's comparison discipline names.
+
+The Atlantic-scope computation that *would* answer your question, `ecco-mht-26n`, is documented as **a draft contract with no sanctioned executor yet** (`skills/transport-analysis/SKILL.md:134-138`). There is no attested path to an Atlantic MHT at 26.5°N in this package today.
+
+## And the attested RAPID confrontation isn't heat
+
+`ecco-rapid-amoc-confrontation` (`skills/compare-obs/SKILL.md:90-108`) confronts ECCO against RAPID v2024.1a on **overturning volume transport in Sv**, not heat in PW. It binds a receipt of `ecco-amoc-26n` at `scope atlantic`. So the one attested ECCO↔RAPID comparison at this latitude is a different variable from the one you asked about.
+
+## What I did not do
+
+I attempted the attested global section-transport run and it was blocked — the `uv run` call needs approval I wasn't granted, so there's no receipt and I won't quote a number as a result. For the record, the executor's docstring carries a cross-implementation **anchor** of 1.098 PW for the 2010 global mean at 26.5°N (via `ecco_v4_py calc_meridional_heat_trsp`). That is a code-level pass bar for a *global* circle, not a run output and not the Atlantic figure — please don't let it stand in for your headline number.
+
+## To actually get you something
+
+Two routes, both needing your go-ahead:
+
+1. **Attested, but global** — approve Bash and I'll run `ecco_section_transport.py --section global-26.5n --year 2010` plus its attester, giving a receipted 2010 global MHT at 26.5°N. Honest number, but still not RAPID-comparable.
+2. **Attested, and RAPID-comparable, but volume not heat** — run `ecco_amoc_26n.py --scope atlantic` over the RAPID overlap and the confrontation on top. That yields a receipted bias/RMSD/correlation against RAPID in Sv.
+
+Either way I'd also need to know whether a stamped ECCO tree (`~/ECCO_V4r4` with `RECORD.json`) is staged here — I can't list outside the working directory to check, and every attester refuses a receipt from an unstamped tree.
+
+If an Atlantic MHT in PW is what you specifically need, that's a gap in the bundle worth filing against `ecco-mht-26n` rather than something I should improvise around.

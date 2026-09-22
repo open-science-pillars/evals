@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 144,
+  "chars": 3328,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript produced no RAPID comparison at all and never reported the Atlantic (~0.666 PW) value, instead only describing a scope gap and declining to compute, so the required Atlantic-scoped comparison with cited gotcha and recipe is absent."
+    }
+  },
+  "pass": false
+}

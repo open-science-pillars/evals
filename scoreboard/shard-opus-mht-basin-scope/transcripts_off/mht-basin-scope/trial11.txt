@@ -1,0 +1,30 @@
+## I can't give you that comparison honestly — the one number available is the wrong basin
+
+Here's what I found before computing anything.
+
+**There is no attested ECCO MHT at 26.5N.** The `ecco-mht-26n` contract is a **draft with no sanctioned executor** (`ocean-science:transport-analysis`). The skill names one attested route at that latitude instead: the heat transport carried in the `ecco-section-transport` receipt for section `global-26.5n`.
+
+**That section is the global latitude circle, not the Atlantic.** From the sanctioned executor (`skills/transport-analysis/scripts/ecco_section_transport.py:91-95`), the registered section builds its indicator as `yc >= 26.5` over all 13 tiles — a closed, seam-crossing circle around the whole planet. RAPID-MOCHA measures the **Atlantic** at 26.5N, Florida to Africa. Quoting the global circle against RAPID is a basin-scope error: the Pacific contributes its own transport at that latitude and is inside the global number.
+
+**The attested RAPID confrontation is overturning, not heat.** `ecco-rapid-amoc-confrontation` (`ocean-science:compare-obs`) consumes an `ecco-amoc-26n` receipt at `scope: atlantic` and scores the mass-balanced streamfunction maximum in Sv. Nothing in the package attests an MHT-versus-RAPID comparison.
+
+### The number I do have, labelled for what it is
+
+**1.098 ± 0.03 PW** — the 2010 mean **global** meridional heat transport at 26.5N, recorded from an independent implementation (`ecco_v4_py.calc_meridional_heat_trsp`, the ocean-science transport golden) as the anchor constant `HEAT_ANCHOR_PW` at `ecco_section_transport.py:97-98`.
+
+That is a code constant I read out of the executor, **not** a value from an attested receipt, and it is not the RAPID quantity. I'm not going to put it next to a RAPID figure.
+
+### Two further blockers on actually running it
+
+- **No data staged.** No `~/ECCO_V4r4` tree exists (`RECORD.json` absent at both candidate homes). Every attester refuses a receipt from an unstamped tree, so even the global section can't produce an attested number here.
+- **No knowledge bundle reachable.** I searched the running plugin roots — `ocean-science/0.9.0` has `skills/` but no `knowledge/` tree; `core/0.6.0/knowledge/` and the `nasa-daac-knowledge` provider bundle (`knowledge/podaac/...`, a declared dependency at `plugin.json:8-10`) are not present. `claude plugin list --json` wasn't approved, so I couldn't read the installer record. That means the expected range, the spread, and the RAPID comparison discipline for this section can't be cited — and both skills forbid hardcoding or recalling them.
+
+### What would unblock a real answer
+
+1. Stage the ECCO science record and stamp it with `tools/science_record_verify.py --stamp`, plus the RAPID v2024.1a tree.
+2. Run `ecco_amoc_26n.py --scope atlantic` covering 2010, then `ecco_rapid_amoc_confrontation.py` and its attester — that gives an **attested AMOC (Sv)** comparison against RAPID for 2010.
+3. For heat specifically, the MHT contract needs an executor written at `scope: atlantic` first. Note that an Atlantic-only section at 26.5N is mass-unbalanced, so its heat transport is a temperature transport relative to a stated reference — that reference has to be declared, unlike the global circle where net mass transport is ~zero.
+
+One thing that is *not* a problem: 2010 sits inside RAPID's record (from April 2004), so the periods do overlap. A single-year mean would still need the wider single-year envelope rather than a multi-year spread.
+
+Want me to set up the Atlantic-scope AMOC confrontation for 2010 instead, since that one is actually attested?

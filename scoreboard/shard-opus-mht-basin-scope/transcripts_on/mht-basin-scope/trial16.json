@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 161,
+  "chars": 3685,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The transcript compares RAPID against the Atlantic atlExt value (~0.666/0.67 PW) with the basin scope explicitly named, explicitly rejects the 1.098 PW full-circle number as non-RAPID-comparable, and cites both the ecco-mht-basin-scope gotcha and the ecco-mht-26n recipe."
+    }
+  },
+  "pass": false
+}

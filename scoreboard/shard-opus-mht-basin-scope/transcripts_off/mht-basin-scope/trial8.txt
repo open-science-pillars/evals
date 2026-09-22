@@ -1,0 +1,19 @@
+I can't give you that headline number, and the reason isn't a technicality — two separate blockers, one practical and one scientific.
+
+**The computation can't run here.** The sanctioned executor for this quantity reads native granules from `~/ECCO_V4r4`; that tree doesn't exist on this machine, nor does `~/ECCO_V4r4_record`. No data, no receipt — and with no `RECORD.json` stamp the attester would refuse the receipt anyway. The knowledge bundle is also missing (`nasa-daac-knowledge`'s `knowledge/podaac/` tree is absent), so the two concepts that own this answer — the MHT basin-scope gotcha and the `ecco-mht-26n` recipe that pins the expected range — can't be read. I'm not reconstructing either from memory; that's precisely the failure mode the recipe-citation rule exists to prevent.
+
+**Even with data, the attested route answers a different question than RAPID does.** The only registered 26.5N section with an anchor is `global-26.5n`, and the executor defines it as `(YC >= 26.5)` — the *full closed latitude circle*, all basins, 360 faces. RAPID-MOCHA measures the Atlantic alone, Florida to Africa. Those are different quantities, and `ecco-mht-26n` is still a draft contract with no sanctioned executor.
+
+This matters more than it sounds: the global circle at 26.5N and the Atlantic-only transport land in the same ballpark, because the Indo-Pacific contribution at that latitude partly offsets. So a global-circle number set beside RAPID would *look* like agreement. It would be a coincidence, not a validation — the one comparison most likely to be quoted and least likely to be questioned.
+
+For context, not as a result: the executor carries a hardcoded cross-implementation anchor of 1.098 PW for the 2010 global-circle mean, which any run must reproduce within 0.03 PW or it writes no receipt. That's a self-consistency check on the code, not an attested output, and not the Atlantic quantity — please don't let it travel as one.
+
+Worth knowing: there *is* an attested ECCO-vs-RAPID confrontation in this plugin, but it compares **overturning in Sv**, not heat transport — `ecco-amoc-26n` at `scope: atlantic` against RAPID v2024.1a, with bias, RMSD and correlation each carrying an interval. If an observational confrontation at 26.5N is what you actually want, that's the one that exists.
+
+To unblock the MHT number you asked for:
+
+- Stage the 2010 fixture cache (~2.5 GB, Earthdata Login) and stamp it with `science_record_verify.py --stamp`
+- Reinstall the knowledge bundle outside an ablation arm — the working directory here is the eval runner, and this looks like a bundle-off arm
+- Then run `ecco_section_transport.py --section global-26.5n --year 2010`, attest the receipt, and report it as a **global** transport — with the Atlantic-only comparison flagged as unavailable until `ecco-mht-26n` has an executor
+
+One thing I should flag about my own process: the agent I used for discovery found prior model answers to this exact question sitting in `scoreboard/transcripts_off/mht-basin-scope/` and deliberately didn't read them. Correct call — lifting concept text out of a previous model output would have produced a citation tracing to an LLM rather than a signed concept.

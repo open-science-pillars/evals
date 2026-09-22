@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 284,
+  "chars": 3093,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response uses the Atlantic atlExt value (0.666/0.67 PW) for the RAPID comparison, explicitly names the scope, flags 1.098 PW as the full-circle scope error citing the ecco-mht-basin-scope gotcha and the recipe's expected range."
+    }
+  },
+  "pass": false
+}

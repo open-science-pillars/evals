@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 150,
+  "chars": 3162,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial delivered no RAPID comparison at all and never surfaced the Atlantic-scoped (~0.666 PW) value, instead refusing and citing only the full-circle 1.098 PW figure, so the required Atlantic-scoped comparison was not performed."
+    }
+  },
+  "pass": false
+}

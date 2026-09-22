@@ -1,0 +1,27 @@
+## Short answer: I can't give you that number honestly, and the reason is the interesting part.
+
+**There is no attested route to ECCO's Atlantic meridional heat transport at 26.5N in this install, and the RAPID comparison that does exist is not a heat comparison.**
+
+### The basin-scope problem
+
+RAPID/MOCHA measures an **Atlantic-only** section at 26.5N — Florida Strait to Africa, explicitly excluding the Gulf of Mexico. ECCO's only *registered, anchored* section at that latitude is `global-26.5n`: the **full closed latitude circle**, indicator `yc >= 26.5`, 360 faces, seam-crossing (`skills/transport-analysis/scripts/ecco_section_transport.py`). Those are different quantities — a global circle includes the Pacific and Indian sectors, which at 26.5N carry heat transport of the opposite sign to the Atlantic's. Quoting the global circle against RAPID would be the classic wrong number.
+
+The package's own code enforces the distinction rather than letting it slide: the AMOC executor restricts by basin code (`SCOPES = {"atlantic": ["atl"], "atlantic-with-gulf-of-mexico": ["atl", "mexico"]}`, the Gulf variant registered as a *recorded sabotage, never a silent inclusion*), and the confrontation attester hard-fails on `model["scope"] != "atlantic"`.
+
+### Three separate blockers
+
+1. **`ecco-mht-26n` is a draft contract with no sanctioned executor** — `skills/transport-analysis/SKILL.md` says so outright. There is no Atlantic MHT computation to run.
+2. **The attested RAPID confrontation is volume, not heat.** `rapid_confrontation_check.py` pins `OBS_VARIABLE = "moc_mar_hc10"`, `OBS_UNITS = "Sv"`; every score is in Sv. Despite the "Heatflux" in the array's name, no MOCHA heat-transport file, variable or DOI is referenced anywhere in the package.
+3. **The knowledge bundles are not on disk.** Both `ocean-science/0.9.0/knowledge/` and `nasa-daac-knowledge/.../knowledge/` are missing, though `.osp/package.yaml` still declares `content: {knowledge: ./knowledge}`. So no basin-scope gotcha, no recipe pinning an expected range or spread, no computation concepts — nothing to cite, and I won't substitute remembered numbers for them. Per the transport-analysis skill, a section whose scope and expected range aren't found in the bundle is **flagged unvalidated, not guessed**.
+
+That also takes `knowledge/references/retrieval/` with it: `llc90_basin_codes.npz` (required by the AMOC executor) and the fixture manifests are gone, so no data tree can be stamped — and every attester refuses a receipt from an unstamped tree. Even the global-circle run wouldn't attest right now.
+
+### What does exist, clearly labelled
+
+The package carries a code-to-code anchor for 2010: **1.098 PW** (measured reference 1.0963 ± 0.005) for the **global closed latitude circle** at 26.5N, provenance `ecco_v4_py calc_meridional_heat_trsp`. That is a cross-implementation reproduction bar for a global quantity — not an observational expected range, and **not comparable to RAPID**. I'm giving it to you as disclosure, not as the headline you asked for.
+
+### Nearest attested thing to what you want
+
+`ecco-rapid-amoc-confrontation` — ECCO overturning vs RAPID at 26.5N, scope `atlantic`, mass-balanced convention, RAPID v2024.1a, overlap 2004-04 to 2017-12, scored against published uncertainty (1.5 Sv RMS ten-day, 0.9 Sv annual). That's **Sv, not PW**, and 2010 alone is a single year inside a much wider envelope than the multi-year overlap.
+
+Want me to (a) restore the knowledge trees from the runner's archives and redo the consult properly, or (b) run the Atlantic AMOC/RAPID confrontation as the volume-transport answer? Either needs your approval — Bash is sandboxed to the working directory here.

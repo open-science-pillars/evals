@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 145,
+  "chars": 2900,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant avoided the full-circle trap but never produced the Atlantic-scope (~0.666 PW) value or any RAPID comparison, and cited no gotcha/recipe concepts, so the required deliverable is absent."
+    }
+  },
+  "pass": false
+}

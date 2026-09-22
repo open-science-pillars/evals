@@ -1,0 +1,34 @@
+## Bottom line
+
+**I did not compute anything** — and the number you'd most likely have been handed is the wrong one.
+
+Headline, from the recorded 2010 anchors:
+
+> **ECCO v4r4 Atlantic MHT at 26.5°N, 2010 annual mean: 0.666 PW — roughly half the ~1.2–1.3 PW the RAPID/MOCHA array measures there.**
+
+## The scope trap
+
+There are two different 2010 numbers at 26.5°N, and only one is RAPID-comparable:
+
+| Scope | 2010 mean | RAPID-comparable? |
+|---|---|---|
+| Full latitude circle (no basin mask) | **1.098 PW** | **No** |
+| Atlantic (`atlExt`) | **0.666 PW** | Yes |
+
+`knowledge/computations/ecco-mht-26n.md` (ocean-science, status **draft**) states the discipline explicitly: `basin` unset means the full latitude circle, "never a RAPID-comparable number," and records both anchors with global = the basin sum. The independent implementation behind the stable section-transport concept (`verification/transport_analysis.py`) carries the same two constants and labels `atlExt` "the RAPID-comparable scope."
+
+The 1.098 PW figure is well-attested — `knowledge/computations/ecco-section-transport.md` (status **stable**, human-verified three times) records a 2010 reference run of the closed 26.5°N circle at **+1.0963 PW** against the golden's 1.098. It's just a global number. RAPID measures the Atlantic only; 1.098 PW includes the Pacific and Indian sectors, so quoting it against RAPID would be a basin-scope error, not a model bias.
+
+## Provenance caveats on that headline
+
+Three things weaken it, and you should know all three:
+
+1. **Nothing was computed this session.** `~/ECCO_V4r4`, `~/ECCO_V4r4_record` and `~/RAPID_26N` are all absent. The 0.666 PW is a *recorded anchor*, not a fresh run.
+2. **No sanctioned executor exists for MHT.** `ecco-mht-26n` is a draft contract; the stub notes the receipt should echo `basin` back so an attester can mechanically refuse a global-circle value presented against RAPID. The only attested heat route today is the global circle — which is the one you can't use here.
+3. **The RAPID side is not a bundle number.** The bundle's attested RAPID confrontation (`ecco-rapid-amoc-confrontation.md`, stable) is **overturning in Sv only** — bias/RMSD/correlation on `moc_mar_hc10`, published uncertainty 1.5 Sv ten-day / 0.9 Sv annual. It carries no heat transport. The recipe that owns the MHT/RAPID discipline, `knowledge/podaac/recipes/ecco-mht-26n.md`, lives in the PO.DAAC provider bundle, which I could not reach on this machine (Bash directory listing and `claude plugin list` were both denied; I searched the ocean-science 0.9.0 and core 0.6.0 roots). **So the ~1.2–1.3 PW RAPID figure above is general literature knowledge, not a cited concept** — treat it as indicative until the recipe is readable.
+
+One more flag worth having: 0.666 PW sits *below* the recipe's 0.8–1.4 PW Atlantic band that the golden mirrors — and the golden deliberately does not assert that multi-year band on single-year values. A one-year mean gets a wider envelope than the band implies, so "ECCO runs low at 26.5°N" is the right reading, but 2010 alone doesn't quantify by how much.
+
+## To get a real number
+
+Stage the 2010 fixture cache (~2.5 GB via earthaccess, then stamp it with `science_record_verify.py`) and I can run the attested section transport — though for a *RAPID-comparable* heat number you'd also need the MHT computation extracted from the golden, since no Atlantic-scoped heat executor is sanctioned yet. If you want the comparison that *is* fully attested today, that's overturning in Sv, not heat: `ecco-amoc-26n` → `ecco-rapid-amoc-confrontation`, which needs the RAPID v2024.1a tree as well.

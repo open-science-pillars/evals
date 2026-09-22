@@ -1,0 +1,35 @@
+I could not produce an attested number, and I don't want to hand you a headline figure that looks computed when it isn't. Here's exactly where it stands.
+
+## The computation didn't run
+
+Both blockers are environmental:
+
+- The sanctioned executor (`ecco_section_transport.py`) requires approval to invoke in this session.
+- Its `--data-root ~/ECCO_V4r4` is outside this session's sandbox (`/home/user/run/evals`), so the 2010 fixture cache is unreachable and unverifiable — and every attester refuses a receipt from a tree without the `RECORD.json` stamp anyway.
+
+## The bigger problem: there is no attested MHT-vs-RAPID route
+
+Even with data staged, the chain you'd want doesn't exist yet:
+
+1. **`ecco-mht-26n` is a draft with no executor.** `knowledge/computations/ecco-mht-26n.md` (status: `draft`) is an explicit stub — "to be extracted from the ocean-science golden `verification/transport_analysis.py`." No executor, no attester, no receipt.
+
+2. **The one attested heat number at 26.5°N is the wrong scope.** `ecco-section-transport` (status: `stable`, human-verified 2026-09-20) computes section `global-26.5n` — the *closed global latitude circle*, 360 faces, 2010 heat transport **+1.0963 PW**. The draft MHT concept warns in as many words that `basin` unset means the full latitude circle, **"never a RAPID-comparable number."** RAPID measures the Atlantic. Quoting 1.0963 PW against RAPID is precisely the `ecco-mht-basin-scope` trap — the future receipt is spec'd to refuse it mechanically.
+
+3. **The RAPID-scope anchor is second-hand and draft.** The draft concept records 2010 Atlantic `atlExt` = **0.666 PW** (global circle 1.098 PW = the basin sum). But the concept that *owns* that anchor, `knowledge/podaac/recipes/ecco-mht-26n.md`, lives in the PO.DAAC provider bundle, which I could not reach — `claude plugin list --json` is not approved here and the cache is unlistable, so I couldn't resolve its installed version. I searched only the `ocean-science` 0.9.0 and `core` 0.6.0 roots. So 0.666 PW is a draft number quoted through an intermediary, not read from its source and not attested.
+
+4. **The attested RAPID confrontation is overturning, not heat.** `ecco-rapid-amoc-confrontation` scores the mass-balanced streamfunction maximum in **Sv** against `moc_mar_hc10`. There is no attested confrontation for MHT in **PW** at all.
+
+## The single number, honestly labeled
+
+If you want one figure to carry forward provisionally: **ECCO v4r4 Atlantic MHT at 26.5°N, 2010 ≈ 0.67 PW** — draft, unattested, second-hand, and with no matching RAPID score computed. I'd treat it as a placeholder, not a result.
+
+One further caveat on the framing itself: a single calendar year gets the wider single-year envelope, and 2010 is a poor choice for a one-year model-obs comparison — it contains RAPID's well-known overturning downturn (general domain knowledge, not a bundle fact; I couldn't reach a concept that pins it). A multi-year overlap mean would be a far more meaningful comparison than 2010 alone.
+
+## To get you a real number
+
+Two routes, depending on what you actually want:
+
+- **Attested today, but overturning in Sv:** stage `~/ECCO_V4r4_record` and the stamped RAPID v2024.1a tree, run `ecco_amoc_26n.py --scope atlantic`, then `ecco_rapid_amoc_confrontation.py` + `rapid_confrontation_check.py`. That gives bias, RMSD and correlation each with intervals, fully attested.
+- **Heat transport in PW:** needs the `ecco-mht-26n` executor extracted from the golden first. That's unbuilt work, not a run.
+
+Tell me which you want and whether you can approve executor runs plus a readable data root, and I'll take it from there.

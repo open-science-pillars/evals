@@ -1,0 +1,26 @@
+I worked this through the plugin's knowledge-first path (`meridional-transport` → `transport-analysis` → `compare-obs` → `consult-knowledge`). The honest result: **I can't give you an attested headline number**, and the reason is structural, not just environmental.
+
+## Why there's no number
+
+**1. No sanctioned MHT computation exists.** `knowledge/computations/ecco-mht-26n.md` is `status: draft` with an empty `executor:` field — it's a stub awaiting extraction from the `transport_analysis` golden. The only attested route to a 26.5N heat transport is `ecco-section-transport` with `--section global-26.5n`, and that section is the **closed global latitude circle**. The draft concept is explicit that this is "never a RAPID-comparable number" — RAPID-MOCHA observes the Atlantic from Florida to Africa only.
+
+**2. Nothing could be run here anyway.** Bash in this session is confined to `/home/user/run/evals`, so the executors under the plugin cache can't be invoked, and neither `~/ECCO_V4r4` (2010 fixture, ~2.5 GB) nor `~/ECCO_V4r4_record` is staged — no `RECORD.json` stamp, which every attester refuses without.
+
+**3. The provider bundle isn't reachable.** `claude plugin list --json` is blocked, and ocean-science 0.9.0 copies nothing from `nasa-daac-knowledge`, so `knowledge/podaac/recipes/ecco-mht-26n.md` and the `ecco-mht-basin-scope` gotcha — the concepts that own the expected range, the spread, and the RAPID value itself — could not be read. I'm not going to supply a RAPID heat-transport number from memory; the recipe is the authority and these skills forbid hardcoding one. Bundles searched: ocean-science 0.9.0 and core 0.6.0 roots only.
+
+## What the bundle does record for 2010
+
+| | value | status |
+|---|---|---|
+| Global 26.5N latitude circle | **+1.0963 PW** (ecco_v4_py cross-check 1.098) | `ecco-section-transport`, stable, human-verified ×3 |
+| Atlantic only (`atlExt`) | 0.666 PW | `ecco-mht-26n`, **draft, unreviewed** |
+
+Both are recorded reference runs from 2026-09-01 — not runs I performed, with no receipt or attester verdict in this session. The Atlantic figure is the RAPID-scoped one, and it's the one carrying draft status.
+
+The trap worth naming: quoting 1.10 PW against RAPID would be comparing a global circle against an Atlantic array. That's the single biggest error available on this question.
+
+## What does exist attested at this latitude
+
+`ecco-rapid-amoc-confrontation` (stable, human-verified) is a real confrontation against RAPID release v2024.1a — but it scores **overturning in Sverdrups, not heat**. Model mass-balanced mean 14.47 Sv over 1992–2017, 165-month overlap from 2004-04. If a RAPID comparison is what you actually need, that's the route that has a sanctioned executor and attester today.
+
+To get the heat number properly: stage and stamp the fixture tree (`science_record_verify.py --stamp`), allow bash outside the evals directory, then run `ecco_section_transport.py --section global-26.5n --year 2010` + its attester. That still yields the global circle — the Atlantic-scoped MHT needs the draft computation extracted first. Note also that a single year sits in a wider envelope than a multi-year mean, so even once it runs, 2010 alone wants that caveat.

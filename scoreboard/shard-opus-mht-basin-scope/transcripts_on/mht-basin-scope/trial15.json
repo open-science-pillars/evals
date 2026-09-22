@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 213,
+  "chars": 3322,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The comparison uses the Atlantic atlExt value (~0.666/0.67 PW) with scope explicitly named, flags the 1.098 PW full-circle value only as a trap to avoid, and cites both the basin-scope gotcha and the ecco-mht-26n recipe with correct arithmetic against RAPID's ~1.33 PW."
+    }
+  },
+  "pass": false
+}

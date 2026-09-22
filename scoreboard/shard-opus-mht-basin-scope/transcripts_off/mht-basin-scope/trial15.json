@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 238,
+  "chars": 3040,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent correctly flagged the basin-scope trap and refused to use 1.098 PW, but it never produced the Atlantic (atlExt) ~0.666 PW value or any RAPID comparison, so the rubric's pass condition \u2014 a comparison using the Atlantic-scoped transport \u2014 is unmet."
+    }
+  },
+  "pass": false
+}

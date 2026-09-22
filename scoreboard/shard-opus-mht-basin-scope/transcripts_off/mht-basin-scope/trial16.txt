@@ -1,0 +1,23 @@
+## I can't give you that number, and the reason matters
+
+Three independent blockers, in order of how fundamental they are.
+
+**1. The quantity RAPID measures has no sanctioned computation in this package.**
+
+`ecco-mht-26n` is a **draft contract with no executor** (transport-analysis `SKILL.md:134-138`). The only attested route to a heat number at 26.5N is the section-transport computation on section `global-26.5n` — and that is the *closed global latitude circle*: the executor builds its indicator as `(YC >= 26.5)` across all 13 tiles (`ecco_section_transport.py:146`), with the recorded anchor being "2010 global mean meridional heat transport 1.098 PW" (`:57`, `:97`).
+
+RAPID-MOCHA measures the **Atlantic only**, Florida to Africa. The package says so itself in `tutorials/quickstart.md:33-36`: the Atlantic 2010 expected value is 0.666 PW, and "the full-circle number is a different quantity."
+
+So handing you `1.098 PW vs RAPID` would be a basin-scope error dressed up as a comparison. The attested RAPID confrontation that *does* exist (`ecco-rapid-amoc-confrontation`) is **overturning in Sv**, not heat in PW.
+
+**2. The knowledge bundles are not on this machine.** Both `knowledge/` trees — `ocean-science/0.9.0/knowledge/` and `nasa-daac-knowledge/.../knowledge/` (where `knowledge/podaac/...` resolves) — are absent. That means the recipe `knowledge/podaac/recipes/ecco-mht-26n.md` (expected range, comparison spread, single-year envelope), the basin-scope gotcha, and RAPID's own published value and measurement uncertainty are all unreadable. I'm not filling those in from memory — the recipe is the authority and it isn't here. The 0.666 PW above is tutorial prose, a pointer to the recipe, not the recipe's range.
+
+**3. I never got to run anything.** The sanctioned executor call came back "requires approval," twice.
+
+## What I can actually do, if you want it
+
+- **Approve the bash calls**, and I'll run the attested `global-26.5n` section transport for 2010 plus its attester, and report the **global** MHT at 26.5N with its receipt — labeled as global, not as a RAPID comparison.
+- **For a real RAPID confrontation**, the attested path is `ecco-amoc-26n --scope atlantic` → `ecco_rapid_amoc_confrontation.py`, which gives bias/RMSD/correlation against RAPID v2024.1a. That's overturning strength in Sv. It needs the 1992–2017 record tree and a stamped RAPID tree, not just the 2010 fixture.
+- **Restore the bundles** (the eval harness in `runner/ablate.sh` moved them aside) and an Atlantic-scope MHT answer becomes citable — though it would still need an executor written for `ecco-mht-26n`, which doesn't exist yet.
+
+A single headline "ECCO vs RAPID heat transport" number is the one thing this package is currently built to refuse.

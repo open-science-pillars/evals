@@ -1,0 +1,34 @@
+I couldn't get you an attested number, and there's a second problem that matters more than the plumbing. Both below.
+
+## What blocked the computation
+
+The sandbox in this session confines reads and commands to `/home/user/run/evals`. Every attempt to run the sanctioned executor was refused:
+
+```
+uv run .../skills/transport-analysis/scripts/ecco_section_transport.py \
+  --section global-26.5n --year 2010 --data-root ~/ECCO_V4r4
+→ This command requires approval
+```
+
+I also couldn't reach `~/ECCO_V4r4` to confirm the 2010 fixture tree is even staged, or read the concept files under `knowledge/computations/` (so my citations below are to the skill manifests and the executor's own docstring, which *were* readable).
+
+## The scope problem
+
+Even unblocked, the attested path doesn't answer your question as asked:
+
+- **`ecco-mht-26n` — meridional heat transport at 26.5N — is a draft contract with no sanctioned executor** (`skills/transport-analysis/SKILL.md`). There is no attested ECCO-MHT-vs-RAPID route in this bundle today.
+- The attested heat-transport route at 26.5N is the section transport across **`global-26.5n`, which is the closed *global* latitude circle** — "the full latitude circle at 26.5 north, closed and seam-crossing" (`ecco_section_transport.py` docstring). RAPID-MOCHA measures the **Atlantic basin** section, Florida Strait to Africa. Quoting the global circle against RAPID would be a basin-scope error — the same class of error the bundle registers as a *recorded sabotage* on the overturning side (`atlantic` vs `atlantic-with-gulf-of-mexico`).
+- The confrontation that *is* attested, `ecco-rapid-amoc-confrontation` (`skills/compare-obs/SKILL.md`), compares **overturning in Sv**, not heat transport in PW.
+
+For calibration only, not as an answer: the executor's docstring records an anchor of **1.098 PW** for the 2010 global mean meridional heat transport at 26.5N, from the independent `ecco_v4_py calc_meridional_heat_trsp` implementation. That is the global circle. It is not the Atlantic, it is not something I computed, and it is not comparable to RAPID.
+
+Separately, 2010 is a poor choice for a single-year headline: it contains the observed 2009/10 AMOC downturn, and a single-year mean carries a much wider envelope than the multi-year mean RAPID comparisons are usually quoted against.
+
+## To unblock
+
+Approve Bash outside the working directory (or tell me the sandbox is off) and confirm `~/ECCO_V4r4` carries its `RECORD.json` stamp — attesters refuse an unstamped tree. Then pick one:
+
+1. **The attested comparison**, in Sv: `ecco_amoc_26n.py --scope atlantic` over the RAPID overlap → `ecco_rapid_amoc_confrontation.py` → `rapid_confrontation_check.py`. That yields a real headline number (bias, with its interval) against RAPID v2024.1a. It needs the record tree `~/ECCO_V4r4_record` and a stamped `~/RAPID_26N`, not the 2010 fixture.
+2. **Heat transport as disclosure**: run `global-26.5n` for 2010 and I report it as the global circle, explicitly not a RAPID comparison.
+
+I'd take option 1 — it's the only route here that produces an attested number answering "how does ECCO compare to RAPID at 26.5N."

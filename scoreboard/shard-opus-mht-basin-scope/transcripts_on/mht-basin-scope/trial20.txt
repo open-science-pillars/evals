@@ -1,0 +1,26 @@
+## ECCO MHT at 26.5°N, 2010
+
+**Headline: ECCO is about 0.7 PW low against RAPID — 0.67 PW vs 1.33 PW.**
+
+The number that matters is the **Atlantic-masked** one:
+
+| scope | 2010 mean |
+|---|---|
+| Atlantic (`basin_name="atlExt"`) — RAPID-comparable | **0.666 PW** |
+| full latitude circle (no basin mask) | 1.098 PW |
+
+The full-circle 1.098 PW is *not* the RAPID comparison. `calc_meridional_heat_trsp(ds, lat_vals=26.5)` with no `basin_name` integrates Atlantic + Pacific + Indian; RAPID/MOCHA observes the Atlantic section only. Quoting 1.098 PW against RAPID's ~1.3 PW would fake near-agreement and hide the real offset — that's a high-severity, human-verified trap in the bundle (`knowledge/podaac/gotchas/ecco-mht-basin-scope.md`, stable). The circle decomposes exactly as atlExt 0.666 + pacExt 0.430 + indExt 0.002 = 1.098, which is what the full-circle number is good for: a method check.
+
+**Against RAPID.** RAPID/MOCHA observes ~1.3 PW mean with ~0.4 PW temporal standard deviation (Johns et al. 2011, 2004–2007: 1.33 ± 0.40 PW; published measurement uncertainty ~±0.2 PW on 10-day values). ECCO 2010 Atlantic sits ~0.66 PW below that — bigger than both the observed temporal spread and the array's measurement error, so it's a genuine offset, but not an anomalous one: the recipe states plainly that ECCO v4 Atlantic means sit low of the observed mean.
+
+Two caveats that the single number hides, both required by the comparison discipline:
+- **Periods don't match.** A single ECCO year against a 2004–2007 observed mean. 2010 is also the documented AMOC-minimum year, so part of that 0.66 PW is real ocean, not model bias. ECCO's 2010 Atlantic value falls below the recipe's 0.8–1.4 PW *multi-year* Atlantic band for exactly that reason — single years carry a wider envelope.
+- ECCO v4r4 ships no formal error fields, so there's no model-side uncertainty to put on the 0.67.
+
+**How I got these — I did not run the computation.** Every shell command in this session was refused (the plugin's executors need `uv run`), and the ECCO 2010 fixture cache (~2.5 GB) isn't staged here, so there's no receipt and no attester verdict. The numbers above are the recipe's own recorded reproducing run (2026-07-04, live PO.DAAC 2010 monthly granules), which the golden `verification/transport_analysis.py` asserts, and which the attested section-transport computation independently corroborates on the global circle (+1.0963 PW against the 1.098 anchor, disjoint code paths). Treat them as validated recorded values, not as an attested run I performed.
+
+Worth knowing for a follow-up: there is **no** attested ECCO-vs-RAPID *heat* confrontation in this package — `ecco-mht-26n` is a draft contract with no sanctioned executor. The only scored RAPID confrontation is **overturning in Sv**, and over the full 2004-04–2017-12 overlap it gives bias −3.23 Sv (model 13.96 vs observed 17.20), correlation +0.77 — the same direction of low bias.
+
+Concepts consulted: `knowledge/podaac/recipes/ecco-mht-26n.md` (stable, human-verified), `knowledge/podaac/gotchas/ecco-mht-basin-scope.md` (stable, severity high), `knowledge/podaac/datasets/rapid-mocha.md` (stable), `knowledge/computations/ecco-section-transport.md` (stable), `knowledge/computations/ecco-mht-26n.md` (draft, voiced as such).
+
+If you can give me a shell and a staged `~/ECCO_V4r4` tree, I can run the sanctioned executor and hand you an attested receipt instead.

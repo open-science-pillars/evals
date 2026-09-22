@@ -1,0 +1,27 @@
+I hit a wall before getting a number, and there are two separate reasons — one mechanical, one scientific. The scientific one matters more.
+
+## The blocker that actually changes the answer: basin scope
+
+You asked for one headline number comparing ECCO to RAPID. The attested route in this package can't produce that, because of what's registered at that latitude.
+
+The `ecco-section-transport` computation registers exactly one section at this latitude: **`global-26.5n`** — described in the skill as "the closed latitude circle." Its `results` do carry a heat transport with an anchor, and that's the only attested MHT route today. But it's the **global** zonal integral across 26.5°N: Atlantic *plus* Pacific *plus* Indian sectors.
+
+RAPID-MOCHA measures the **Atlantic alone**, Florida Straits to Africa. Differencing a global latitude-circle heat transport against RAPID's Atlantic MHT isn't a model–observation comparison; it's two different quantities with the same latitude label. That's precisely the basin-scope discipline the transport skill insists on ("the basin scope the observation uses") — and it's why the companion AMOC computation binds `scope` explicitly (`atlantic` vs `atlantic-with-gulf-of-mexico`, the latter recorded as a sabotage, "never a silent inclusion").
+
+The Atlantic-scoped MHT contract, **`ecco-mht-26n`, is a draft with no sanctioned executor yet.** So there is no attested Atlantic MHT at 26.5°N to quote. I'm not going to manufacture one by relabeling the global number.
+
+## The mechanical blocker
+
+I'm sandboxed to `/home/user/run/evals`. Both the executor (`…/ocean-science/0.9.0/skills/transport-analysis/scripts/`) and the granules (`~/ECCO_V4r4`) are outside it, so I couldn't run the executor, read the knowledge concepts, or even confirm the fixture tree exists and carries its `RECORD.json` stamp — the attesters refuse an unstamped tree.
+
+## What I'd recommend
+
+**Run `ecco-amoc-26n` with `scope atlantic`, then the RAPID confrontation.** That is basin-matched, has a sanctioned executor *and* a real attester (`rapid_confrontation_check.py`, which recomputes the mass-balanced maximum and net transport from the per-level transports and checks the 2010 anchor). It yields one attested headline number against RAPID. The catch: it's AMOC strength in **Sv**, not heat transport in **PW**. If a single attested number against RAPID is what you want, this is the one that exists.
+
+Alternatively I run `global-26.5n` for 2010 and report the heat transport as what it is — global, no RAPID difference attached.
+
+Two things to fix regardless of route, since you asked for a single year:
+- **2010 is a bad year to headline alone.** RAPID recorded an anomalous AMOC downturn over winter 2009/10, so a 2010 mean sits well off the multi-year mean and needs the wider single-year envelope, not the multi-year spread.
+- Any heat transport across a mass-unbalanced section needs its **reference temperature stated**; the global closed circle is the only one that's cleanly mass-balanced.
+
+To proceed, I need approval to read the plugin bundle and run the executors against `~/ECCO_V4r4` (2010 fixture, ~2.5 GB) or `~/ECCO_V4r4_record` (1992–2017, needed for an overlap-matched RAPID comparison). Which route do you want — the attested Atlantic AMOC-vs-RAPID number, or the global 26.5°N heat transport reported as global?

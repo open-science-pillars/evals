@@ -1,0 +1,26 @@
+## Short answer
+
+I can't give you an attested comparison number in this environment, and the reason matters more than the number would.
+
+**The headline, with the caveat attached:** ECCO v4r4's **Atlantic** meridional heat transport at 26.5N in 2010 is **0.67 PW** — roughly half the RAPID/MOCHA array's observed value. That ECCO figure is a recorded anchor, not a run I made here (see below), and the RAPID side I could not verify against a concept.
+
+## The trap you would have walked into
+
+The one attested heat-transport number at this latitude in the installed bundle is **+1.0963 PW for 2010** (reference run, section `global-26.5n`, 360 faces; independent implementation 1.098 PW, agreement 0.002 PW) — `ocean-science/0.9.0/knowledge/computations/ecco-section-transport.md`, status stable, human-verified three times.
+
+That number is the **closed global latitude circle** — Pacific plus Indian plus Atlantic. RAPID measures the Atlantic only. Quoting 1.10 PW against RAPID's ~1.2–1.3 PW would look like a near-miss and would be a scope error, not a result.
+
+The draft concept `knowledge/computations/ecco-mht-26n.md` states the split explicitly: *"2010: Atlantic atlExt 0.666 PW; global circle 1.098 PW equal to the basin sum"*, and the scope rule — *"`basin` unset means the FULL latitude circle, never a RAPID-comparable number."* Voiced as it must be: that concept is `status: draft`, unverified, and it defers to a narrative recipe I could not read.
+
+## What blocked a real run
+
+- **No ECCO data.** Neither `~/ECCO_V4r4` (2010 fixture cache) nor `~/ECCO_V4r4_record` exists, and there is no `RECORD.json` stamp. Every attester refuses an unstamped tree, so the sanctioned executor `ecco_section_transport.py` cannot run.
+- **No sanctioned MHT executor exists anyway.** `ecco-mht-26n` is a draft contract with no executor; extraction from the golden hasn't landed.
+- **The provider knowledge bundle is absent.** `knowledge/podaac/` (nasa-daac-knowledge 2026.9.5) is not on this filesystem — so `recipes/ecco-mht-26n.md`, the gotcha `ecco-mht-basin-scope`, and whatever concept owns RAPID's published MHT, period and uncertainty are all unreadable. I'm not quoting RAPID's number from memory against a rule whose text I can't read; my ~1.2–1.3 PW above is general literature recall, explicitly not a cited concept.
+- **The only attested RAPID confrontation here is for volume, not heat** — `ecco-rapid-amoc-confrontation` compares overturning in Sv (ECCO record mean 14.47 Sv, mass-balanced). There is no attested MHT-vs-RAPID confrontation.
+
+Two further caveats that would bind the number even with data: the 26.5N section is **not mass-balanced** in ECCO (global circle net −0.43 Sv; Atlantic about 1.2 Sv southward over the record), so this is a temperature transport relative to a stated reference; and a single 2010 mean sits in a wider envelope than a multi-year mean, though 2010 does fall inside RAPID's coverage, so the periods do overlap.
+
+## To get you a real number
+
+Stage the 2010 fixture cache (~2.5 GB, needs an Earthdata Login), stamp it with `science_record_verify.py`, then run `ecco_section_transport.py --section global-26.5n --year 2010` and its attester. That gives an attested global-circle value. For a genuinely RAPID-comparable Atlantic MHT, the bundle needs either the extracted `ecco-mht-26n` executor or the restored provider bundle. Want me to walk through the staging?

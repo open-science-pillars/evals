@@ -1,0 +1,31 @@
+## The short answer: I can't give you an attested one, and the obvious number is the trap
+
+No computation ran. Three independent blockers, all verified rather than assumed:
+
+- **No shell.** Every `uv run` of the sanctioned executors was denied in this session.
+- **No data.** `~/ECCO_V4r4/RECORD.json` and `~/ECCO_V4r4_record/RECORD.json` do not exist. Every attester in this package refuses a receipt from an unstamped tree, so even with a shell there is nothing to run against. `~/RAPID_26N/.../RECORD.json` is absent too.
+- **No sanctioned MHT executor exists at all.** `knowledge/computations/ecco-mht-26n.md` is a `status: draft` stub: "Stub, not yet sanctioned: to be extracted from the ocean-science golden `verification/transport_analysis.py`."
+
+## The scope trap, which is the substantive point
+
+The only attested route to a 26.5N heat transport today is the `global-26.5n` section in `knowledge/computations/ecco-section-transport.md` (frontmatter `status: stable`, three `human:PaulMRamirez` verified events, `stale_after: 2027-01-04`). Its 2010 reference run:
+
+> global-26.5n, the closed latitude circle, 360 faces: heat transport mean **+1.0963 PW** against the independent implementation's 1.098 … volume mean **−0.43 Sv**
+
+That is the **full latitude circle — every basin at 26.5°N**. RAPID-MOCHA measures one Atlantic section, Florida to Africa. The draft MHT concept states the rule explicitly: `basin` unset "means the FULL latitude circle, **never a RAPID-comparable number**," and it records the extraction requirement that the attester must "refuse a global-circle value presented against RAPID."
+
+So 1.0963 PW is the number this environment can actually hand you, and quoting it against RAPID would be wrong — it is coincidentally close to the observed Atlantic value, which makes it worse, not better. Two further reasons it isn't a heat transport as such: the circle carries −0.43 Sv net volume, so it is mass-unbalanced and the quantity is a temperature transport relative to an unstated reference; and 2010 is a single year, which sits inside a wider envelope than any multi-year mean.
+
+## The number you asked for, with its flags
+
+The Atlantic-only figure is recorded only in the draft concept, quoting the ablated recipe: **2010 Atlantic `atlExt` 0.666 PW** (global circle 1.098 PW = the basin sum). Voiced as its status requires: a draft concept, not yet reviewed, says this.
+
+**Headline, heavily caveated: ECCO's 2010 Atlantic MHT at 26.5°N is ≈0.67 PW, roughly half the ~1.2–1.3 PW RAPID-MOCHA observes.**
+
+The obs side of that sentence is from my own memory, **not** from a concept — I am flagging it rather than laundering it into a citation. The recipe that owns the expected range, the spread and the RAPID comparison discipline (`knowledge/podaac/recipes/ecco-mht-26n.md`) and the `ecco-mht-basin-scope` gotcha are both in the `nasa-daac-knowledge` provider bundle, which is not reachable here — I searched the running `ocean-science` 0.9.0 root (readable) and could not resolve the provider root at any guessed version; directory listing outside `/home/user/run/evals` is sandboxed, and the plugin's own `ecco-scout` agent hit the same wall. A factor-of-two gap is large enough that I would not report it as a model-skill result until that recipe is read: it could equally be a scope or reference-temperature definition difference.
+
+Worth noting: the only attested RAPID confrontation in this package is `ecco-rapid-amoc-confrontation` — **overturning in Sverdrups** (`moc_mar_hc10`, release v2024.1a, doi:10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1, published RMS uncertainty 1.5 Sv on ten-day and 0.9 Sv on annual values). There is no attested heat-transport confrontation. 2010 does fall inside RAPID's 2004-04–2017-12 coverage, so the periods do overlap — that part is fine.
+
+One inconsistency to pass upstream: `ecco-section-transport.md` has `status: stable` in frontmatter but its body placement note says "the concept sits at `status: draft` with no verified event added." I read the frontmatter as authoritative and flagged the conflict rather than resolving it silently.
+
+To get a real number: restore the provider bundle, stage and stamp the 2010 fixture cache, and either extract the MHT executor or run `ecco_section_transport.py` against an Atlantic-scoped registered section — `global-26.5n` is not one.

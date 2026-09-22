@@ -1,0 +1,36 @@
+I can't give you that headline number, and the reason isn't just missing data — the comparison as posed is a scope mismatch. Here's what I found.
+
+## The scope problem
+
+ECCO's **attested** heat transport at 26.5N is across `global-26.5n` — the full, closed latitude circle at 26.5N, all basins. RAPID-MOCHA measures the **Atlantic only**, Florida to Africa. Those are different quantities, and differencing them would be meaningless.
+
+The Atlantic-only MHT concept (`ecco-mht-26n`) is, per the transport-analysis skill, *"a draft contract with no sanctioned executor yet."* So there is no attested ECCO Atlantic MHT at 26.5N to set against RAPID today. The only registered heat sections in the sanctioned executor are `global-26.5n` and `fifteen-s-southeast-atlantic` (`ecco_section_transport.py:91-95`).
+
+The nearest attested ECCO-vs-RAPID confrontation that *does* exist is `ecco-rapid-amoc-confrontation` — but that's **overturning in Sv**, not heat in PW.
+
+## The execution problem
+
+Even for the global circle, I couldn't produce a receipt:
+
+- No ECCO fixture tree is staged (`~/ECCO_V4r4` and `~/ECCO_V4r4_record` don't exist; `runner/fixtures/` is empty), and the attesters refuse a receipt from an unstamped tree.
+- `uv run` on the executor wasn't permitted in this session.
+
+Per the plugin's rule I won't quote a transport without running the attester on a receipt, so I'm not giving you a number as if it were computed.
+
+## What is traceable right now
+
+The sanctioned executor carries its own validation anchor, which I read directly from the hashed code rather than from memory:
+
+> **1.098 PW** — the 2010 mean *global* meridional heat transport at 26.5N, recorded by an independent implementation (`ecco_v4_py.calc_meridional_heat_trsp`), with a ±0.03 PW cross-implementation band (`ecco_section_transport.py:56-58, 97-98`).
+
+That is a pass-bar baked into the code, **not** a receipted run of mine — and it's the global circle, so it is *not* the RAPID comparison you asked for. I'm also not quoting a RAPID value from memory; that number lives in the confrontation receipt, which owns it.
+
+## To actually close this
+
+1. Stage the 2010 fixture cache (~2.5 GB) under `~/ECCO_V4r4` and stamp it with `science_record_verify.py --stamp`.
+2. Run `ecco_section_transport.py --section global-26.5n --year 2010`, then `section_transport_check.py` on the receipt — that gets you an attested **global** 26.5N MHT for 2010.
+3. For a real RAPID comparison, either take the attested **AMOC in Sv** route (`ecco_amoc_26n.py --scope atlantic` + `ecco_rapid_amoc_confrontation.py`, which needs the stamped RAPID v2024.1a tree), or wait on `ecco-mht-26n` getting a sanctioned executor for Atlantic-scope heat.
+
+Two caveats that will bind the result when it comes: 2010 alone is a single-year mean and gets the wider single-year envelope, not a multi-year one; and an Atlantic-only section is mass-unbalanced, so its "heat transport" is a temperature transport that must carry a stated reference.
+
+One transparency note: I could read the skills and the sanctioned executors in `open-science-pillars/ocean-science/0.9.0`, but `knowledge/` was not reachable under that root and `claude plugin list --json` wasn't permitted, so the concept texts (`ecco-section-transport.md`, `ecco-mht-26n.md`, the PO.DAAC `ecco-` gotchas) were **not** read. The scope and status claims above come from the skill bodies and the executor source, which is thinner provenance than the concepts themselves.

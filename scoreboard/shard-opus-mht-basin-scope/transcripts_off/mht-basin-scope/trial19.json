@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 104,
+  "chars": 3153,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial never produced the Atlantic (atlExt) ~0.666 PW value or a RAPID comparison, and instead only surfaced the full-circle 1.098 PW figure while declining to compute anything."
+    }
+  },
+  "pass": false
+}

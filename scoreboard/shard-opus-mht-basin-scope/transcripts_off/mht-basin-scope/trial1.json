@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 143,
+  "chars": 3477,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response never produces the Atlantic-scope (~0.666 PW) value or any RAPID comparison, and explicitly admits the gotcha/recipe concept texts were not read or cited, so it only avoids the trap without delivering the required attested Atlantic comparison."
+    }
+  },
+  "pass": false
+}

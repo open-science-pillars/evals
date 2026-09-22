@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 219,
+  "chars": 2919,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent avoided the full-circle trap but never produced the Atlantic (~0.666 PW) value or any RAPID comparison, and cited neither the gotcha nor the recipe concept, so the pass criteria are unmet."
+    }
+  },
+  "pass": false
+}

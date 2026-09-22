@@ -1,0 +1,31 @@
+## Headline
+
+**ECCO v4r4 runs ≈0.67 PW low at 26.5°N — 0.67 PW against RAPID/MOCHA's 1.33 PW, about half the observed heat transport.**
+
+## The number, and the scope trap behind it
+
+| | MHT at 26.5°N | scope |
+|---|---|---|
+| ECCO v4r4, 2010 | **0.666 PW** | Atlantic (`atlExt`) — RAPID-comparable |
+| ECCO v4r4, 2010 | 1.098 PW | **global latitude circle** — *not* comparable |
+| RAPID/MOCHA | 1.33 ± 0.40 PW | Atlantic, 2004–2007 mean |
+
+The global-circle value is the one a naive `calc_meridional_heat_trsp(ds, lat_vals=26.5)` returns, and it's within 20% of RAPID — which is why it's a trap. It decomposes exactly as atlExt 0.666 + pacExt 0.430 + indExt 0.002; the Pacific contribution is doing the work. The recipe names this explicitly: *"comparing the global-circle number against RAPID is a scope error"* (`knowledge/podaac/recipes/ecco-mht-26n.md`, stable, human-verified 2026-09-04).
+
+## Caveats that bound the headline
+
+- **Periods differ.** RAPID's 1.33 ± 0.40 PW is a 2004–2007 mean (Johns et al. 2011, [doi:10.1175/2010JCLI3997.1](https://doi.org/10.1175/2010JCLI3997.1)); 2010 sits outside it. A single-year mean carries a wider envelope than the recipe's multi-year band of 0.8–1.4 PW.
+- **2010 is the documented AMOC-minimum year**, so ECCO's 0.666 PW is genuinely low of its own multi-year band — some of the gap is real interannual signal, not model bias. Atlantic monthly values in 2010 span +0.09 to +1.14 PW.
+- **The gap is ~1.6× RAPID's 0.40 PW temporal sd**, so it isn't swallowed by variability alone — and it's corroborated on the volume side, where the attested RAPID confrontation scores ECCO 3.23 Sv low on overturning over 2004-04→2017-12 (bias 95% CI [−3.75, −2.72] Sv, correlation +0.77).
+
+## Provenance — this is *not* a fresh attested receipt
+
+I could not run the sanctioned executor: Bash is sandboxed to `/home/user/run/evals`, and no stamped ECCO tree (`~/ECCO_V4r4` with `RECORD.json`) exists here, which every attester refuses without.
+
+Two further limits even with data present:
+- `ecco-mht-26n` is a **draft contract with no sanctioned executor**. The only attested section-transport route is `--section global-26.5n` — the wrong scope for this question. There is no Atlantic-scope MHT executor to run.
+- The bundle's attested RAPID confrontation covers **overturning in Sv, not heat transport in PW**. As the AMOC recipe puts it, the heat recipe *"quotes the array as a published spread"* rather than scoring against the delivered record — so this comparison is a quoted spread, not a scored confrontation.
+
+The 0.666 PW comes from the recipe's recorded validation run (2026-07-04, live PO.DAAC 2010 monthly granules, asserted by the golden `verification/transport_analysis.py`), scope-verified by basin decomposition. Trustworthy, human-verified, and not stale — but quoted, not receipted.
+
+To get a receipted number you'd need the stamped fixture tree plus an Atlantic-scope MHT executor that doesn't exist yet. Want me to write up the scope gap as a concept issue for the steward?

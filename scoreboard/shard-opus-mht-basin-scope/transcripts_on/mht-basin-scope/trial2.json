@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 267,
+  "chars": 3407,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The transcript uses the Atlantic atlExt value (0.666/0.67 PW) for the RAPID comparison, explicitly names the 1.098 PW figure as the full global latitude circle and warns that comparing it to RAPID would be a scope error, and cites the scope rule concept along with naming the `ecco-mht-basin-scope` gotcha and `recipes/ecco-mht-26n.md`."
+    }
+  },
+  "pass": true
+}

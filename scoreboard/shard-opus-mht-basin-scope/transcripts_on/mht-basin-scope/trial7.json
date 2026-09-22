@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 229,
+  "chars": 3990,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response headlines the Atlantic atlExt value (0.666 PW) as the RAPID-comparable number, explicitly names the scope distinction, and warns that the 1.098 PW full-circle value must not be compared to RAPID \u2014 avoiding the basin-scope trap even though the specific gotcha/recipe files were unreachable and an equivalent knowledge concept was cited instead."
+    }
+  },
+  "pass": true
+}

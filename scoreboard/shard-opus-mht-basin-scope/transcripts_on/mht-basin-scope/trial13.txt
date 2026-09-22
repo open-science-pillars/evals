@@ -1,0 +1,30 @@
+Correction to what I said above: the provider bundle **is** installed — at a version-hashed path (`nasa-daac-knowledge/2026.9.5-6b0ef007a964`) that my earlier guesses missed. I've now read both concepts directly, and they're `status: stable`, human-verified 2026-09-04. So the headline number does exist.
+
+## The headline
+
+**ECCO's 2010 Atlantic MHT at 26.5N is 0.666 PW, against RAPID/MOCHA's 1.33 ± 0.40 PW — ECCO runs about 0.66 PW low, roughly half the observed transport.**
+
+## What's behind it
+
+| | Value | Scope |
+|---|---|---|
+| ECCO v4r4, 2010 | **0.666 PW** | Atlantic, `basin_name="atlExt"` — the RAPID section |
+| ECCO v4r4, 2010 | 1.098 PW | **global circle** — *not* RAPID-comparable |
+| RAPID/MOCHA | 1.33 ± 0.40 PW | Atlantic, 2004–2007 (Johns et al. 2011) |
+
+The global-circle number decomposes exactly as atlExt 0.666 + pacExt 0.430 + indExt 0.002 = 1.098, which is the recipe's method-reproducibility check — and the reason `ecco-mht-basin-scope` (severity: high) exists: *"Quoting 1.098 PW as 'the 26.5N heat transport' against a ~1.3 PW RAPID mean invents a disagreement in one direction and hides the real Atlantic offset in the other."* Using the global number would have made the gap look like −0.23 PW instead of −0.66 PW.
+
+## Four caveats the number doesn't carry on its own
+
+- **Periods don't match.** RAPID's 1.33 PW is a 2004–2007 mean; yours is calendar 2010. The recipe's discipline is explicit: *"compare like periods ... and state the averaging window."*
+- **2010 is the AMOC-minimum year.** The recipe flags 0.666 PW as deliberately below its own 0.8–1.4 PW multi-year band, *"consistent with the documented 2009/2010 AMOC minimum."* Some of the 0.66 PW gap is the year, not the model.
+- **±0.40 PW is a temporal standard deviation, not an error bar.** Atlantic monthly values in 2010 span +0.09 to +1.14 PW. The offset is outside one σ, but σ here measures variability.
+- **A low bias is expected.** *"ECCO v4 Atlantic means sit low of the observed mean, so model-minus-RAPID offsets are expected, not anomalous."*
+
+## Provenance — this is recorded, not freshly computed
+
+These are the recipe's recorded validation-run values (2026-07-04, live PO.DAAC 2010 monthly granules), not output from a run I made. I could not run one: no ECCO data is staged here and no `RECORD.json` stamp exists, and in any case `ecco-mht-26n` is a **draft computation concept with an empty `executor:` field** — there is no sanctioned MHT executor yet. The attested `global-26.5n` section route exists but yields the wrong-scope quantity.
+
+Also still true from before: there's no attested ECCO-vs-RAPID *heat* confrontation. The only executable one is overturning in Sv, and it needs ≥24 consecutive months, so 2010 alone can't go through it.
+
+If you want this as a computed-and-attested result rather than a cited one, the gap to close is fetching the 2010 fixture and extracting the MHT executor from the golden `verification/transport_analysis.py`. Want me to scope that?

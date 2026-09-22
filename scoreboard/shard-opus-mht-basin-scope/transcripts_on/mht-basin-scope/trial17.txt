@@ -1,0 +1,29 @@
+I could not run this here, so the number below is not one I computed — here's exactly what stands behind it.
+
+## What blocked the computation
+
+The attested route for section transports needs the native ECCO granules under a `RECORD.json`-stamped data root. Nothing is staged (`~/ECCO_V4r4`, `~/ECCO_V4r4_record`, `~/RAPID_26N` all absent) and there are no Earthdata Login credentials (`.netrc` missing), so the ~2.5 GB fixture cache can't be fetched. Every attester refuses a receipt from an unstamped tree, so there is no attested run to quote.
+
+Two further limits, independent of the data:
+
+- `ecco-mht-26n` is a **draft** concept with **no sanctioned executor** (`knowledge/computations/ecco-mht-26n.md`).
+- The one executor that does heat transport, `ecco-section-transport`, registers only `global-26.5n` and `fifteen-s-southeast-atlantic`. Neither is the Atlantic section RAPID observes — so even fully staged, that path yields a **global-circle** number, not a RAPID-comparable one.
+
+## The headline
+
+From the recipe's recorded 2010 run (`knowledge/podaac/recipes/ecco-mht-26n.md`, status stable, human-verified 2026-09-04 — validation provenance, not a run I performed):
+
+> **ECCO's 2010 Atlantic MHT at 26.5°N is 0.67 PW, roughly half of RAPID's observed ~1.3 PW — about 0.65 PW low.**
+
+## The scope trap you'd otherwise hit
+
+The obvious number to quote, 1.098 PW, is the **full latitude circle** (Atlantic + Pacific + Indian; it equals the basin sum atlExt 0.666 + pacExt 0.430 + indExt 0.002). Against RAPID's ~1.3 PW that looks like near-agreement. It isn't a comparison at all — RAPID observes the Atlantic only, which needs `basin_name="atlExt"`. Quoting the global circle invents agreement and hides a real ~0.65 PW Atlantic offset (`knowledge/podaac/gotchas/ecco-mht-basin-scope.md`, severity high, stable).
+
+## Caveats that qualify the headline
+
+- **Periods don't match.** RAPID's 1.33 ± 0.40 PW is the 2004–2007 mean (Johns et al. 2011, doi:10.1175/2010JCLI3997.1). Yours is a single year, 2010. This is not a like-for-like window, and I have no attested RAPID 2010 value to substitute.
+- **2010 is the documented AMOC-minimum year.** ECCO's Atlantic 2010 mean sits below the recipe's own multi-year expected band (0.8–1.4 PW) for that reason; a single-year mean carries a wider envelope than that band.
+- **Part of the offset is structural.** ECCO v4 Atlantic means run low of the RAPID-observed mean generally, so a model-minus-RAPID offset is expected, not anomalous.
+- ECCO ships no formal error fields, so there is no model-side uncertainty to combine — the 0.40 PW is RAPID's temporal standard deviation, not a comparison interval.
+
+If you want this as an attested number rather than a recorded one, the missing pieces are Earthdata credentials plus the fixture cache and its verify stamp — and, for a genuinely RAPID-comparable Atlantic value, an executor that doesn't exist yet. The nearest attested thing available is the AMOC confrontation (`ecco-rapid-amoc-confrontation`), but that scores overturning in Sv, not heat transport. Want me to set up the data staging?

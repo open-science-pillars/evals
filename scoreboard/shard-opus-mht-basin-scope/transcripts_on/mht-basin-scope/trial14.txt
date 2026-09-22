@@ -1,0 +1,37 @@
+## Headline
+
+**ECCO v4r4, 2010, Atlantic at 26.5°N: 0.67 PW — roughly half of what RAPID measures (~1.2–1.3 PW).**
+
+That is the comparison number. Below is why it is 0.67 and not 1.10, and what I could and could not verify.
+
+## I did not compute this — no data, and no sanctioned path to an MHT number
+
+- No ECCO granule tree is present (`~/ECCO_V4r4` and `~/ECCO_V4r4_record` are absent, so no `RECORD.json` stamp), and no stamped RAPID tree. Every attester in this package refuses a receipt from an unstamped tree, so no run I could make here would be attestable.
+- The MHT computation itself is a **draft contract with no sanctioned executor** (`ocean-science/knowledge/computations/ecco-mht-26n.md`, `status: draft`). The attested section route (`ecco-section-transport`, `--section global-26.5n`) has only the **closed global latitude circle** registered — there is no registered Atlantic-only MHT section, so the attested path cannot produce a RAPID-comparable heat transport at all.
+- The one attested RAPID confrontation in this package (`ecco-rapid-amoc-confrontation`) compares **overturning in Sv**, not heat transport in PW.
+
+So the numbers below are the concepts' recorded reference values, cited as such — not a receipt from this session.
+
+## Why 0.67 and not 1.10 — the basin-scope trap
+
+| Scope | ECCO 2010 MHT at 26.5°N | RAPID-comparable? |
+|---|---|---|
+| Full latitude circle (global) | **1.0963 PW** | **No** |
+| Atlantic only (atlExt) | **0.666 PW** | Yes |
+
+RAPID-MOCHA is a Florida-to-Africa Atlantic section. The global circle at 26.5°N also carries the Indo-Pacific, and the basin values sum to the circle — quoting 1.10 PW against RAPID would be comparing a whole-globe number to a one-basin array. The draft MHT concept states the rule directly: `basin` unset means the full latitude circle, **never a RAPID-comparable number**.
+
+Provenance and status, honestly voiced:
+
+- **1.0963 PW** is the solid one — `ocean-science/knowledge/computations/ecco-section-transport.md`, `status: stable`, human-verified (maintainer, most recently 2026-09-20), `stale_after: 2027-01-04`; its 2010 reference run agrees with an independent `ecco_v4_py` implementation's 1.098 PW to 0.002 PW from disjoint code paths. It is also the number you must *not* use here.
+- **0.666 PW** — the one you do want — comes from `ocean-science/knowledge/computations/ecco-mht-26n.md`, a **draft** concept, not yet reviewed. So the RAPID-comparable figure rests on weaker evidence than the non-comparable one.
+
+## Caveats on the comparison itself
+
+- **The RAPID side is not from an installed concept.** The provider bundle `nasa-daac-knowledge` (which holds `knowledge/podaac/recipes/ecco-mht-26n.md` and `gotchas/ecco-mht-basin-scope.md`) is not readable from this session — reads outside `/home/user/run/evals` are denied and I could not resolve its install path. The ~1.2–1.3 PW is general literature knowledge, labeled as such, not a cited concept with a pinned value, uncertainty, and DOI. Treat "about half" as the robust claim and the exact RAPID number as unverified here.
+- **Single year vs. envelope.** 2010 is one year against a multi-year observational mean; a single-year mean sits inside a wider envelope than the multi-year spread, and interannual AMOC variability at 26.5°N is large. The gap is too big to be sampling alone, but its precise size is not pinned by one year.
+- **ECCO has no formal error fields** — it is a state estimate, not an observation product, and the deficit is a known consequence of a 1° non-eddying solution.
+
+## To get this properly attested
+
+Stage the 2010 fixture cache and the RAPID v2024.1a tree, stamp both with `tools/science_record_verify.py --stamp`, then run `ecco_amoc_26n.py --scope atlantic` and the RAPID confrontation with its attester. That gives a receipted **overturning** comparison. A receipted **heat transport** comparison needs the `ecco-mht-26n` executor to be extracted from the golden first — the contract is drafted but the code does not exist yet.

@@ -1,0 +1,35 @@
+I can't give you that comparison as a single attested number, and the reason is substantive rather than a tooling hiccup. Two separate blockers:
+
+## 1. The attested ECCO heat transport at 26.5N is *global*, not Atlantic
+
+The sanctioned executor (`skills/transport-analysis/scripts/ecco_section_transport.py`) registers exactly two sections, and the only one at 26.5N is `global-26.5n` — "the full latitude circle at 26.5 north, closed and seam-crossing" (`ecco_section_transport.py:53`, `SECTIONS` at :91). Its anchor is the 2010 global mean MHT, 1.098 PW, from an independent `ecco_v4_py calc_meridional_heat_trsp` run (:97).
+
+RAPID-MOCHA observes the Atlantic only, Florida to Africa. The global circle at 26.5N also crosses the North Pacific. Quoting 1.098 PW against RAPID would be comparing different domains — exactly the basin-scope error the transport skill's RAPID discipline exists to prevent.
+
+The Atlantic-scoped route is the `ecco-mht-26n` concept, and the transport-analysis skill states plainly that it is **a draft contract with no sanctioned executor yet**. So there is no attested Atlantic MHT at 26.5N in this package.
+
+## 2. The only attested ECCO↔RAPID confrontation is overturning, not heat
+
+`ecco-rapid-amoc-confrontation` consumes an `ecco-amoc-26n` receipt, and that executor computes volume transport only — "the zonal integral of meridional volume transport per model level, cumulative in depth, maximum over depth" (`ecco_amoc_26n.py:9-11`), in Sv. No heat term anywhere in it. Its scope handling is correct for RAPID (basin code `atl`, with the Gulf of Mexico a registered separate scope and a recorded sabotage, never silent), but it is the wrong quantity for your question.
+
+## What I could not run
+
+Every `Bash` call in this session was declined, including `uv --version`, so I could not execute the section-transport executor, verify the fixture tree's `RECORD.json` stamp, or produce a receipt. The 1.098 PW above is the anchor constant compiled into the sanctioned executor, cited as such — **not a receipted run I performed**. I'm also flagging that `knowledge/computations/` is not readable at the package root the skills name, so the recipe's expected range and spread went unconsulted; directory listing outside `/home/user/run/evals` is blocked, so I couldn't locate the bundle elsewhere.
+
+## The two routes that would actually work
+
+**Attested today —** ECCO vs RAPID **overturning** at 26.5N in Sv, which does yield one headline bias number with an interval:
+
+```
+ecco_amoc_26n.py --period 2010-01:2010-12 --scope atlantic --data-root ~/ECCO_V4r4_record
+ecco_rapid_amoc_confrontation.py --ecco-receipt ... --rapid-root ~/RAPID_26N/rapid.ac.uk-2026-09-02
+rapid_confrontation_check.py <receipt> --model-receipt <model receipt>
+```
+
+Needs the stamped science-record tree plus the stamped RAPID v2024.1a tree, and Bash approval.
+
+**For heat specifically —** that needs an Atlantic-restricted MHT executor that doesn't exist yet. The machinery is all present (the section masks, and `ecco_amoc_26n.py`'s basin-code restriction applied to `ADVx_TH`/`ADVy_TH` instead of the volume fluxes), but writing it means creating a new sanctioned computation, not running one.
+
+One caveat worth carrying into either route: 2010 sits in the RAPID 2009/10 AMOC downturn, so a single-year mean falls in a much wider envelope than a multi-year one.
+
+Want me to run the overturning confrontation instead? I'd need Bash approvals and confirmation that both data trees are staged and stamped.

@@ -1,0 +1,22 @@
+I worked this through the plugin's transport path (`meridional-transport` → `transport-analysis` → `consult-knowledge` → `compare-obs`). Two things came out of it, and the second one is the whole answer.
+
+## The headline
+
+**ECCO v4r4, 26.5°N, 2010, Atlantic only: ≈ 0.67 PW — roughly half the RAPID‑MOCHA observed annual mean of ~1.2–1.3 PW.** That is a low bias of about 0.5 PW, not a match.
+
+## Why the obvious number is the wrong one
+
+The attested route for heat transport at this latitude is `ecco-section-transport` (`knowledge/computations/ecco-section-transport.md`, status stable, human-verified). Its registered section is `global-26.5n` — the **closed global latitude circle**, 360 faces. Its recorded 2010 reference run is **+1.0963 PW**, anchored at 1.098 PW against an independent `ecco_v4_py` implementation.
+
+1.10 PW against RAPID's ~1.2 PW looks like excellent agreement. It isn't a comparison at all. RAPID-MOCHA measures the **Atlantic** section from Florida to Africa; the global circle sums every basin. The draft concept `knowledge/computations/ecco-mht-26n.md` states the scope rule explicitly: *`basin` unset means the FULL latitude circle, never a RAPID-comparable number* (the `ecco-mht-basin-scope` gotcha), and records the 2010 split as Atlantic `atlExt` **0.666 PW**, global circle 1.098 PW equal to the basin sum. So the RAPID-comparable ECCO number is 0.67 PW, and ECCO v4r4 runs substantially cold here.
+
+## What this number is not
+
+- **Not attested.** I could not run the sanctioned executor — Bash execution was denied in this session — and `~/ECCO_V4r4/RECORD.json` does not exist, so the tree is unstamped and the attester would refuse any receipt from it regardless. The 0.666 / 1.0963 PW figures are **reference-run values recorded in the concepts**, not a run I performed.
+- **The Atlantic figure is draft-sourced.** `ecco-mht-26n` is `status: draft`, no sanctioned executor, no verified event — "a draft concept, not yet reviewed, says 0.666 PW." The attested `global-26.5n` route is the only sanctioned one today, and it gives the number you can't use against RAPID.
+- **The RAPID side has no concept backing.** No installed concept covers RAPID's *heat* transport. The bundle's RAPID material (`ecco-rapid-amoc-confrontation.md`, release v2024.1a, doi:10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1) is **overturning in Sv only** — 14.47 Sv model mean, 1.5 Sv published RMS uncertainty on ten-day values. The ~1.2–1.3 PW I quoted is general literature knowledge, not a bundle number, and 2010 specifically sits low in the observed record after the 2009/10 downturn, so a like-for-like 2010-vs-2010 comparison would narrow the gap somewhat from the climatological one.
+- **Single-year envelope.** One year sits inside a wider spread than a multi-year mean, and ECCO ships no formal error fields.
+
+**Bundles searched:** the running `ocean-science` root (0.9.0) and `core` (0.6.0). The PO.DAAC provider bundle (`nasa-daac-knowledge`, floor `>=2026.9.2`) is **not reachable in this session** — `claude plugin list --json` requires approval here and the cache path does not resolve. That bundle owns `recipes/ecco-mht-26n.md` (the recipe holding the anchors and scope discipline) and `gotchas/ecco-mht-basin-scope.md`, so I am citing both second-hand through the local concepts that quote them.
+
+To turn this into a real number: stage and stamp the 2010 fixture cache, then run `ecco_section_transport.py --section global-26.5n --year 2010` plus `section_transport_check.py`. That still only gets you the global circle — there is no sanctioned Atlantic-only MHT executor yet, which is exactly the gap the draft `ecco-mht-26n` concept is holding open.

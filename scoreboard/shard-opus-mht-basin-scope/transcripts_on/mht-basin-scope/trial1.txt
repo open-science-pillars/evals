@@ -1,0 +1,25 @@
+## The headline
+
+**ECCO v4r4 Atlantic MHT at 26.5°N for 2010: 0.67 PW — about 0.66 PW below RAPID/MOCHA's published 1.33 ± 0.40 PW. Roughly half.**
+
+## Two things you need to know about that number
+
+**I did not compute it.** I couldn't, for two independent reasons:
+
+1. The attested MHT computation (`ocean-science/knowledge/computations/ecco-mht-26n.md`) is `status: draft` and **names no executor** — it's a stub awaiting extraction from the `transport_analysis` golden. There is no sanctioned code to run.
+2. Bash here is sandboxed to `/home/user/run/evals`, and the run I attempted (`ecco_section_transport.py`) was denied approval. No ECCO data root is reachable either.
+
+So 0.666 PW is the **recorded anchor** from `knowledge/podaac/recipes/ecco-mht-26n.md` (status `stable`, human-verified 2026-09-04 by PaulMRamirez, stale_after 2027-01-04), measured 2026-07-04 on live PO.DAAC 2010 granules and cross-checked by basin decomposition. It is a cited concept value, not a receipt I produced this session.
+
+**The scope trap is the whole ballgame here.** `calc_meridional_heat_trsp(ds, lat_vals=26.5)` with no `basin_name` gives the **full latitude circle** — 1.098 PW for 2010 (= atlExt 0.666 + pacExt 0.430 + indExt 0.002). Quoting 1.098 against RAPID's ~1.3 would have looked like near-agreement while comparing a global quantity to an Atlantic-only array. That's `gotchas/ecco-mht-basin-scope.md`, severity high, stable. The RAPID-comparable number is the `atlExt`-masked one, 0.666 PW.
+
+Note the one attested route that *does* exist for heat — `ecco-section-transport` on `global-26.5n`, reference run +1.0963 PW — is the global circle, so it is not the number you want.
+
+## Caveats that materially qualify the comparison
+
+- **Periods don't match.** RAPID's 1.33 ± 0.40 PW is Johns et al. 2011 over 2004–2007. Yours is a single year, 2010. This is not like-for-like, and the recipe's comparison discipline says to say so.
+- **2010 is the documented AMOC-minimum year.** ECCO's 0.666 PW sits *below* its own multi-year Atlantic expected band of 0.8–1.4 PW, which is expected for this year rather than anomalous. Atlantic monthly values in 2010 span +0.09 to +1.14 PW.
+- **The 0.66 PW gap is ~1.7× RAPID's own temporal sd** (0.40 PW), so it's a real offset but not a dramatic one against observed variability — and the period mismatch alone could account for part of it.
+- **This is a quoted spread, not a scored confrontation.** Per `conventions/consistency-versus-confrontation.md`, the MHT recipe cites RAPID without colocation or measured scores, and "must not describe itself as validated against the observation." The only *scored* ECCO-vs-RAPID confrontation at this latitude is the **overturning** (volume, not heat): bias −3.23 Sv [−3.75, −2.72], r = +0.77, over 165 months of 2004-04→2017-12. If you want a defensible model-vs-array statement with intervals, that's the one that exists.
+
+If you want the real computed number rather than the recorded anchor, the blocker is concrete: the MHT executor needs extracting from `verification/transport_analysis.py`, and this session needs a reachable, RECORD.json-stamped `~/ECCO_V4r4` tree plus approval to run `uv`.

@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-mht-basin-scope/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  mht-basin-scope trial 2: PASS (267s, 3407 chars)
+  mht-basin-scope trial 4: FAIL (284s, 3093 chars)
+  mht-basin-scope trial 3: FAIL (290s, 3638 chars)
+  mht-basin-scope trial 6: PASS (246s, 4357 chars)
+  mht-basin-scope trial 7: PASS (229s, 3990 chars)
+  mht-basin-scope trial 5: FAIL (339s, 3854 chars)
+  mht-basin-scope trial 1: FAIL (620s, 3178 chars)
+  mht-basin-scope trial 9: empty or limit message (105s, 29 chars)
+  mht-basin-scope trial 8: FAIL (178s, 3377 chars)
+  mht-basin-scope trial 10: PASS (150s, 3225 chars)
+  mht-basin-scope trial 11: PASS (165s, 3288 chars)
+  mht-basin-scope trial 12: FAIL (142s, 3641 chars)
+  mht-basin-scope trial 16: FAIL (161s, 3685 chars)
+  mht-basin-scope trial 15: FAIL (213s, 3322 chars)
+  mht-basin-scope trial 13: FAIL (304s, 2988 chars)
+  mht-basin-scope trial 14: PASS (268s, 4011 chars)
+  mht-basin-scope trial 17: PASS (119s, 3094 chars)
+  mht-basin-scope trial 18: FAIL (109s, 3016 chars)
+  mht-basin-scope trial 19: PASS (120s, 3026 chars)
+  mht-basin-scope trial 20: FAIL (223s, 3418 chars)
+mht-basin-scope: 8/19 valid (rate 0.421, 1 errors) CI [0.231, 0.637] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-mht-basin-scope/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-mht-basin-scope/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  mht-basin-scope trial 4: FAIL (137s, 3354 chars)
+  mht-basin-scope trial 1: FAIL (143s, 3477 chars)
+  mht-basin-scope trial 3: FAIL (219s, 2919 chars)
+  mht-basin-scope trial 2: FAIL (394s, 3700 chars)
+  mht-basin-scope trial 6: FAIL (358s, 2933 chars)
+  mht-basin-scope trial 5: FAIL (371s, 3954 chars)
+  mht-basin-scope trial 7: FAIL (363s, 3269 chars)
+  mht-basin-scope trial 10: FAIL (119s, 2836 chars)
+  mht-basin-scope trial 9: FAIL (144s, 3328 chars)
+  mht-basin-scope trial 8: FAIL (299s, 3204 chars)
+  mht-basin-scope trial 11: FAIL (162s, 3624 chars)
+  mht-basin-scope trial 12: FAIL (145s, 2900 chars)
+  mht-basin-scope trial 14: FAIL (96s, 3354 chars)
+  mht-basin-scope trial 17: FAIL (161s, 3513 chars)
+  mht-basin-scope trial 15: FAIL (238s, 3040 chars)
+  mht-basin-scope trial 13: FAIL (354s, 3654 chars)
+  mht-basin-scope trial 16: FAIL (283s, 2757 chars)
+  mht-basin-scope trial 19: FAIL (104s, 3153 chars)
+  mht-basin-scope trial 18: FAIL (132s, 3512 chars)
+  mht-basin-scope trial 20: FAIL (150s, 3162 chars)
+mht-basin-scope: 0/20 valid (rate 0.0, 0 errors) CI [0.0, 0.161] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-mht-basin-scope/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-mht-basin-scope/ablation.html
+ABLATION_DONE

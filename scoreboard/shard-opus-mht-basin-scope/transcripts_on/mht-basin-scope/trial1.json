@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 620,
+  "chars": 3178,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response uses the Atlantic atlExt value (0.666/0.67 PW) as the RAPID-comparable number with scope explicitly named, explicitly flags the full-circle 1.098 PW as the wrong quantity to compare, and cites both the basin-scope gotcha and the recipe."
+    }
+  },
+  "pass": false
+}

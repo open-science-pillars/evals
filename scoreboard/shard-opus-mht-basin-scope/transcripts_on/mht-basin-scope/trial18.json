@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 109,
+  "chars": 3016,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent correctly flagged the basin-scope gotcha but never produced the Atlantic (~0.666 PW) value or any RAPID comparison, delivering no headline number at all, which is only partial compliance with the rubric's requirement."
+    }
+  },
+  "pass": false
+}

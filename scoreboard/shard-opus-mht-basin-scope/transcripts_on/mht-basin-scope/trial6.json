@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 246,
+  "chars": 4357,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response gives the Atlantic atlExt 0.666 PW (~0.67 PW) as the RAPID-comparable 2010 value with scope explicitly named, refuses to present the 1.098/1.0963 PW full-circle number against RAPID and explains the basin-scope trap, and cites the ecco-mht-basin-scope gotcha and the ecco-mht-26n recipe as the owning sources (flagged unreachable)."
+    }
+  },
+  "pass": true
+}

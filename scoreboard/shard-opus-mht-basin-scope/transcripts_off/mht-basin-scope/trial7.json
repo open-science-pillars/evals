@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 363,
+  "chars": 3269,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript never produces the Atlantic-scoped (~0.666 PW) RAPID comparison or cites the gotcha/recipe; it declines to give any number and only reports the 1.098 PW global anchor, so the required comparison is absent."
+    }
+  },
+  "pass": false
+}

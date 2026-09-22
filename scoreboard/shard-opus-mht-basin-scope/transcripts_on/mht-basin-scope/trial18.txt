@@ -1,0 +1,31 @@
+I consulted the knowledge bundle before computing, and the consult stopped the computation. Here's where it landed.
+
+## I ran nothing
+
+Every `Bash` call was denied in this session — `claude plugin list`, directory listing under the plugin cache and data root, and the executor itself:
+
+```
+uv run .../transport-analysis/scripts/ecco_section_transport.py \
+  --section global-26.5n --year 2010 --data-root ~/ECCO_V4r4 --receipt ...
+```
+
+So nothing below is a run I made today. The numbers are the reference-run values recorded in the concepts, cited as such.
+
+## Why there is no honest headline number
+
+Three things block the comparison you asked for, and the first is the one that matters:
+
+**1. The attested ECCO MHT at 26.5°N is a global latitude circle; RAPID is Atlantic-only.** `knowledge/computations/ecco-section-transport.md` (stable, human-verified 2026-09-20) registers `global-26.5n` as the closed circle — 360 faces — with a 2010 heat transport of **+1.0963 PW**, agreeing to 0.002 PW with an independent `ecco_v4_py` implementation at 1.098 PW. That is Atlantic + Pacific + Indian summed. RAPID-MOCHA observes the Atlantic section from Florida to Africa only, which the AMOC concept resolves as 66 faces between 80.5°W and 14.5°W. Putting 1.0963 PW next to a RAPID heat transport would be a basin-scope error, not a comparison.
+
+**2. There is no sanctioned executor for Atlantic MHT.** `transport-analysis` states plainly that `ecco-mht-26n` is *"a draft contract with no sanctioned executor yet."* The bundle has no attested route to an Atlantic heat transport in PW at this latitude.
+
+**3. The attested RAPID confrontation is overturning, not heat.** `knowledge/computations/ecco-rapid-amoc-confrontation.md` scores ECCO's mass-balanced streamfunction maximum against `moc_mar_hc10` — Sverdrups, over 2004-04:2017-12. Different quantity from what you asked for.
+
+Two further constraints that would bind the number even if the scope matched: ECCO's 26.5°N section carries nonzero net mass transport (−0.43 Sv on the global circle, ~1.2 Sv southward in the Atlantic from Bering throughflow and Arctic storage), so any heat transport across it is a temperature transport needing a stated reference, while RAPID enforces zero net by construction — and a single 2010 mean sits in a wider envelope than the array's multi-year record.
+
+## What I can get you, with approval
+
+- **Approve Bash** and I'll run the section transport executor plus `section_transport_check.py` for 2010 and report the attested global-circle MHT from the receipt's verdict — correctly labelled as the whole latitude circle, not a RAPID-comparable figure.
+- **For an actual RAPID confrontation**, the route is `ecco_amoc_26n.py` → `ecco_rapid_amoc_confrontation.py`, which needs the 1992–2017 science record at `~/ECCO_V4r4_record` and a stamped RAPID v2024.1a tree. That returns bias, RMSD and correlation in **Sv**, each with a sampling interval — a real headline number, just for overturning rather than heat.
+
+Which do you want?

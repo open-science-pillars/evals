@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 119,
+  "chars": 3094,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response quotes the Atlantic (atlExt) 2010 value ~0.67 PW against RAPID's ~1.3 PW with the basin scope explicitly named, explicitly flags 1.098 PW as the full latitude circle and unsuitable for RAPID comparison, and cites both the recipe and the basin-scope gotcha concepts."
+    }
+  },
+  "pass": true
+}

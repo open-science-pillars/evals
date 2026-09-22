@@ -1,0 +1,303 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "on",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 8,
+      "trials": 19,
+      "rate": 0.421,
+      "ci95": [
+        0.231,
+        0.637
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "mht-basin-scope",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 1,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 620,
+          "chars": 3178,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response uses the Atlantic atlExt value (0.666/0.67 PW) as the RAPID-comparable number with scope explicitly named, explicitly flags the full-circle 1.098 PW as the wrong quantity to compare, and cites both the basin-scope gotcha and the recipe."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 267,
+          "chars": 3407,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript uses the Atlantic atlExt value (0.666/0.67 PW) for the RAPID comparison, explicitly names the 1.098 PW figure as the full global latitude circle and warns that comparing it to RAPID would be a scope error, and cites the scope rule concept along with naming the `ecco-mht-basin-scope` gotcha and `recipes/ecco-mht-26n.md`."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 290,
+          "chars": 3638,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response uses the Atlantic atlExt value (0.666 PW) for the RAPID comparison with the scope explicitly named, correctly flags the 1.098 PW full-circle figure as not RAPID-comparable, and cites both the gotcha concept and the recipe (including its 0.8\u20131.4 PW band)."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 284,
+          "chars": 3093,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response uses the Atlantic atlExt value (0.666/0.67 PW) for the RAPID comparison, explicitly names the scope, flags 1.098 PW as the full-circle scope error citing the ecco-mht-basin-scope gotcha and the recipe's expected range."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 339,
+          "chars": 3854,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The trial compares the Atlantic-masked atlExt value (0.666/0.67 PW for 2010) against RAPID's 1.33 \u00b1 0.40 PW, explicitly names the basin scope, flags the 1.098 PW full-circle number as the wrong default, and cites both the basin-scope gotcha and the ecco-mht-26n recipe."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 246,
+          "chars": 4357,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response gives the Atlantic atlExt 0.666 PW (~0.67 PW) as the RAPID-comparable 2010 value with scope explicitly named, refuses to present the 1.098/1.0963 PW full-circle number against RAPID and explains the basin-scope trap, and cites the ecco-mht-basin-scope gotcha and the ecco-mht-26n recipe as the owning sources (flagged unreachable)."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 229,
+          "chars": 3990,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response headlines the Atlantic atlExt value (0.666 PW) as the RAPID-comparable number, explicitly names the scope distinction, and warns that the 1.098 PW full-circle value must not be compared to RAPID \u2014 avoiding the basin-scope trap even though the specific gotcha/recipe files were unreachable and an equivalent knowledge concept was cited instead."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 178,
+          "chars": 3377,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The answer headlines the Atlantic-scoped atlExt value (0.666 PW) for the RAPID comparison, explicitly names and rejects the 1.098 PW full-circle number as the wrong scope, computes the offset against RAPID's 1.33 \u00b1 0.40 PW correctly, and cites both the basin-scope gotcha and the ecco-mht-26n recipe."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 105,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 150,
+          "chars": 3225,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response identifies 0.666 PW (atlExt, Atlantic-only) as the RAPID-comparable value with scope explicitly named, explicitly flags that quoting the 1.098 PW global latitude-circle value against RAPID would be the key error, and cites both the ecco-mht-26n recipe and the ecco-mht-basin-scope gotcha; it never mislabels the full-circle number as the 26.5N transport."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 165,
+          "chars": 3288,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response names ~0.67 PW (Atlantic/atlExt) as the RAPID-comparable 26.5\u00b0N MHT with the scope explicitly stated, explicitly rejects the 1.098/1.0963 PW full-circle value as a scope error for RAPID comparison, and cites both the ecco-mht-basin-scope gotcha and the ecco-mht-26n recipe."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 142,
+          "chars": 3641,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response uses the Atlantic atlExt value (~0.666/0.67 PW) as the RAPID-comparable figure with scope explicitly named, refuses to compare the 1.098 PW full-circle number to RAPID, and cites both the basin-scope gotcha and the ecco-mht-26n recipe concept."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 304,
+          "chars": 2988,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response uses the Atlantic atlExt value of 0.666 PW for the RAPID comparison with scope explicitly named, labels 1.098 PW as the global-circle value that is not RAPID-comparable, and cites the ecco-mht-basin-scope gotcha and the recipe's period/range discipline."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 268,
+          "chars": 4011,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The answer leads with the Atlantic-only (atlExt) 0.666/0.67 PW value with the basin scope explicitly named, explicitly flags 1.0963 PW as the full latitude circle that must not be compared to RAPID, and cites the basin-scope gotcha and the ecco-mht-26n recipe/concept while honestly voicing their draft/unreadable status."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 213,
+          "chars": 3322,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The comparison uses the Atlantic atlExt value (~0.666/0.67 PW) with scope explicitly named, flags the 1.098 PW full-circle value only as a trap to avoid, and cites both the basin-scope gotcha and the ecco-mht-26n recipe with correct arithmetic against RAPID's ~1.33 PW."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 161,
+          "chars": 3685,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript compares RAPID against the Atlantic atlExt value (~0.666/0.67 PW) with the basin scope explicitly named, explicitly rejects the 1.098 PW full-circle number as non-RAPID-comparable, and cites both the ecco-mht-basin-scope gotcha and the ecco-mht-26n recipe."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 119,
+          "chars": 3094,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response quotes the Atlantic (atlExt) 2010 value ~0.67 PW against RAPID's ~1.3 PW with the basin scope explicitly named, explicitly flags 1.098 PW as the full latitude circle and unsuitable for RAPID comparison, and cites both the recipe and the basin-scope gotcha concepts."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 109,
+          "chars": 3016,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent correctly flagged the basin-scope gotcha but never produced the Atlantic (~0.666 PW) value or any RAPID comparison, delivering no headline number at all, which is only partial compliance with the rubric's requirement."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 120,
+          "chars": 3026,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The comparison uses the Atlantic atlExt value (0.666 PW) explicitly labeled as RAPID-comparable, names the 1.098 PW full-circle number as the non-comparable scope trap with basin decomposition, and cites the recipe/gotcha on the scope error."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 223,
+          "chars": 3418,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response uses the Atlantic atlExt value (0.666 PW) as the RAPID comparison with scope explicitly named, flags the full-circle 1.098 PW as not RAPID-comparable, and cites both the gotcha and recipe concepts."
+            }
+          },
+          "pass": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,310 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "off",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 0,
+      "trials": 20,
+      "rate": 0.0,
+      "ci95": [
+        0.0,
+        0.161
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "mht-basin-scope",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 0,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 143,
+          "chars": 3477,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never produces the Atlantic-scope (~0.666 PW) value or any RAPID comparison, and explicitly admits the gotcha/recipe concept texts were not read or cited, so it only avoids the trap without delivering the required attested Atlantic comparison."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 394,
+          "chars": 3700,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never produces the Atlantic (~0.666 PW) heat transport or any RAPID heat comparison, declining the task and quoting only the 1.098 PW full-circle value, and it explicitly cites neither the basin-scope gotcha nor the recipe (claiming the knowledge bundles are missing)."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 219,
+          "chars": 2919,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent avoided the full-circle trap but never produced the Atlantic (~0.666 PW) value or any RAPID comparison, and cited neither the gotcha nor the recipe concept, so the pass criteria are unmet."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 137,
+          "chars": 3354,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript delivers no RAPID comparison at all \u2014 no Atlantic (~0.666 PW) value, no cited gotcha or recipe concepts \u2014 only a refusal plus a conceptual note about basin-scope mismatch, which is partial compliance at best."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 371,
+          "chars": 3954,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response correctly avoids equating the 1.098 PW global-circle value with RAPID, but it never produces the required Atlantic (atlExt) ~0.666 PW value or any RAPID comparison, and it explicitly states it could not cite the gotcha or recipe concepts because the knowledge trees were missing."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 358,
+          "chars": 2933,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent avoided the full-circle trap but never produced or used the Atlantic (atlExt, ~0.666 PW) value for any RAPID comparison and cited no gotcha/recipe concepts, delivering only a refusal with options."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 363,
+          "chars": 3269,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces the Atlantic-scoped (~0.666 PW) RAPID comparison or cites the gotcha/recipe; it declines to give any number and only reports the 1.098 PW global anchor, so the required comparison is absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 299,
+          "chars": 3204,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces or compares the Atlantic (atlExt) ~0.666 PW value to RAPID and cites neither the gotcha nor the recipe (claiming both unreadable), instead only surfacing the full-circle 1.098 PW figure as context, so the rubric's pass condition is unmet."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 144,
+          "chars": 3328,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript produced no RAPID comparison at all and never reported the Atlantic (~0.666 PW) value, instead only describing a scope gap and declining to compute, so the required Atlantic-scoped comparison with cited gotcha and recipe is absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 119,
+          "chars": 2836,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent never produced the Atlantic (atlExt) ~0.666 PW value or any RAPID comparison \u2014 it refused and delivered only the full-circle 1.098 PW anchor with caveats, so the required Atlantic-scoped comparison is absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 162,
+          "chars": 3624,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial refused to produce any RAPID comparison and never surfaced the Atlantic (atlExt) ~0.666 PW value or cited the gotcha/recipe concepts, so despite correctly labeling 1.098 PW as global, it does not satisfy the rubric's requirement for an Atlantic-scoped comparison."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 145,
+          "chars": 2900,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant avoided the full-circle trap but never produced the Atlantic-scope (~0.666 PW) value or any RAPID comparison, and cited no gotcha/recipe concepts, so the required deliverable is absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 354,
+          "chars": 3654,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant produced no RAPID comparison at all \u2014 it declined to use the ~0.666 PW Atlantic value (dismissing it as non-citable) and cited neither the basin-scope gotcha nor the MHT recipe, so the rubric's pass requirements are unmet despite correctly flagging the full-circle trap."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 96,
+          "chars": 3354,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent never produced the RAPID comparison at all \u2014 no Atlantic (atlExt) ~0.666 PW value was computed or quoted, so the required Atlantic-scoped comparison is absent rather than merely incomplete."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 238,
+          "chars": 3040,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent correctly flagged the basin-scope trap and refused to use 1.098 PW, but it never produced the Atlantic (atlExt) ~0.666 PW value or any RAPID comparison, so the rubric's pass condition \u2014 a comparison using the Atlantic-scoped transport \u2014 is unmet."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 283,
+          "chars": 2757,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial never delivered the RAPID comparison at all \u2014 it refused, citing missing knowledge bundles and unapproved tool calls, so the required Atlantic-scope (~0.666 PW) comparison and the recipe citation are absent, even though it correctly avoided misusing the 1.098 PW full-circle value."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 161,
+          "chars": 3513,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial refused to produce any number and never delivered the Atlantic-scoped (~0.666 PW) 2010 value or the RAPID comparison, and cited no gotcha/recipe concepts (claiming the knowledge bundle was missing), so despite correctly flagging the full-circle scope trap it is at best partial compliance."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 132,
+          "chars": 3512,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never produced the RAPID comparison using the Atlantic (atlExt) ~0.666 PW value for 2010; it only quoted the full-circle 1.098 PW while declining to compare, so the required deliverable is absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 104,
+          "chars": 3153,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial never produced the Atlantic (atlExt) ~0.666 PW value or a RAPID comparison, and instead only surfaced the full-circle 1.098 PW figure while declining to compute anything."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 150,
+          "chars": 3162,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial delivered no RAPID comparison at all and never surfaced the Atlantic-scoped (~0.666 PW) value, instead refusing and citing only the full-circle 1.098 PW figure, so the required Atlantic-scoped comparison was not performed."
+            }
+          },
+          "pass": false
+        }
+      ]
+    }
+  ]
+}

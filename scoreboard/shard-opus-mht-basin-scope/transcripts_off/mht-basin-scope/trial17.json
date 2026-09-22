@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 161,
+  "chars": 3513,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial refused to produce any number and never delivered the Atlantic-scoped (~0.666 PW) 2010 value or the RAPID comparison, and cited no gotcha/recipe concepts (claiming the knowledge bundle was missing), so despite correctly flagging the full-circle scope trap it is at best partial compliance."
+    }
+  },
+  "pass": false
+}

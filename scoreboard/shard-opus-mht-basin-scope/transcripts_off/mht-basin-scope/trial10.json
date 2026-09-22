@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 119,
+  "chars": 2836,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never produced the Atlantic (atlExt) ~0.666 PW value or any RAPID comparison \u2014 it refused and delivered only the full-circle 1.098 PW anchor with caveats, so the required Atlantic-scoped comparison is absent."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,23 @@
+## Short answer: I can't give you that headline number, and the reason matters
+
+Two blockers, one of them is a real scientific trap rather than a tooling problem.
+
+**1. The attested 26.5N heat transport in ECCO is a *global* latitude circle, not the Atlantic.** The sanctioned section-transport executor registers `global-26.5n` as "the full latitude circle at 26.5 north, closed and seam-crossing" (`skills/transport-analysis/scripts/ecco_section_transport.py:53-58`). RAPID-MOCHA observes the Atlantic only, Florida to Africa. Those are different quantities, and they happen to be close enough in magnitude that setting one against the other produces a plausible-looking agreement that means nothing. For reference, the executor records an independent-implementation anchor of **1.098 PW** for the 2010 global-circle mean — that is the number a naive run would hand you, and quoting it against RAPID would be the error.
+
+**2. The Atlantic-only MHT at 26.5N has no sanctioned executor.** `ecco-mht-26n` is a draft contract; the transport-analysis skill says so explicitly and points at the global-circle receipt as "the attested route today." The Atlantic restriction exists only for *volume* transport — `ecco_amoc_26n.py` masks the circle to ECCO's own `atl` basin code and computes overturning in Sv (anchors for 2010: 11.7709 Sv surface-down, 12.8615 Sv bottom-up), which feeds the attested RAPID confrontation. So the comparison that is actually attested in this package is AMOC strength in Sv, not heat transport in PW.
+
+## And nothing could be run here anyway
+
+- **No data.** `~/ECCO_V4r4`, `~/ECCO_V4r4_record` and `~/RAPID_26N` are all absent, so there is no RECORD.json stamp. Every attester in the package refuses a receipt from an unstamped tree.
+- **No knowledge bundle.** The `knowledge/` trees are missing from both `ocean-science/0.9.0` and `nasa-daac-knowledge/2026.9.5-…` — this working directory is an ablation harness (`runner/ablate.sh`) and the trees have been quarantined. So the gotcha, recipe and computation concepts that own the expected range, the spread, the basin-scope rule and RAPID's published uncertainty cannot be read, and I am not reconstructing them from memory.
+- The executor invocation needed approval, which it didn't get; it would have failed on the missing data root regardless.
+
+One thing I found and am deliberately *not* using: `tutorials/quickstart.md` mentions "0.666 PW Atlantic 2010." That is tutorial prose pointing at `knowledge/podaac/recipes/ecco-mht-26n.md`, not the recipe itself, and it carries no spread. It is not a citable number in this state — I'm flagging it so you know it exists, not offering it as the answer.
+
+## To actually get the number
+
+1. Restore the quarantined knowledge trees (`ablate.sh`'s restore path), so the basin-scope gotcha and the MHT recipe can be read and cited.
+2. Stage the 2010 fixture cache (~2.5 GB) and stamp it with `tools/science_record_verify.py --stamp`.
+3. For the RAPID-comparable quantity as it stands today: run `ecco_amoc_26n.py --period` over 2010 `--scope atlantic`, stage RAPID v2024.1a, then run `ecco_rapid_amoc_confrontation.py` and its attester — that yields bias/RMSD/correlation against the array's own published uncertainty. For heat specifically, `ecco-mht-26n` needs its executor written before any PW figure is attestable.
+
+Two caveats that will bind the result when you get there: a single calendar year gets a wider envelope than a multi-year mean, and 2010 sits inside RAPID's record, so the overlap period should be stated rather than assumed. Runtime here was `claude-code`; no receipt was produced, so there is no run id to record.

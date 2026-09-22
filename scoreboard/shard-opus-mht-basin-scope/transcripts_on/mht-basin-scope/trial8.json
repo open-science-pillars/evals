@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 178,
+  "chars": 3377,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The answer headlines the Atlantic-scoped atlExt value (0.666 PW) for the RAPID comparison, explicitly names and rejects the 1.098 PW full-circle number as the wrong scope, computes the offset against RAPID's 1.33 \u00b1 0.40 PW correctly, and cites both the basin-scope gotcha and the ecco-mht-26n recipe."
+    }
+  },
+  "pass": false
+}

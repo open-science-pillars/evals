@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 394,
+  "chars": 3700,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response never produces the Atlantic (~0.666 PW) heat transport or any RAPID heat comparison, declining the task and quoting only the 1.098 PW full-circle value, and it explicitly cites neither the basin-scope gotcha nor the recipe (claiming the knowledge bundles are missing)."
+    }
+  },
+  "pass": false
+}

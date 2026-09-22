@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 304,
+  "chars": 2988,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response uses the Atlantic atlExt value of 0.666 PW for the RAPID comparison with scope explicitly named, labels 1.098 PW as the global-circle value that is not RAPID-comparable, and cites the ecco-mht-basin-scope gotcha and the recipe's period/range discipline."
+    }
+  },
+  "pass": false
+}

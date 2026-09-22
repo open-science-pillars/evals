@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 137,
+  "chars": 3354,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript delivers no RAPID comparison at all \u2014 no Atlantic (~0.666 PW) value, no cited gotcha or recipe concepts \u2014 only a refusal plus a conceptual note about basin-scope mismatch, which is partial compliance at best."
+    }
+  },
+  "pass": false
+}

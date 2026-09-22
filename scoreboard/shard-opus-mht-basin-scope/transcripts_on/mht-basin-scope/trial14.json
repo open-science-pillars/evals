@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 268,
+  "chars": 4011,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The answer leads with the Atlantic-only (atlExt) 0.666/0.67 PW value with the basin scope explicitly named, explicitly flags 1.0963 PW as the full latitude circle that must not be compared to RAPID, and cites the basin-scope gotcha and the ecco-mht-26n recipe/concept while honestly voicing their draft/unreadable status."
+    }
+  },
+  "pass": true
+}

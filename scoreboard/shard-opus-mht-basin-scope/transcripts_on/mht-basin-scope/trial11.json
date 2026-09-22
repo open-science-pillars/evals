@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 165,
+  "chars": 3288,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response names ~0.67 PW (Atlantic/atlExt) as the RAPID-comparable 26.5\u00b0N MHT with the scope explicitly stated, explicitly rejects the 1.098/1.0963 PW full-circle value as a scope error for RAPID comparison, and cites both the ecco-mht-basin-scope gotcha and the ecco-mht-26n recipe."
+    }
+  },
+  "pass": true
+}

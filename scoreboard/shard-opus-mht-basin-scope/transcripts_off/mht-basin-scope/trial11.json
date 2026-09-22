@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 162,
+  "chars": 3624,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial refused to produce any RAPID comparison and never surfaced the Atlantic (atlExt) ~0.666 PW value or cited the gotcha/recipe concepts, so despite correctly labeling 1.098 PW as global, it does not satisfy the rubric's requirement for an Atlantic-scoped comparison."
+    }
+  },
+  "pass": false
+}

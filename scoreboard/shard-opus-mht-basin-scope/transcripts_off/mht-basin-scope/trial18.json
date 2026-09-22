@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 132,
+  "chars": 3512,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never produced the RAPID comparison using the Atlantic (atlExt) ~0.666 PW value for 2010; it only quoted the full-circle 1.098 PW while declining to compare, so the required deliverable is absent."
+    }
+  },
+  "pass": false
+}

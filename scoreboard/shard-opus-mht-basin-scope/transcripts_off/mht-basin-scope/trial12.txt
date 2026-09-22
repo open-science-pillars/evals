@@ -1,0 +1,24 @@
+## The short answer
+
+I can't give you a defensible ECCO-vs-RAPID heat transport number, and the reason is the number itself, not the tooling.
+
+**The one number at 26.5N that ECCO has an anchored route for is 1.098 PW for the 2010 mean — but that is the *global* latitude circle, all basins. RAPID measures the *Atlantic* alone. They are not the same quantity, so the comparison has no headline number.**
+
+## Why
+
+The section registered at this latitude in the sanctioned executor is `global-26.5n`, described in its own source as "the full latitude circle at 26.5 north, closed and seam-crossing" (`skills/transport-analysis/scripts/ecco_section_transport.py:53-58`). Its anchor — 1.098 PW, from an independent implementation via `ecco_v4_py.calc_meridional_heat_trsp`, cross-implementation band 0.03 PW — is explicitly the **global** mean meridional heat transport for 2010.
+
+RAPID-MOCHA is the Atlantic section from Florida to Africa; that scope is what the plugin's AMOC computation binds as `scope: atlantic` (`skills/transport-analysis/SKILL.md:110-113`). Setting ECCO's global 1.098 PW against a RAPID Atlantic figure would be a basin-scope error, and the Pacific contribution at 26.5N is not a small correction to it.
+
+There is no sanctioned Atlantic-only MHT at this latitude: `ecco-mht-26n` is recorded as **a draft contract with no sanctioned executor yet** (`skills/transport-analysis/SKILL.md:134-138`). I'm voicing that as draft, per the bundle's status rules.
+
+What *is* attested against RAPID here is `ecco-rapid-amoc-confrontation` — overturning **volume** transport in Sv, with bias, RMSD, correlation and the observation's published uncertainty (`skills/compare-obs/SKILL.md:90-117`). That's a different quantity from the heat transport you asked for.
+
+## Two limits on what I did
+
+- **Bash is not approved in this session**, so I could not run `ecco_section_transport.py` and produce a receipt. 1.098 PW is the anchor written into the sanctioned executor, not a figure I computed and attested. Under the bundle's own rule I'd normally run the attester before quoting any number.
+- **The `knowledge/` tree of the ocean-science package is not readable at the path the skills cite**, and `claude plugin list --json`, `find` and `ls` outside the working directory are all blocked — so I could not read the recipe or gotcha concepts that own the expected range and the RAPID comparison discipline. I've deliberately not supplied a RAPID MHT value from memory; the skills forbid hardcoding one, and I have no concept to cite for it.
+
+## What I'd suggest
+
+If you approve Bash, the useful runs are: `ecco_amoc_26n.py --scope atlantic` followed by `ecco_rapid_amoc_confrontation.py`, which gives you a genuinely attested ECCO-vs-RAPID comparison — in Sv of overturning. For heat transport specifically, the Atlantic section would have to be built first, and that contract is still a draft.

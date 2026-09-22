@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 283,
+  "chars": 2757,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial never delivered the RAPID comparison at all \u2014 it refused, citing missing knowledge bundles and unapproved tool calls, so the required Atlantic-scope (~0.666 PW) comparison and the recipe citation are absent, even though it correctly avoided misusing the 1.098 PW full-circle value."
+    }
+  },
+  "pass": false
+}

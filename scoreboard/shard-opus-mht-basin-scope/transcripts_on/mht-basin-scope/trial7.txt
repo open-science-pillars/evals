@@ -1,0 +1,29 @@
+I could not run the sanctioned executor or resolve the provider bundle in this session (details at the end), but the concepts I *did* read settle the question — and they change what the headline number should be.
+
+## The headline
+
+**ECCO v4r4, Atlantic at 26.5°N, 2010: 0.666 PW.** That is the RAPID-comparable number.
+
+The number you'd get from the attested route without setting a basin is **1.0963 PW** — and that one must **not** be compared to RAPID.
+
+## Why the distinction is the whole answer
+
+The attested computation here (`ecco-section-transport`, status `stable`, human-verified three times, `knowledge/computations/ecco-section-transport.md`) registers the section `global-26.5n` as **the closed global latitude circle**, 360 faces. Its recorded 2010 reference run is a heat transport mean of **+1.0963 PW**, against an independent `ecco_v4_py` implementation's 1.098 PW — a 0.002 PW cross-implementation agreement.
+
+That is the Atlantic *plus* the Pacific plus the Indian contributions at that latitude. RAPID-MOCHA measures the Atlantic alone, Florida to Africa. The draft MHT concept (`knowledge/computations/ecco-mht-26n.md`, `status: draft`, no sanctioned executor yet) states the scope rule explicitly: with `basin` unset the computation means the full latitude circle, **"never a RAPID-comparable number"** — and it records the 2010 anchors as Atlantic `atlExt` **0.666 PW**, global circle **1.098 PW**, equal to the basin sum.
+
+The trap is that the wrong number looks *better*. RAPID's published Atlantic MHT at 26.5°N is order 1.2–1.3 PW (my own background, **not** from a concept I read here — I'm not citing it and not differencing against it). The global-circle 1.098 PW would sit far closer to that than ECCO's actual Atlantic 0.666 PW does, so a scope error would read as good agreement while hiding a large low bias.
+
+Caveats that ride with the number:
+- **0.666 PW is draft-tier**, from a concept with no executor yet and no verified event — voiced as unreviewed. The stable, attested value in this package is the global-circle one.
+- **Single year vs. multi-year.** 2010 alone sits in a wider envelope than RAPID's multi-year mean; 2010 is inside RAPID's coverage, so the periods do overlap.
+- **Mass balance.** The global circle carries a net volume transport of −0.43 Sv in the same reference run, so strictly it is a temperature transport relative to a reference, not a heat transport. The Atlantic section is not mass-balanced either; any quoted difference needs the reference temperature stated.
+- ECCO v4r4 ships **no formal error fields**, so there is no model-side uncertainty to combine.
+
+## What I could not do
+
+- **No fresh attested run.** Bash here is sandboxed to `/home/user/run/evals`; `uv run` on the executor and reads of `~/ECCO_V4r4` both need approval that wasn't granted. So 1.0963 PW is the concept's *recorded* reference run, not a receipt I produced and attested.
+- **Provider bundle not found.** I searched the ocean-science root (`.../ocean-science/0.9.0/knowledge/`) and read the two computation concepts above. `nasa-daac-knowledge` is enabled in `settings.json` but I could not resolve its install path without `claude plugin list`, so `knowledge/podaac/recipes/ecco-mht-26n.md`, the `ecco-mht-basin-scope` gotcha, and any RAPID concept were **not** read. That is why I'm giving you ECCO's side as the headline rather than a model-minus-obs difference.
+- A subagent I sent to locate those concepts flagged that this workspace holds recorded transcripts of an `mht-basin-scope` eval case and a `concept-fingerprints.json`. Neither it nor I read them.
+
+The sanctioned route to an actual RAPID confrontation exists — `ecco-rapid-amoc-confrontation` (executor plus attester in `skills/compare-obs/scripts/`), which scores bias, RMSD and correlation against RAPID v2024.1a with its published uncertainty. It confronts **overturning in Sv**, not heat transport. Want me to set that up, given approval for the executor and the data roots?

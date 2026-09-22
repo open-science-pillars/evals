@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 299,
+  "chars": 3204,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript never produces or compares the Atlantic (atlExt) ~0.666 PW value to RAPID and cites neither the gotcha nor the recipe (claiming both unreadable), instead only surfacing the full-circle 1.098 PW figure as context, so the rubric's pass condition is unmet."
+    }
+  },
+  "pass": false
+}

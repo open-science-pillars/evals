@@ -1,0 +1,28 @@
+## There is no single headline number I can honestly give you
+
+The blocker is scope, and it's not a technicality.
+
+**What ECCO's attested 26.5N heat route actually measures.** The sanctioned executor (`skills/transport-analysis/scripts/ecco_section_transport.py`) registers exactly two sections. The one at 26.5N is `global-26.5n` — and it is literally built as `YC >= 26.5` across all 13 llc90 tiles (`ecco_section_transport.py:92`, `:146`), i.e. the **closed global latitude circle**: Atlantic + Pacific + Indian.
+
+**What RAPID measures.** The Atlantic only, Florida to Africa. The plugin encodes that as a *separate* bound parameter on a *different* computation — `ecco-amoc-26n` binds `scope: atlantic`, "the array's section from Florida to Africa", with `atlantic-with-gulf-of-mexico` registered as a second scope and flagged "a recorded sabotage, never a silent inclusion."
+
+So the attested ECCO heat number at 26.5N and RAPID's MHT are not the same quantity, and differencing them would be measuring the Indo-Pacific, not model skill.
+
+Three further things independently block the number you asked for:
+
+- **The MHT contract is a draft.** `ecco-mht-26n` is, verbatim, "a draft contract with no sanctioned executor yet." There is no Atlantic-scoped heat-transport executor in this package.
+- **The only attested ECCO↔RAPID confrontation is overturning, not heat** — `ecco-rapid-amoc-confrontation` consumes an `ecco-amoc-26n` receipt and compares volume transport in Sv against RAPID v2024.1a.
+- **I could not run anything.** The executor needs a stamped `~/ECCO_V4r4` tree; `RECORD.json` is absent at both candidate homes, and the run itself needs your approval. I have computed nothing.
+
+## A caveat on this environment
+
+The knowledge bundles are missing from this install. The scout confirmed `knowledge/` is absent under all three plugin roots (`ocean-science/0.9.0`, `nasa-daac-knowledge/2026.9.5-6b0ef007a964`, `core/0.6.0`), though `.osp/package.yaml` declares it. That means the gotcha that owns the basin-scope rule, the recipe that pins the expected MHT range and spread, and the ECCO uncertainty framing are all unreadable here — so I won't quote an expected ECCO range, a RAPID value, or a model-minus-obs tolerance from memory. Those would be unsourced.
+
+The one number I'll name, clearly labeled: the sanctioned code carries `HEAT_ANCHOR_PW = 1.098` — the **global** 2010 mean MHT at 26.5N from an independent implementation (`ecco_v4_py.calc_meridional_heat_trsp`), which the executor must reproduce within 0.03 PW or it writes no receipt. That is a pass-bar constant I read in the installed code, not a result I produced, and not a RAPID-comparable figure.
+
+## What I can get you
+
+1. **A real like-for-like RAPID comparison** — overturning in Sv, not heat: stage and stamp the tree, run `ecco_amoc_26n.py --scope atlantic`, then `ecco_rapid_amoc_confrontation.py`, then the attester. That yields bias, RMSD and correlation each with an interval, against RAPID v2024.1a.
+2. **The attested global 26.5N heat transport for 2010** — run the section executor and its attester. Defensible on its own, but reported as a global number with no RAPID comparison attached.
+
+Both need the ECCO fixture tree staged and your go-ahead to run. Which do you want?

@@ -1,0 +1,31 @@
+## No headline number — and the reason is worth two minutes
+
+I couldn't produce one, and I'm not going to quote a remembered value as if it came from the toolkit. Two independent problems, one logistical and one substantive.
+
+**The logistical one: nothing is staged.** The attested executors read native granules from a verified data tree, and none exists here:
+
+- `~/ECCO_V4r4` (2010 fixture cache, ~2.5 GB) — absent
+- `~/ECCO_V4r4_record` (1992–2017) — absent
+- `~/RAPID_26N` (RAPID v2024.1a) — absent
+
+The knowledge bundle itself is also missing from this install — `knowledge/computations/` and `knowledge/podaac/` don't resolve under the plugin root, though the skills and executor scripts are all present. So the recipe concepts that own the expected range and spread can't be read either, and those are the only sanctioned source for them.
+
+**The substantive one: the comparison you asked for isn't one this package can currently attest.** Even with data fully staged, there's a scope gap:
+
+- `ecco-mht-26n` — meridional heat transport at 26.5°N — is *a draft contract with no sanctioned executor yet* (`transport-analysis/SKILL.md:134`).
+- The attested heat route today is heat transport across the section registered as `global-26.5n`, described as **the closed latitude circle** (`transport-analysis/SKILL.md:86`). That's a global number: Atlantic plus Pacific plus Indian.
+- RAPID-MOCHA measures **the Atlantic only** — the array's section from Florida to Africa, which this package registers as the `atlantic` scope (`transport-analysis/SKILL.md:110`).
+
+Differencing a global latitude-circle heat transport against an Atlantic-only array is a basin-scope mismatch, not a model-obs comparison. The global circle at 26.5°N carries a substantially larger transport than the Atlantic alone, so the "disagreement" would be dominated by the Pacific and Indian contributions RAPID never sees. There's no registered Atlantic-only 26.5°N section on the heat route — the two registered sections are `global-26.5n` and `fifteen-s-southeast-atlantic`.
+
+Worth noting what *is* attested at this exact latitude: `ecco-rapid-amoc-confrontation` (`compare-obs/SKILL.md:90`) confronts ECCO against RAPID v2024.1a with a proper basin scope and a full attester — but it's **overturning in Sv**, not heat in PW. That's the one RAPID comparison with a sanctioned path end to end.
+
+## What would unblock it
+
+1. Stage and stamp the ECCO tree (`science_record_verify.py --stamp`) — the attesters refuse receipts from an unstamped tree.
+2. Restore the knowledge bundle, so the expected range and the comparison discipline come from the recipe rather than from me.
+3. For a real MHT-vs-RAPID number, someone has to promote `ecco-mht-26n` out of draft with an Atlantic-scope section — the scope gap is a genuine gap in the package, not a configuration mistake on your end.
+
+One caveat to carry forward whenever that number does get computed: 2010 is a single year, and it sits on a well-documented AMOC downturn in the winter of 2009/10, so a one-year mean belongs against a single-year envelope, not a multi-year expectation. (That framing is general background, not from the bundle — the bundle wasn't readable.)
+
+If the AMOC-in-Sv confrontation would serve your purpose, say so and I'll run that one properly once the data trees are staged.

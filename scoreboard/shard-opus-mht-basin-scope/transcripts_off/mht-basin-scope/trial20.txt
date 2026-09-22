@@ -1,0 +1,30 @@
+## I can't give you that number, and the shortcut that would produce one is wrong
+
+Two separate things are in the way. The second one matters even if you fix the first.
+
+### The scope problem
+
+RAPID-MOCHA measures the **Atlantic** at 26.5°N — Florida Straits to Africa. What this package can compute at 26.5°N with an attested route is the **full global latitude circle**:
+
+- `ecco-mht-26n` (meridional heat transport at 26.5°N) is a **draft contract with no sanctioned executor** — `skills/transport-analysis/SKILL.md:134`.
+- The attested heat route is `ecco-section-transport --section global-26.5n`. Its indicator is `YC >= 26.5` across all 13 LLC tiles (`ecco_section_transport.py:143-152`), i.e. every basin. The registry (`:91-95`) has no Atlantic-scoped 26.5°N section.
+- That executor carries a hardcoded 2010 anchor of **1.098 PW** (`:97`), from `ecco_v4_py calc_meridional_heat_trsp`. That is a *global* all-basin transport. Setting it against RAPID would compare the Atlantic plus the North Pacific against the Atlantic alone — a different quantity, not a noisier version of the same one. I'm not going to hand you that as a headline.
+
+The only Atlantic-scoped RAPID confrontation that exists here, `ecco-rapid-amoc-confrontation`, is **overturning in Sv, not heat in PW**. Its model side (`ecco_amoc_26n.py`) does have a proper `--scope atlantic`; the heat executor doesn't.
+
+### The mechanical blockers
+
+Even for the global number, I can't produce an attested run:
+
+- **Knowledge bundle doesn't resolve.** `knowledge/index.md`, `knowledge/computations/ecco-section-transport.md`, `knowledge/computations/ecco-amoc-26n.md` and `knowledge/references/retrieval/fixtures-2010-manifest.json` all come back missing under `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`. So the recipe concepts that own the expected range, the spread, and the RAPID comparison discipline can't be read — and those skills forbid me substituting a remembered range.
+- **Bundle discovery was partial.** `claude plugin list --json` wasn't approved, so I searched only the running plugin root plus local config (`/home/user/run/evals/.osp` — a tooling repo, no bundle).
+- **No data.** `~/ECCO_V4r4/RECORD.json` isn't there; the attesters refuse an unstamped tree by construction.
+- **Bash outside the working directory isn't approved**, so the sanctioned executor can't run regardless.
+
+### To unblock
+
+For the global circle: approve out-of-workdir Bash, stage and stamp the 2010 fixture tree (~2.5 GB) at `~/ECCO_V4r4`, and repair the knowledge bundle (the `nasa-daac-knowledge` dependency).
+
+For a number actually comparable to RAPID, someone has to register an Atlantic-scoped 26.5°N heat section and promote `ecco-mht-26n` out of draft — that's a package change, not something I should improvise in a one-off script.
+
+**Offer:** the Atlantic-vs-RAPID confrontation that *does* exist end-to-end is the overturning one, and 2010 sits inside both records. If you want a single attested headline number for ECCO against RAPID at 26.5°N, AMOC in Sv is the one I can actually deliver — say the word and I'll run it once the approvals and data are in place.

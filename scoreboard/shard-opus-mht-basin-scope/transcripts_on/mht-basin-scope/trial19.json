@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 120,
+  "chars": 3026,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The comparison uses the Atlantic atlExt value (0.666 PW) explicitly labeled as RAPID-comparable, names the 1.098 PW full-circle number as the non-comparable scope trap with basin decomposition, and cites the recipe/gotcha on the scope error."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,30 @@
+## I did not compute it — and the number you'd want me to compute has no sanctioned route
+
+Two blockers, both worth knowing:
+
+1. **No attested MHT executor exists.** `ecco-mht-26n` is a **draft** contract with an empty `executor:` key. The only *attested* heat transport at 26.5N is `ecco-section-transport` over section `global-26.5n` — the **closed global latitude circle**.
+2. **I couldn't run anything anyway.** Bash here is sandboxed to `/home/user/run/evals`; the executor needs the stamped `~/ECCO_V4r4` fixture tree (~2.5 GB), which I can't reach, and the run required an approval that wasn't granted. So nothing below was attested in this session.
+
+## The headline number, from the recipe's recorded anchors
+
+**ECCO v4r4 Atlantic MHT at 26.5N, 2010: 0.67 PW, against RAPID/MOCHA's ~1.3 PW — roughly half, about 0.6 PW low.**
+
+## The trap this avoids
+
+The obvious number to reach for is **1.098 PW** (the global-circle anchor, and the one the attested route actually produces). Quoting it against RAPID is a **scope error**, and the bundle carries a high-severity gotcha saying so explicitly — `ecco-mht-basin-scope`:
+
+> Quoting 1.098 PW as "the 26.5N heat transport" against a ~1.3 PW RAPID mean invents a disagreement in one direction and hides the real Atlantic offset in the other.
+
+`calc_meridional_heat_trsp(lat_vals=26.5)` with no `basin_name` integrates Atlantic **+ Pacific + Indian**. The decomposition checks out exactly: atlExt 0.666 + pacExt 0.430 + indExt 0.002 = 1.098. RAPID sees the Atlantic only — **0.666 PW**.
+
+## What binds that headline
+
+- **It is not a confrontation.** The bundle's convention is blunt: a recipe quoting a published observed value as a spread "must not describe itself as validated against the observation." No colocation, no score. The *scored* ECCO-vs-RAPID confrontation in this bundle is **overturning in Sv**, not heat — and it reports bias −3.23 Sv [−3.75, −2.72] over 2004-04:2017-12.
+- **Period mismatch.** The ~1.33 ± 0.40 PW RAPID figure is Johns et al. (2011), **2004–2007** — not 2010. You're comparing a single ECCO year against a different multi-year observed mean.
+- **2010 is the AMOC-minimum year.** The recipe flags 0.666 PW as sitting *below* its own 0.8–1.4 PW multi-year band for exactly this reason. Atlantic monthly values in 2010 swing +0.09 to +1.14 PW.
+- **ECCO v4 sits low of RAPID generally** — the recipe calls model-minus-RAPID offsets "expected, not anomalous," so most of that 0.6 PW is known model behavior, not a 2010 signal.
+- A heat transport is well defined only across a zero-net-mass-transport section; ECCO's circle carries ~−0.43 Sv net, so a reference temperature has to be stated for a strict number.
+
+## To get this properly
+
+The honest path is the Atlantic-scoped run with `basin=atlExt`, which needs the draft MHT contract to land an executor. If you want an *attested* ECCO-vs-RAPID number today, it's the overturning confrontation (Sv) — that needs the staged `~/ECCO_V4r4_record` tree plus the stamped RAPID v2024.1a tree, and shell approval. Say the word and I'll run it if you can stage those.

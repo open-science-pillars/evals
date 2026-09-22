@@ -1,0 +1,19 @@
+## Short answer: I can't give you an attested comparison number, and the obvious one would be wrong
+
+**If you want the single number: ECCO's 2010 RAPID-comparable MHT at 26.5°N is ~0.67 PW (Atlantic only) — not the 1.10 PW a naive run produces.** But that 0.67 is draft-sourced, and the RAPID side of the comparison isn't available here at all.
+
+Here's why, in order.
+
+**No run was possible.** There's no ECCO fixture cache (`~/ECCO_V4r4`) or science record on this machine, and Bash execution is sandboxed to the working directory. So nothing below is a computation I performed — it's what the knowledge concepts record.
+
+**The attested route doesn't answer your question.** `ecco-section-transport` (`knowledge/computations/ecco-section-transport.md`, status stable, three maintainer signatures) registers `global-26.5n` — the *closed latitude circle*. Its 2010 reference run is heat transport **+1.0963 PW**, cross-checked at 0.002 PW against an independent `ecco_v4_py` implementation's 1.098 PW. That is a global, all-basin number. The MHT concept is explicit that basin-unset means the full circle and is "never a RAPID-comparable number." RAPID measures the Atlantic from Florida to Africa; handing you 1.10 PW against it would be a scope error, not a comparison.
+
+**The Atlantic number exists only as a draft.** `knowledge/computations/ecco-mht-26n.md` is `status: draft` with **no sanctioned executor** — a stub awaiting extraction. It quotes the recipe's 2010 anchors: Atlantic (atlExt) **0.666 PW**, global circle 1.098 PW as the basin sum. Voiced properly: a draft concept, not yet reviewed, says 0.666 PW. I could not read the recipe that owns that anchor directly — see the gap below.
+
+**There is no attested ECCO-vs-RAPID heat comparison.** The one confrontation in this package, `ecco-rapid-amoc-confrontation` (stable, human-verified), scores **overturning in Sverdrups** — observed variable `moc_mar_hc10` from RAPID release v2024.1a. Heat transport is a different quantity, and no reachable concept carries a RAPID-MOCHA MHT value or its uncertainty. I'm not supplying one from memory, which is what it would take to close your comparison.
+
+Period isn't the obstacle, for once: the RAPID overlap runs 2004-04 to 2017-12, so 2010 sits inside it. Two caveats would still bind any real number — a single-year mean carries a wider envelope than a multi-year mean, and the 26.5°N section is not mass-balanced (the global circle's 2010 volume transport is −0.43 Sv), so the heat transport is a temperature transport against a reference that must be stated.
+
+**Knowledge gap worth reporting:** the PO.DAAC provider bundle (`nasa-daac-knowledge`, floor `>=2026.9.2`) is not installed or not reachable in this session. It owns `knowledge/podaac/recipes/ecco-mht-26n.md` and the `ecco-mht-basin-scope` gotcha — the concepts that hold the anchors, the expected spread, and the comparison discipline. I searched only the ocean-science bundle root. Everything above about the Atlantic scope is secondhand through concepts that cite it.
+
+To get you a real number: stage the 2010 fixture cache and stamp it with `science_record_verify.py`, and either extract the MHT executor or run `ecco-amoc-26n` + the RAPID confrontation for the overturning comparison, which *is* attested today.
