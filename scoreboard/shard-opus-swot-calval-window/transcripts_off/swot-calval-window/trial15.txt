@@ -1,0 +1,46 @@
+I could not complete the load. Two things blocked it, and one of them changes the answer to your second question, so I'll be specific.
+
+## What's blocked
+
+**The knowledge bundle isn't reachable.** The `load-swot` workflow requires consulting the PO.DAAC concepts before planning a fetch — `knowledge/podaac/datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md`. `ocean-science` v0.9.0 declares `nasa-daac-knowledge >=2026.9.2` and v2026.9.5 is installed, but neither bundle root has a `knowledge/` directory in this session:
+
+- `…/ocean-science/0.9.0/knowledge` — absent
+- `…/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge` — absent, though `tools/` and `README.md` are there
+
+So no concept resolves. Per the consult convention I'm saying that plainly rather than substituting remembered SWOT facts for signed ones — which matters here, because the ShortName, version family, tier posting, current processing baseline, and the crossover-correction field are exactly the things the concepts own and I'd otherwise be guessing at.
+
+**CMR search wasn't permitted.** The `get_collections` call was declined, so I couldn't verify granule counts or run the volume gate either. Nothing was downloaded and no statistics were computed.
+
+## What I parsed from your request
+
+- **Region:** Agulhas, which I'd take as roughly 10°E–40°E, 45°S–25°S — the current core along the SE African shelf edge, the retroflection, and the return current. Narrow it to ~10–30°E, 45–35°S if you only want the retroflection.
+- **Time:** 2023-03-01 to 2024-03-31.
+- **Tier:** Basic by default; Expert if you want the full correction and uncertainty set, which for this analysis you probably do.
+
+## The thing that dominates this window
+
+March 2023 – March 2024 straddles SWOT's orbit-phase transition. The mission flew a 1-day repeat cal/val orbit in the first part of 2023, then moved to the 21-day science orbit in the second half. These are not two chunks of one time series — they are two different sampling instruments:
+
+- **1-day phase:** the swath pattern repeats daily. Superb temporal resolution, but only over the fixed ground tracks that orbit happened to lay down. Whether any of them cross your Agulhas box is a coverage fact I could not check.
+- **21-day phase:** near-global, but each point is revisited only once or twice per cycle.
+
+There's also a version-family trap the gotcha concept covers: the cal/val era is not held in the same collection family as the science era. Query one ShortName across the whole 13 months and the early part comes back empty — which reads as "no data over the Agulhas" when it actually means "wrong family."
+
+## The time series I'd build
+
+Given that split, I would **not** build one continuous regional series and describe it as SWOT SSH over 13 months. I'd build:
+
+1. **A per-cycle, per-swath regional mean SSHA** — flag-masked, crossover-corrected, area-weighted, left and right swaths kept separate with the nadir gap intact, and the cal/val and science segments plotted as two separate traces on a shared axis with the transition marked. Cadence is ~daily then ~21-day; that discontinuity is the honest presentation.
+2. **The series worth more scientifically: regional SSH variance / eddy kinetic energy per cycle.** The Agulhas is a ring-shedding system, and SWOT's value here is the 2D swath structure, not a basin-mean number a nadir altimeter already gives you better. A variance series resolves ring shedding in a way a mean SSHA doesn't.
+3. **Derived, if you want the dynamics:** cross-track SSH gradient across the current core → surface geostrophic velocity, giving a jet-transport proxy; and a retroflection longitude index tracked cycle to cycle.
+
+## Caveats that shape it
+
+- **No trend.** Thirteen months, mesoscale-dominated, two sampling regimes. Any slope you fit is aliased eddy energy, not a sea level trend.
+- **Processing baseline drift.** A 13-month span will mix CRIDs within a collection. Record the baseline of every granule loaded; consistency claims across the series depend on that record.
+- **Crossover correction arrives unapplied** and has a quality gate. It must be applied before any statistic, and the summary must say so explicitly.
+- **Never interpolate the nadir gap** — it's a real void.
+
+## To proceed
+
+I need either the `knowledge/podaac/` bundle restored (`claude plugin update nasa-daac-knowledge@open-science-pillars`, then `/reload-plugins`), or your say-so to plan from general method with the dataset specifics verified live against CMR — which needs the `earthdata` MCP tools approved. With both, I can run the granule search, show you count and volume, and hit the gate properly before anything downloads.

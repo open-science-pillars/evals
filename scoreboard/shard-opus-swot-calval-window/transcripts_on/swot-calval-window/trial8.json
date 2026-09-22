@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 148,
+  "chars": 4246,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response flags the orbit-phase transition in general terms but explicitly declines to supply the phase dates, cycle-numbering discontinuity, or version-family (cal/val D-collection) facts, and never splits or narrows the range per phase or applies the version-family constraint to collection choice \u2014 it blocks instead of delivering the required per-phase plan."
+    }
+  },
+  "pass": false
+}

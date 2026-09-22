@@ -1,0 +1,46 @@
+I could not complete the load. Two blockers, both worth naming precisely before the science:
+
+**1. The PO.DAAC knowledge bundle is not readable in this session.** The `load-swot` and `swot` skills both require consulting `knowledge/podaac/datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, and `gotchas/swot-crossover-unapplied.md` before anything else — and the orbit-phase concept specifically must be read first for any range touching 2023, which yours does. The `ocean-science` bundle index confirms these live in the separate `nasa-daac-knowledge` plugin (dependency `>=2026.9.2`), but I can't reach it: `Read` on the candidate paths returns nothing, and directory listing, `find`, and `claude plugin list --json` are all blocked outside `/home/user/run/evals`. So I have **not** consulted those concepts, and I won't restate their contents from memory — the skill forbids it, and my recollection is exactly the thing the concepts exist to override.
+
+**2. No data access.** The Earthdata CMR tools weren't granted, so I never got to the granule search, which means the volume gate was never evaluated and nothing was downloaded. No granule counts, no sizes, no baselines, no flag statistics.
+
+Everything below is **general method, not concept-backed**. Treat the numbers as approximate and verify them against the concepts once the bundle is back.
+
+## The problem with your window
+
+March 2023 – March 2024 is close to the worst possible span to ask for as a single time series, for a reason that has nothing to do with the Agulhas:
+
+- SWOT launched in December 2022 and spent the early part of 2023 in commissioning. **A series starting 1 March 2023 probably starts before there is science-quality KaRIn L2 SSH at all.**
+- The mission then flew a **1-day repeat cal/val orbit** through roughly the first half of 2023, and transitioned to the **21-day science orbit** around mid-2023. These are *different ground tracks*, different cycle numbering, and different revisit cadence. Your window straddles that transition.
+- The cal/val orbit repeated a limited set of passes, not global coverage. **Whether the Agulhas box sits under a cal/val swath at all is an empirical question** I'd have to answer from granules — I can't assume it either way.
+- The two eras are typically held in different product version families. So an empty result for early 2023 is a *wrong-collection* symptom at least as often as a true coverage gap, and the orbit-phase concept is what disambiguates that.
+
+Net: you do not get a 13-month series. You realistically get **~8 months of homogeneous 21-day science sampling** (mid-2023 → March 2024, on the order of a dozen cycles), plus an earlier, differently-sampled chunk that must not be concatenated onto it. Under one full annual cycle of consistent sampling — so no seasonal cycle, and certainly no trend.
+
+## What the time series actually looks like
+
+The unit of acquisition is **cycle × pass**, not a date. Each pass gives an instantaneous snapshot of a two-swath strip with a nadir gap down the middle. For an Agulhas box (I'd assume ~10–40°E, 45–30°S; extend east to ~50°E if you want the Agulhas Return Current — tell me which, it changes the download), only a handful of passes cross it per cycle, each at a different moment within the cycle.
+
+So the honest construction is **one series per pass ID**, indexed by cycle — not a single merged regional series. A box-mean built from whichever swaths happened to be in view on a given day is averaging different pieces of ocean each time; in a region with gradients as sharp as the Agulhas, that sampling noise will dominate whatever signal you're after.
+
+Quantities worth putting on that axis, roughly in order of robustness:
+
+1. **Per-pass SSHA variance / RMS and surface geostrophic EKE** from along-swath gradients. Least exposed to the large-scale correlated swath errors, and it's the Agulhas-relevant quantity — ring shedding and retroflection variability.
+2. **Front position** — where a chosen SSHA contour crosses a fixed pass. A clean scalar per cycle, immune to most swath-mean error.
+3. **Wavenumber spectra per pass segment** — the submesoscale content SWOT exists to resolve, which nadir altimetry cannot give you here. Report the noise floor alongside.
+4. **Swath-mean SSHA** — list it last deliberately. It's the statistic *most* exposed to cross-track correlated (roll/phase) error, which is what the crossover correction addresses, and that correction arrives unapplied in at least some tiers. Don't quote it before applying the correction with its quality gate.
+
+Ring tracking is tempting here and I'd push back on it: 21-day revisit is too coarse to follow an Agulhas ring continuously. You'd use SWOT for 2D structure at snapshots and a merged nadir product (DUACS or similar) as the continuous backbone.
+
+## Other things that will bite
+
+- **SSHA is an anomaly against a mean sea surface.** In the Agulhas — sharp persistent gradients, historically sparse coverage — MSS error is not negligible and projects straight into any regional mean.
+- **Processing baseline drift.** Over 13 months the granules will not all carry the same `crid`. Record it per granule; consistency claims depend on that record.
+- **Flagged fraction will be substantial**, especially austral winter. Flags are bit-packed and must be decoded before any statistic — no exceptions, and I wouldn't report a number computed any other way.
+- **Never interpolate across the nadir gap or flatten the swaths to a grid** as part of loading. That's analysis, done deliberately and separately.
+
+## To actually run this
+
+I need two things: the `nasa-daac-knowledge` bundle readable (so the orbit dates, version families, tier inventory, and crossover field come from the concepts rather than my memory), and permission for the Earthdata tools so I can do the granule search and put a real number in front of the volume gate.
+
+Also tell me the **tier** — default is Basic; the finest-posting tier inflates volume fast over a year of passes — and confirm the bounding box.

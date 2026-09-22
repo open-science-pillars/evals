@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 134,
+  "chars": 5806,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the July 2023 orbit-phase transition unprompted, splits the window into two regimes rather than one continuous series, explicitly cites differing repeat period and cycle numbering, and applies the version-family constraint by refusing a single-collection query (and a guessed ShortName) because the cal/val era lives in a different family that would fail silently."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,38 @@
+I could not load the data. Three separate blockers, and one of them is about your date range rather than the environment.
+
+## What's blocked
+
+**1. The knowledge bundle isn't installed.** Every SWOT dataset fact `load-swot` needs — the tier inventory and ShortNames, the version families and their holdings, the current processing baseline, the orbit-phase rules, the crossover correction and its quality gate — lives in the PO.DAAC provider bundle at `knowledge/podaac/`, which ships in the `nasa-daac-knowledge` plugin. Bundles searched: `ocean-science/0.9.0` and `core/0.6.0` (neither has a `knowledge/` directory at all), and `nasa-daac-knowledge/` in the plugin cache, which exists but is empty — no version directory under it. `claude plugin list --json` isn't runnable here (the shell is confined to the working directory), so I'm reporting what the filesystem shows rather than the installer's record. `claude plugin install nasa-daac-knowledge@open-science-pillars` should fix it.
+
+**2. CMR discovery wasn't permitted.** `get_collections` came back needing approval, so I have no granule count, no volume estimate, and no confirmation of what actually exists over the Agulhas box.
+
+**3. No project config.** There's no `ocean-science.local.md` in `/home/user/run/evals`, so there's no configured region box and no download-gate threshold. I'd propose 10–40°E, 45–30°S (Retroflection through the Cape Basin and part of the Return Current) — confirm or replace it, since region and tier are what determine download size.
+
+I'm not going to substitute remembered SWOT facts for the concepts, and with no granules there are no statistics to report.
+
+## The problem with March 2023 – March 2024
+
+This isn't an environment issue — it's the window itself. SWOT flew a 1-day cal/val orbit before switching to the 21-day science orbit in mid-2023, and your range straddles that switch. The plugin's own skill text flags this as a double silent failure: a query spanning the transition, and an empty early-mission query that looks like a coverage gap but is actually a version-family mismatch (the cal/val era lives only in the D family — `skills/swot/references/swot-products.md:17-20`). The exact transition date, the cycle numbering on each side, and which ShortName covers which era are precisely what the unreachable concept carries, so I won't quote them.
+
+Practical consequence: **there is no single homogeneous KaRIn series across these 13 months.** You get an early-2023 stretch with no science-orbit SSH, then a daily-repeat segment restricted to the fixed cal/val ground tracks (which may or may not cross your box), then the 21-day science record. Splicing those three into one line produces a sampling discontinuity that reads as signal.
+
+## The time series I'd build (general method, not concept-backed)
+
+**Don't build a box-mean.** The Agulhas is the highest-eddy-energy region in the world ocean outside the Gulf Stream. A regional average of SSHA collapses ±30–50 cm ring and meander signals into a small, noisy residual, and each 21-day sample aliases a field that reorganizes faster than the repeat interval.
+
+**Build a per-pass Hovmöller instead.** Pick one or two passes that cut the Retroflection and the Return Current cleanly, and plot SSHA against along-swath distance versus cycle number, kept separate for the left and right swaths with the nadir gap left empty. This holds the sampling geometry and the cross-track error profile fixed, which a regional mean does not — and it shows ring shedding and westward propagation directly, which is what you actually want from the Agulhas.
+
+Alongside it, one scalar per cycle that survives sparse sampling: **regional SSHA variance or RMS over good pixels** — an EKE-like proxy, far more robust to which passes happened to fall where than the mean is.
+
+Decisions that shape it:
+
+- **Time axis is cycle, not date.** ~21 days per sample in the science era, so roughly 11–13 points from the orbit switch to March 2024. Enough to see ring events; not enough to fit a seasonal cycle and a trend separately, and with mesoscale decorrelation of weeks to months the effective degrees of freedom are in the single digits. **I would not quote a trend from this window.**
+- **Crossover correction before any statistic.** The delivered `ssha` arrives with it unapplied; `height_cor_xover` carries it and has a quality gate (`skills/swot/SKILL.md:108`). Uncorrected cross-track error aliases into exactly the low-frequency regional wobble a time series is built to detect — this is the single most likely way to manufacture a fake Agulhas signal.
+- **Record `crid` per granule and plot it under the series.** Over 13 months the granules will carry more than one processing baseline, and a step in the series can be a reprocessing step rather than ocean.
+- **Flags decoded and pixels masked first; swaths and gap intact.** Never interpolate across the nadir gap — it's a real void.
+- **Uncertainty** from the per-sample uncertainty variables the dataset concept names, plus a block bootstrap sized to the mesoscale decorrelation scale, not a naive standard error.
+- **Backbone series from nadir altimetry.** Gridded L4 SSH gives you continuous coverage across the entire March 2023 – March 2024 window, including the months where KaRIn science data doesn't exist. Use that as the continuous line and SWOT as the high-resolution overlay on top of it — that's the honest way to cover your stated period.
+
+## What I'd suggest
+
+Install `nasa-daac-knowledge`, approve the Earthdata MCP tools, and drop a `ocean-science.local.md` with the box and gate threshold. Then either narrow the window to the science orbit only (mid-2023 onward, one continuous sampling regime), or keep the full 13 months and accept two separately-labelled segments plus a nadir-altimetry backbone. Tell me which and I'll run the search and stop at the volume gate with real counts.

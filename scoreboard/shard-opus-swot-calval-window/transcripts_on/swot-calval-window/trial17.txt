@@ -1,0 +1,70 @@
+I consulted the knowledge bundles before touching the data, and the consult changed the request materially. I have **not** downloaded anything — two gates are open, one scientific and one procedural.
+
+## What I parsed
+
+| | |
+|---|---|
+| Region | Agulhas — I used **10°E–40°E, 45°S–25°S** (current core, retroflection, return flow). Say if you want a different box. |
+| Time | 2023-03-01 → 2024-03-31 |
+| Tier | Basic, unless you say otherwise |
+| Family | see below — this is the part that changed |
+
+## Concepts consulted
+
+All three are from the PO.DAAC provider bundle (`nasa-daac-knowledge` 2026.9.5), all `stable`, all human-verified 2026-09-04, `stale_after` 2027-01-04 — current as of today.
+
+- `knowledge/podaac/datasets/swot-karin.md`
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` (severity high)
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` (severity high)
+
+## The blocking problem: your window is not one record
+
+`swot-calval-orbit-phases.md` fires on any range touching 2023, and yours straddles the transition exactly:
+
+- **1-day repeat cal/val orbit**, calibration phase 2023-03-30 → 2023-07-10 — sparse fixed track set, daily revisit, cycles numbered 475–578.
+- **21-day science orbit** from 2023-07-21 — global coverage, cycle numbering restarts at 001.
+
+Two consequences for your request specifically:
+
+1. **March 1–26, 2023 has no KaRIn LR SSH at all.** The Version D holdings begin at cycle 473, 2023-03-27; the calibration phase starts 2023-03-30. The first four weeks of "March 2023" are empty, and that is a holdings fact, not a regional gap.
+2. **Only the D family covers your window.** The Version C (`*_2.0`) collections return *zero* granules for the calibration window and begin 2023-07-26. A C-family query for spring 2023 comes back empty and reads as "no data" — the gotcha's documented silent failure. So: `SWOT_L2_LR_SSH_BASIC_D` (C3233942270-POCLOUD), not `BASIC_2.0`.
+
+The concept's correct approach is to split the range at the transition and analyze per phase. I am not going to hand you one spliced Agulhas series across July 2023 — that aliases the orbit change into apparent ocean variability.
+
+## Procedural gate: I could not run the search
+
+The CMR granule search was denied (`get_granules` permission not granted), and there is no `ocean-science.local.md` in `/home/user/run/evals`, so no ungated-download threshold is configured. I therefore have **no verified granule count**, and the load-swot volume gate cannot be cleared.
+
+Scaling from the one figure the dataset concept records (a 3-day Gulf Stream regional query returned 8 granules at ~9.4 MB each), a comparable Agulhas box over the ~8-month science phase lands around **600–700 granules, roughly 6 GB at Basic tier** — an estimate from that anchor, not a measurement. Expert tier is heavier; Unsmoothed (250 m posting) far heavier. That is very likely above any sane threshold, so the gate would fire regardless.
+
+Whether the 1-day cal/val tracks even cross the Agulhas is something the concepts do not answer — only the search does.
+
+## The time series I would build
+
+Not one series. Two, and they are not commensurable.
+
+**Science phase (2023-07-21 → 2024-03-31), the one worth building.** The 21-day repeat makes the cycle the natural sample: **one value per cycle, per swath side**, about **12 points** over your window. Concretely:
+
+- Variable: `ssha_karin` **plus `height_cor_xover`**, gated by `height_cor_xover_qual`. This is not optional. The crossover calibration arrives unapplied, and the raw field carries a cross-track ramp spanning ±2.9 m, against corrected mesoscale structure of std 0.17 m. In the Agulhas, where the signal you want *is* the mesoscale, the uncorrected ramp is more than an order of magnitude larger than the signal — an "as-is" region mean would be a confident wrong answer.
+- Gating: decode `ssha_karin_qual` bitwise before any statistic; land-gate; check `rain_flag` and `distance_to_coast` over the shelf. Expect roughly 39% valid pixels — that is normal, not a defect.
+- Geometry: left and right swaths kept separate with the nadir gap intact. They have independent error profiles, and the gap is a real void. No gridding, no gap-filling at load.
+- Subsetting: CMR matches whole pole-to-pole passes, so a matched granule can hold zero in-box pixels. Trim to the box *before* aggregating.
+- Carried with every point: valid-pixel fraction, dominant flag reasons, the in-box footprint actually sampled, and each granule's `crid`.
+
+**Cal/val phase (2023-03-30 → 2023-07-10), conditional.** If the 1-day tracks cross the Agulhas, this is a near-daily SSH series at fixed locations — genuinely good for sub-monthly behaviour (Natal pulses, ring shedding at the retroflection) that the 21-day orbit cannot see. But it is point-like, not regional, and it stands as its own product with its own plot.
+
+**What this series can and cannot support.** Twelve samples at 21-day spacing over eight months: it resolves the seasonal march and mesoscale field structure, and it aliases everything faster than ~42 days. It supports **no trend** — a 13-month window with a 12-month gap in the middle of the sampling regime is not a trend record. If a multi-year Agulhas sea level trend is the goal, that is nadir altimetry (the bundle has a `nasa-ssh.md` dataset concept, status draft); SWOT buys you two-dimensional structure, not record length.
+
+Two traps I would build the series to avoid:
+
+- **Footprint drift.** After flag masking the in-box coverage changes cycle to cycle, so a naive "region mean" silently changes its own footprint. Area-weight and report the footprint per point, or the sampling change reads as ocean signal.
+- **Baseline drift.** D-family CRIDs run PGD0 through forward-processing baselines across this window. A step in the series is a processing change until you have ruled it out from the recorded `crid` values.
+
+**Uncertainty.** `ssh_karin_uncert` is per-sample *random* noise only. It excludes the correlated swath-scale systematics (roll, phase, timing, wet troposphere residuals) that dominate exactly the swath-scale average this series is made of. The error bar on a per-cycle region mean is therefore **not** `uncert/√N` — that would understate it badly. If you want the full correction and uncertainty stack for a proper error decomposition, that is the Expert tier.
+
+## To proceed I need
+
+1. **The phase decision** — both phases as two separate series (my recommendation), or narrow to the science phase alone.
+2. **Tier** — Basic is enough for the SSHA series and carries `height_cor_xover` already; Expert only if you want the error decomposition.
+3. **The box** — confirm 10–40°E, 45–25°S.
+4. **Permission** for the CMR granule search, plus a download threshold (or explicit go-ahead on the volume once I can report the real count).

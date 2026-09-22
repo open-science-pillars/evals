@@ -1,0 +1,35 @@
+I stopped short of loading anything. Here's where it stands and why.
+
+## Blocked on three things
+
+**1. The knowledge consult can't complete.** `load-swot` requires reading the PO.DAAC concepts before a fetch, and forbids working from remembered SWOT dataset rules where a concept exists. The concepts are in the `nasa-daac-knowledge` provider bundle, which I can't locate: I read `ocean-science/0.9.0/knowledge/index.md` (which states explicitly that nothing from the provider bundle is copied there) and `core/0.6.0/knowledge/index.md` (cross-cutting only). The documented way to find the install path is `claude plugin list --json`, which wasn't approved. So `knowledge/podaac/datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md` and `gotchas/swot-crossover-unapplied.md` are all unread.
+
+**2. No granule search.** The earthdata MCP tools aren't permitted in this session, so I have no granule count, no ShortName confirmed against CMR, and no volume estimate.
+
+**3. No volume gate threshold.** There's no `ocean-science.local.md` in `/home/user/run/evals`, so the hard gate has no configured threshold to fire against.
+
+## The window you picked is the problem, independent of the tooling
+
+Flagging this as general method, explicitly **not** yet verified against the orbit-phase concept: March 2023 → March 2024 straddles SWOT's orbit change, and a single query across it fails silently in two ways at once.
+
+- **Early March 2023 is pre-public-SSH** — the mission was still in commissioning. Your series starts later than you asked for, whatever the query says.
+- **The window contains two orbit phases**: a 1-day-repeat cal/val phase (fast revisit, but only under a fixed, sparse set of ground tracks — whether the Agulhas box sits under one is a coverage question, not a given) and the 21-day science orbit that follows, with a transition gap between them.
+- **The phases live in different version families in the archive.** One ShortName spanning the whole window returns only part of it, and the missing part looks like "no data over the Agulhas" rather than a family mismatch. That's the trap I need the gotcha to resolve — it carries the actual dates, cycle numbering, and which family holds the cal/val era.
+
+## The time series I'd build
+
+Not one continuous curve. **Two segments, plotted separately, with no trend fit across the seam** — the sampling density changes by more than an order of magnitude at the transition, so a single line through both is a sampling artifact dressed as a signal.
+
+Within each segment:
+
+- **Pass is the unit, not day.** Granules are whole passes; search the box (~10–45°E, 25–45°S — confirm), then trim to the region *before* aggregating.
+- **Per-pass aggregates over good pixels only**: area-weighted mean SSHA, plus the statistics that actually matter for the Agulhas — SSHA variance/RMS as an eddy-energy proxy, and valid-pixel fraction as the honesty column. Left and right swath kept separate; they have independent error profiles.
+- **Flags decoded and pixels masked before any statistic**, with masked fraction and dominant flag reasons reported.
+- **Crossover correction applied, and said so.** It arrives unapplied in the KaRIn SSH products and carries its own quality gate. In a retroflection region, uncorrected cross-track/roll error aliases straight into the mesoscale structure you're trying to measure — it's the difference between an eddy and an artifact.
+- **Nadir gap intact, swaths never flattened** at load. Gridding is an analysis decision made deliberately, later.
+- **`crid` recorded per granule.** A 13-month span can mix processing baselines within one collection, so consistency claims downstream depend on that record.
+- **Sampling caveat carried with the series:** at science-orbit revisit, a mid-latitude box gets a couple of samples per 21-day cycle, while Agulhas rings and eddies evolve on 10–30 day scales. The series is irregularly spaced and aliased; trends and spectra need methods that know that.
+
+## To proceed
+
+Approve `claude plugin list --json` (or just give me the `nasa-daac-knowledge` install path), approve the earthdata tools for the granule search, confirm the bounding box and tier (Basic is the default), and tell me the ungated download ceiling. With the orbit-phase concept read I can also tell you whether the cal/val segment covers the Agulhas at all — if it doesn't, the answer collapses to a science-orbit series starting mid-2023, and your effective window is about eight months, not thirteen.

@@ -1,0 +1,40 @@
+I stopped before loading anything. Here's where it stands.
+
+## What I parsed from your request
+
+| | |
+|---|---|
+| Region | Agulhas — I'd default to ~10°E–40°E, 45°S–30°S (current, retroflection and return flow). Say if you want the box tighter or wider. |
+| Time | 2023-03-01 → 2024-03-31 |
+| Tier | Basic, unless you want the full correction/uncertainty set or the finest posting |
+
+## Why I didn't load
+
+`load-swot` gates the download on reading the PO.DAAC knowledge concepts first, and I could not read them from this session.
+
+Searched, found nothing:
+- `…/open-science-pillars/ocean-science/0.9.0/` — ships skills only, no `knowledge/` root
+- `…/open-science-pillars/nasa-daac-knowledge/{2026.9.2–.5}/` — no bundle at any version path I could construct
+
+`~/.claude/settings.json` confirms `nasa-daac-knowledge@open-science-pillars` is enabled, and the marketplace pins it at `v2026.9.5`, so the bundle is installed — I just can't find its root. Listing outside `/home/user/run/evals` is blocked, `claude plugin list --json` (the installer's record, which is what names the live install path) wasn't approved, and the Earthdata MCP search wasn't approved either. So I have no way to resolve the path and no way to run the granule search.
+
+**To unblock, any one of these is enough:** approve `claude plugin list --json`, approve the Earthdata MCP tools, or just tell me the bundle path.
+
+## Why this particular window is the wrong one to guess on
+
+Your range straddles SWOT's 2023 orbit change. `load-swot` and the `swot` skill both make the orbit-phase concept a mandatory *first* read for any range touching 2023, and they say why: a window spanning that transition and an empty early-mission query are **silent failures** — you get a file, or you get zero granules, and neither looks like an error. The empty case is typically a version-family problem (the cal/val era lives in a different family) misread as "no coverage in the Agulhas."
+
+Both the collection I'd search and the sampling cadence of the resulting series depend on facts in that concept. I'm not going to supply them from memory — the skill's hard refusal covers exactly that, and it's the rule most likely to be protecting you here.
+
+## The time series, as far as method goes
+
+This part is general method, not dataset fact, and the sampling cadence — the thing that actually defines the series — is the piece I still can't confirm:
+
+- **The sample is a pass crossing, not a date.** SWOT gives you a swath sweeping the box at intervals set by the repeat orbit, so the native index is (cycle, pass), irregularly spaced in time. I'd build the series on that index and resample to a calendar only as a deliberate, separate step.
+- **It is not one homogeneous record.** The cadence changes mid-window at the orbit transition. I'd expect to build it as two segments and characterize each before splicing — a single regression through the join would mix two different sampling regimes.
+- **Order of operations:** decode the bit-packed quality flags and mask → apply the crossover correction (it arrives unapplied, with a quality gate the gotcha specifies) → trim whole passes to the box → *then* aggregate. Subset before you aggregate.
+- **Swaths stay separate, gap stays open.** Left and right swaths carry independent error profiles, so I'd summarize per swath. The nadir gap is a real data void; filling it is fabrication, not interpolation.
+- **Per sample:** area-weighted SSHA mean over good pixels in the box, valid-pixel count, flagged fraction with dominant reasons, and the product's own uncertainty variables carried along.
+- **Caveat worth stating up front:** in the Agulhas, an SSHA box mean is dominated by retroflection ring shedding and meander position. It's a mesoscale-activity index more than a regional sea level signal, and with irregular sampling it will alias. If you want the eddy story, an eddy-kinetic-energy or SSHA-variance series per pass crossing will be more interpretable than the mean.
+
+Nothing was downloaded, and I never reached the volume gate — I also found no `ocean-science.local.md` in this project, so the gate threshold isn't configured either. Tell me how you'd like to unblock the bundle and I'll run the search and give you real granule counts and volume before anything is fetched.

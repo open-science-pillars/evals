@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 201,
+  "chars": 4954,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response splits the window by orbit phase and applies the version-family constraint (cal/val held in a separate collection family, science-era query returns empty), but it never acknowledges the cycle-numbering discontinuity across the July 2023 transition, and it never names the D collections \u2014 so only partial compliance with the rubric's required elements."
+    }
+  },
+  "pass": false
+}

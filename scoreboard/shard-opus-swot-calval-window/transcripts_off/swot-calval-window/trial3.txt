@@ -1,0 +1,59 @@
+I could not complete the load. Here's exactly why, and then the part of your question I can answer properly.
+
+## What blocked the load
+
+**The knowledge concepts are unreadable in this session.** The `load-swot` workflow requires consulting the SWOT concepts before fetching, and names three:
+
+- `knowledge/podaac/datasets/swot-karin.md` — tier/Variants table, ShortNames, version-family holdings, current baseline, uncertainty variables
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — orbit phases, cycle numbering, version-family trap
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — the crossover correction and its quality gate
+
+None resolve under any bundle root I can reach, and directory search outside `/home/user/run/evals` is blocked, so I can't locate the provider bundle. This workspace is a prepared eval run whose README describes knowledge trees being archived out of the cache, which is consistent with what I'm seeing.
+
+The skill is explicit that a date range touching 2023 gets the orbit-phase concept read **before anything else**, and that I must never substitute a remembered SWOT dataset rule where a concept exists. So I'm not going to quote ShortNames, concept ids, baselines, or cycle numbers from memory. Everything below is general method, labeled as such, except where I cite the skill reference files I *could* read.
+
+**Granule search is also unavailable** — the Earthdata CMR tools aren't permitted here (`get_collections` was denied). So there is no granule count, no volume estimate, no gate decision, and no data. Nothing was downloaded and I'll quote no statistics.
+
+## The request as I read it
+
+Region **Agulhas** needs pinning down — I'd propose 10–40°E, 45–28°S to cover the current core along the shelf edge, the retroflection near 20°E/40°S, and the return current. If you mean only the retroflection, or the Cape Basin ring corridor, the box and the volume change a lot. Tier unstated; that changes what gets downloaded, so it's a real question, and for this region it's not the default choice — see below.
+
+## The thing that decides this request
+
+Your window is not one sampling regime. March 2023 – March 2024 straddles SWOT's cal/val-to-science transition, which is precisely what the orbit-phase gotcha exists to catch. On general knowledge, unverified against the concept:
+
+- **~March 2023** falls in commissioning. Your start month is likely to return little or nothing, and what exists isn't a science record.
+- **~April–early July 2023**: the 1-day repeat cal/val orbit. Daily revisit, but a sparse, fixed set of ground tracks — *not* global. **Whether the Agulhas sat under a cal/val swath at all is a coverage question I cannot answer from memory and did not verify.** The skill's reference file (`skills/swot/references/swot-products.md:18-20`) adds the trap: the cal/val era lives only in the D version family, so an empty early-mission result is a family symptom before it's a coverage fact — query the wrong family and you'll wrongly conclude there's no data.
+- **~July 2023**: orbit-change maneuvers. A gap.
+- **~late July 2023 onward**: the 21-day science orbit. Global, two ~50 km swaths with a nadir gap between them, revisit every 21 days.
+
+Cycle numbering differs between the two phases. A series built by concatenating on cycle number will splice a daily-cadence regional record onto a 21-day global one and read as if it were continuous.
+
+## The series I'd actually build
+
+Not one series. The honest answer is that **SWOT is the wrong instrument for a 13-month time axis over this region**, and the right build depends on what you want.
+
+**If you want SWOT specifically — a fixed-track series.** Pick one pass number crossing the Agulhas and build SSHA across cycles for that pass alone. Same geometry every revisit, so differences are ocean change rather than sampling change. Cadence 21 days, roughly 8 points from August 2023 to March 2024. This is the cleanest thing SWOT gives you here: a repeated cross-section through the jet or the retroflection.
+
+**The regional-mean-per-pass alternative, and why it's weaker.** Trim each whole-pass granule to the box, flag-mask, apply the crossover correction, area-weighted mean over good pixels, indexed by (cycle, pass, time) — irregular, maybe 25–35 points. The problem: each pass samples a *different part* of the box. In the Agulhas — a narrow meandering jet shedding rings with SSH anomalies of tens of centimetres — the variance from the sampling footprint moving can exceed the variance from the ocean changing. That series conflates the two and shouldn't be read as regional sea level.
+
+**What SWOT is really for here is not a scalar series at all**: a sequence of 2-D swath snapshots of ring edges, filaments and the retroflection front. One caveat worth knowing up front — the full scene is only ~120 km across, and Agulhas rings run 200–300 km, so a pass cuts a *chord* through a ring rather than imaging it whole. You get the submesoscale edge structure beautifully; you don't get the ring.
+
+## What would corrupt it
+
+- **Aliasing.** Agulhas mesoscale evolves on ~10–30 days and rings translate ~5–10 km/day, so a ring moves on the order of its own radius between 21-day revisits. Read the science-orbit points as independent snapshots, not resolved evolution.
+- **Seasonal cycle and trend: don't.** Eight science-orbit points is less than one annual cycle. A seasonal harmonic plus a trend cannot be separated from mesoscale variability with that. I'd decline to fit one.
+- **Mixed processing baselines.** Thirteen months spans reprocessing, so record the `crid` of every granule loaded and check for a step at any baseline boundary before interpreting a change — a naive multi-cycle series can carry a discontinuity that looks physical.
+- **The crossover correction arrives unapplied** (`height_cor_xover`, with a quality gate) — statistics computed without it are not SSHA statistics.
+- **Uncertainty understates.** The per-sample uncertainty variable does not cover the cross-track systematic (roll/baseline) error — which is exactly the error that contaminates a regional mean and, far worse, any spatial derivative. If you want geostrophic velocity or relative vorticity from SSH gradients, that second derivative amplifies cross-track systematics badly, and that pushes you to the Expert tier for the full correction and uncertainty set, not Basic.
+- **This region is a high-sea-state one.** Southern Ocean swell means large SWH, which is where the sea-state bias correction and KaRIn's SWH-dependent noise floor are at their worst. Expect a higher flagged fraction than in calm water — and **plot the good-pixel fraction as its own series**, because a coverage change masquerades as an SSHA change.
+
+## What I'd suggest instead
+
+For a continuous 13-month Agulhas time axis, use gridded multi-mission altimetry (DUACS-type L4 SSH), which actually has daily coverage across your whole window, and overlay SWOT swaths on selected dates for the spatial structure nadir altimetry can't see. If it must be SWOT alone, cut the window to the science orbit (~August 2023 onward) and build the fixed-track series, adding the cal/val months only if a granule search in the D family shows real Agulhas coverage.
+
+One volume warning: a 30°×17° box over 13 months is order hundreds of whole-pass granules and plausibly tens of GB — rough, unverified, and the finest-posting tier inflates that sharply. The gate has to run on a real search before anything is fetched.
+
+## To go further
+
+I need either the knowledge bundle restored (so the concepts can be read) or CMR search permitted (so coverage and volume can be verified). Right now I can give you the design, which is above, but not the data or any number from it. Want me to write this up as a shareable design note?

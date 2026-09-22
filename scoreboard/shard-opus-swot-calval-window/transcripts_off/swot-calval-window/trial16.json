@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 222,
+  "chars": 5904,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the 1-day cal/val \u2192 21-day science orbit transition inside the requested window, refuses to splice one continuous series, offers to narrow to the science orbit or keep two separately-labelled segments with a nadir backbone, notes cycle numbering differs on each side of the switch (and uses cycle rather than date as the time axis), and applies the version-family constraint that cal/val-era data exists only in the D collections to the collection choice."
+    }
+  },
+  "pass": true
+}

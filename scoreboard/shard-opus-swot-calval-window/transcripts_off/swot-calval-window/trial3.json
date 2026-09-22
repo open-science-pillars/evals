@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 220,
+  "chars": 7806,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted split the March 2023\u2013March 2024 window by orbit phase (commissioning, 1-day cal/val, orbit-change gap, 21-day science), explicitly warned that cycle numbering differs across phases so concatenation would splice a daily regional record onto a 21-day global one, and applied the version-family constraint that cal/val-era data exists only in the D collections to collection/search choice while recommending the series be narrowed to the science orbit."
+    }
+  },
+  "pass": true
+}

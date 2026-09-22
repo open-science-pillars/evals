@@ -1,0 +1,42 @@
+I did not download anything. Two things blocked the load, and one of them changes what you'd want to ask for.
+
+## The load is blocked
+
+**The knowledge bundle isn't reachable in this session.** `load-swot` requires reading three concepts before fetching — the dataset concept (`knowledge/podaac/datasets/swot-karin.md`, which owns the tier/Variants table, ShortNames, version-family holdings, current baseline, uncertainty variables) and two gotchas (`swot-calval-orbit-phases.md`, `swot-crossover-unapplied.md`). None of them resolve. The `ocean-science` plugin is installed at `.../ocean-science/0.9.0` (I read its `plugin.json`), but it has no `knowledge/` tree, and the `nasa-daac-knowledge` dependency it declares (`>=2026.9.2`) has no reachable bundle root either. This looks deliberate: `runner/ablate.sh:77-88` quarantines exactly these trees. **No installed concept covers SWOT KaRIn here.**
+
+That matters because the skill forbids me from working from a remembered ShortName, tier, version family, or crossover field — those are precisely the facts the concept owns. So I can't name a collection to fetch.
+
+Two smaller blocks: there's no `ocean-science.local.md` in this project, so the volume gate has no threshold to test against; and the earthdata CMR tools aren't permissioned, so I couldn't even verify granule counts read-only.
+
+Everything below is **general method and general mission knowledge, not concept-backed** — treat it as unverified.
+
+## The window you asked for is not one time series
+
+March 2023 – March 2024 straddles SWOT's orbit change, and a naive concatenation would produce a series whose sampling changes character twice:
+
+- **March 2023** — commissioning. Effectively no science-grade KaRIn SSH.
+- **~April to early July 2023** — the **1-day repeat cal/val orbit**. Daily revisit, but only over a small set of fixed swath footprints. Whether the Agulhas is under one of them is a coverage question I can't answer without the archive. Crucially, the cal/val era is held in a *different version family* — so querying the science-era collection over this span returns **empty**, and that empty result reads as "no Agulhas coverage" when it's actually a collection mismatch. This is the single most likely way this request goes silently wrong.
+- **~late July 2023 onward** — the **~21-day science orbit**, two ~50 km swaths either side of a ~20 km nadir gap, near-global.
+
+So the revisit interval goes nothing → 1 day → 21 days, over a completely different footprint. Any variance, EKE, or trend statistic computed across those boundaries measures the sampling change, not the ocean.
+
+## What I'd actually build
+
+**Two separate series, plotted separately, never spliced.**
+
+**Primary — science orbit, ~Aug 2023 to Mar 2024 (~11 cycles).** Box roughly 10°E–45°E, 45°S–25°S, covering the Agulhas Current core, the retroflection, the Return Current, and ring corridors into the Cape Basin. Per cycle, over flag-gated pixels only, with the crossover correction applied and stated:
+
+- area-weighted mean SSHA and SSHA variance inside a **fixed common footprint** — the intersection of the box with the pixel mask common to all cycles. Without that, the series inherits footprint wobble rather than ocean signal.
+- EKE from geostrophic velocities off along- and cross-swath SSH gradients, kept per-swath (left/right have independent error profiles, and cross-track error grows toward swath edges).
+- a ring/eddy count from closed SSHA contours, plus retroflection-front position.
+- per-point: valid-pixel fraction, dominant flag reasons, and the processing baselines (`crid`) present.
+
+**Secondary — cal/val, only if an Agulhas footprint exists.** Daily cadence, April–early July 2023, its own record, over whatever narrow strip the 1-day orbit covers.
+
+**What it would show.** The Agulhas retroflection is among the most energetic mesoscale regions in the ocean; the series will be dominated by ring-shedding events (rings of order 200–400 km with several-tenths-of-a-metre SSH anomalies), not by a seasonal cycle. Eleven science-orbit cycles is not enough to resolve an annual cycle, and nowhere near enough for a trend — so I'd frame it as an event/structure record, not a climate series. If you want a genuine continuous 13-month Agulhas SSH record, gridded nadir altimetry (DUACS/CMEMS L4) is the right instrument, with SWOT layered on for the structure it resolves that nadir altimetry cannot.
+
+## To unblock
+
+Any one of these gets me moving: restore or point me at the `nasa-daac-knowledge` bundle root; grant the earthdata CMR tools so I can verify collections and Agulhas granule counts per phase; and set a "maximum ungated download size" in an `ocean-science.local.md` so the volume gate has a threshold.
+
+Worth flagging for the bundle steward: this session is a real knowledge gap, not a missing fact — the concepts exist by path in `runner/concept-fingerprints.json` but no bundle root on this machine carries them.

@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 167,
+  "chars": 5528,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response surfaces the orbit-phase transition, splits the window into two separate series, and applies the D-family/cal-val version constraint, but never acknowledges the cycle-numbering discontinuity across the phases (it only mentions cycle numbers as a way to empirically pin dates), so it meets only part of the rubric."
+    }
+  },
+  "pass": false
+}

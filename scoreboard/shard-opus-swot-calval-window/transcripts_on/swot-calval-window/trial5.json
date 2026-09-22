@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 139,
+  "chars": 4799,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted splits the window into cal/val, transition, and science phases, notes the cycle-numbering discontinuity (475\u2013578 vs 001\u2013012), warns that a single continuous series aliases the orbit change, and applies the D-only version-family constraint for the cal/val era."
+    }
+  },
+  "pass": true
+}

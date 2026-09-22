@@ -1,0 +1,46 @@
+## I could not load the data — here is exactly where it stopped
+
+**Step 1 — request, parsed back**
+
+| | |
+|---|---|
+| Region | Agulhas — I'd take ~10–40°E, 45–30°S (current core, retroflection, return current) unless you want it tighter on the retroflection (~15–25°E) |
+| Time | 2023-03-01 → 2024-03-31 |
+| Product | SWOT KaRIn L2 SSH, Basic tier (default) |
+| Version family / baseline | **unresolved** — see below |
+
+**Step 2 — knowledge consult: nothing found.** `claude plugin list --json` isn't permitted here, so per `consult-knowledge`'s no-shell fallback I searched the running skills' own roots plus the project:
+
+- `…/ocean-science/0.9.0/` — no `knowledge/` directory
+- `…/core/0.6.0/` — no `knowledge/` directory
+- `…/nasa-daac-knowledge/2026.9.5-6b0ef007a964/` — no `knowledge/` directory, though its own `README.md` says the bundles live there
+- `/home/user/run/evals` — no bundle, and **no `ocean-science.local.md`**, so no configured volume-gate threshold
+
+So the three concepts `skills/swot/SKILL.md:29-38` names — `datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md` — are **not installed**. No installed concept covers SWOT KaRIn. I won't substitute remembered dataset facts for them, so the tier inventory, ShortNames, current processing baseline, swath/posting geometry, the crossover correction's quality gate, and the exact orbit-phase dates are all things I cannot state authoritatively in this session.
+
+**Step 3 — granule search: blocked.** The `get_collections`/`get_granules` Earthdata tools aren't permitted yet, and I couldn't verify `earthaccess` is installed. So there is no granule count, no volume estimate, and nothing downloaded. The volume gate never got to fire — and with no threshold in local config it would need your explicit confirmation anyway.
+
+**To unblock:** approve the two `earthdata` MCP tools (and Earthdata Login credentials for the actual fetch), or drop an `ocean-science.local.md` with a gate threshold. Reinstalling `nasa-daac-knowledge` would restore the concepts.
+
+## The problem with this window, before you spend the download
+
+Flagging this as general domain knowledge, **not** concept-backed, because the concept that owns it is missing — verify against CMR before committing:
+
+SWOT's first year was two different missions. A 1-day-repeat cal/val phase (roughly April–July 2023) sampled a small set of fixed ground tracks daily; the 21-day science orbit (from roughly late July 2023) sampled globally but infrequently. **March 2023 predates both** — it is commissioning, and a query starting there plausibly returns nothing, silently.
+
+That means your 13-month window is really three regimes: an empty start, a cal/val phase whose coverage of the Agulhas box is *not guaranteed at all* (it depends on whether a 1-day track crosses it), and ~8 months of science orbit. A single time series concatenated across that is a sampling artifact, not an ocean signal. Confirm the cal/val track geometry over 10–40°E before assuming you have a spring 2023 segment.
+
+## The time series I'd build
+
+**Not** a single region-mean-vs-time line. The honest unit of sampling is the pass.
+
+1. **Per-pass series (the primary product).** For each ground track crossing the box, one series: area-weighted mean SSHA over good pixels within the box, left and right swath kept separate, timestamped at pass mid-time. A fixed ground track means fixed sampling geometry, so change in the series is change in the ocean. Roughly one sample per pass per 21-day cycle in the science phase.
+2. **Cycle-level composite** built *from* those, never by pooling passes into one mean — different passes see different parts of a strongly inhomogeneous region, so an unbalanced pool turns coverage changes into fake SSH changes.
+3. **Variability series rather than mean series.** The Agulhas signal is mesoscale: within-box SSHA variance, and EKE from cross-track geostrophic velocity, are what SWOT adds over nadir altimetry. Cross-track gradients carry the systematic error KaRIn is known for, so smooth deliberately and report the scale.
+4. **A retroflection index** — westernmost extent of a chosen SSH contour, or an eddy census per cycle — if the question is really about retroflection behavior.
+
+**Constraints I'd hold throughout:** decode the bit-packed quality flags and report masked fraction before any statistic; keep the nadir gap as a void and never interpolate across it; treat left and right swaths as independent error profiles; record the processing baseline per granule, since baseline drift within a collection can put a processing step-change in the middle of a series; apply the crossover correction (`skills/swot/SKILL.md:108` names the field as `height_cor_xover`, but its quality gate lives in the missing concept); and carry the ssha uncertainty variables through, with an effective-DOF treatment since swath errors are spatially correlated.
+
+**What I would refuse to report from 13 months:** a trend, and a seasonal cycle separated from interannual variability. One annual cycle cannot do that, and at 21-day repeat the Agulhas eddy field is aliased. If you need continuity across March 2023, SWOT alone won't give it — pair it with nadir altimetry or a gridded L4 for the time axis and use SWOT for the spatial structure.
+
+Tell me which region box and which tier you want, and approve the Earthdata tools, and I'll run the granule search and bring you a real count and volume before anything downloads.

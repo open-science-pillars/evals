@@ -1,0 +1,67 @@
+## I could not load anything — two blockers
+
+**Tooling.** The CMR search tools (`get_collections`/`get_granules`) and shell execution both returned permission denials, so no granule search ran and nothing was downloaded. Every count, size, cycle list and statistic below is therefore *design*, not measurement.
+
+**Knowledge bundle missing.** `load-swot` requires reading three concepts before planning — `knowledge/podaac/datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md`. I searched the roots I could reach:
+
+| bundle root | knowledge/ present? |
+|---|---|
+| `…/ocean-science/0.9.0/` | no |
+| `…/nasa-daac-knowledge/2026.9.5-6b0ef007a964/` | no (only `docs/`, `tools/`) |
+| `…/core/0.6.0/` | no |
+| project local config `ocean-science.local.md` | not present in `/home/user/run/evals` |
+
+`claude plugin list --json` was also denied, so I could not check the installer record. The `nasa-daac-knowledge` plugin is installed but its bundle directory is absent — that looks like a broken install rather than a genuine knowledge gap, and it's worth fixing before any real run, because the concepts are exactly where the SWOT-specific rules below are supposed to come from. **Everything I say about SWOT below is general method and general knowledge, unverified against a concept — treat the specifics as things to confirm, not as settled facts.**
+
+## Request as I parsed it
+
+- **Region:** Agulhas — I'd use 10–45°E, 45–25°S (current core, retroflection, return current, Agulhas ring corridor). Confirm or tighten; this drives volume.
+- **Time:** 2023-03-01 → 2024-03-31.
+- **Tier:** unstated → Basic by default. Expert if you want the full correction/uncertainty set (you will, see below). Unsmoothed only with a deliberate size decision.
+
+## The thing that changes this request
+
+Your window straddles SWOT's orbit-phase transition, and that is not a detail — it decides what a "time series" can even mean here.
+
+- **March–~April 2023 is essentially empty.** SWOT was still in commissioning; routine KaRIn L2 SSH doesn't start at the beginning of your window.
+- **~April–mid-July 2023 is the 1-day repeat cal/val orbit:** daily revisits, but only over a fixed, sparse set of ground tracks. Whether any of them cross the Agulhas is the first thing to check — if none do, that whole segment is zero granules for your box.
+- **A gap during orbit transition** (roughly mid-to-late July 2023).
+- **~Late July 2023 → March 2024 is the 21-day science orbit**, global swath coverage, cycles renumbered from 1.
+- **The two phases live in different collections / version families.** Querying only the science-orbit ShortName across 2023-03→2024-03 returns nothing for the early months and gives no error. That silent-empty result is the trap to guard against.
+
+So the usable, regularly-sampled record for the Agulhas is roughly **August 2023 – March 2024: about 11–12 cycles.** Anything from the cal/val phase is a *separate* series on different geometry and must never be concatenated into the 21-day one.
+
+## Before I'd download
+
+No `ocean-science.local.md` exists, so no ungated-download threshold is configured — I'd treat everything as gated and come back to you with actual granule counts, total size and destination before fetching a byte. Order of magnitude only, to be replaced by the real search: a handful of passes cross that box per cycle, so Basic across ~12 cycles is plausibly single-digit GB; Expert several times that; Unsmoothed is the tier that gets away from you fast.
+
+## The time series I would build
+
+**The sampling unit is `(cycle, pass, swath side)`.** That's the honest atom. A 21-day repeat with ~120 km swaths means a regional "mean" mixes signal with sampling geometry that changes cycle to cycle. So the design rule is: **fix the geometry, then let time vary.** Build per-pass series, not per-box series.
+
+**1. Agulhas Current surface-transport proxy — the primary series.**
+Pick the pass(es) crossing the current obliquely near 32–35°S, upstream of the retroflection. Along a fixed cross-current section on a fixed swath side, take the inshore-minus-offshore SSHA difference → geostrophic surface transport proxy. One value per cycle, ~21-day cadence, ~11–12 points. Because the section is identical every cycle, cycle-to-cycle change is signal, not resampling.
+
+**2. Retroflection EKE.**
+Geostrophic velocities from the 2D SSHA gradients (this is the thing nadir altimetry cannot give you), then per-cycle EKE within the box, computed *per swath* and reported alongside the fraction of the box actually sampled that cycle. Without that coverage fraction the series is uninterpretable.
+
+**3. Agulhas ring census.**
+Per cycle: count, amplitude, radius of closed SSHA features. Caveat that limits this one — rings are 200–300 km across and the swath is ~120 km wide, so most rings are clipped. This series only works co-registered with gridded DUACS altimetry for ring identification, with SWOT supplying the interior structure.
+
+**4. Small-scale variance and spectral slope — the most defensible SWOT-only series.**
+Per cycle, the along-swath SSHA wavenumber spectrum in the 15–150 km band: one variance and one slope per cycle. It's computed entirely within a swath, so it's insensitive to partial box coverage, and the Agulhas is energetic enough that the submesoscale signal sits well above the instrument noise floor.
+
+### What the series can and cannot support
+
+**Roughly 11 points over 8 months.** That is a descriptive, event-resolving record — it can show a retroflection occlusion, a ring shedding, a meander passing a section. It cannot support a trend, and it cannot resolve a seasonal cycle. I would refuse to fit a trend line to it, and I'd say so on the figure.
+
+### Caveats that must travel with every number
+
+- **Crossover calibration arrives unapplied.** `height_cor_xover` must be added, gated on its quality field, before any statistic. Stating explicitly that it was applied is part of the output.
+- **Flag masking is seasonally biased.** High sea state in the Southern Ocean in austral winter means more flagged pixels exactly when the region is most energetic — so the masked fraction is itself correlated with the signal. Report masked fraction and dominant flag reasons per cycle.
+- **Processing baselines drift within a collection.** Granules reprocessed at different times carry different baselines; a series built across a mixed set can show steps that are pure processing artifact. Record the baseline per granule and report the mix.
+- **Mean sea surface error aliases into SSHA in strong currents.** The Agulhas is precisely where the MSS model is worst, and that error projects onto your transport proxy. Worth checking which MSS the chosen `ssha` variant uses.
+- **Never interpolate across the nadir gap,** and never grid the swaths as a loading step — if the analysis needs a grid, that's a deliberate, separately-justified step.
+- Per-pixel uncertainty variables come along with the data, but they do not cover correlated cross-track error, which is the dominant term for a cross-swath difference like series #1.
+
+**Suggested next step:** fix the `nasa-daac-knowledge` bundle install and grant the CMR search tools, and I'll run the real granule search — split across the cal/val and science collections so the phase boundary is visible — and bring you actual counts and sizes for the gate.

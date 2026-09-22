@@ -1,0 +1,43 @@
+I couldn't complete the load. Two things blocked it, and both are environment problems rather than judgment calls — I'd rather tell you than hand you a plausible-looking load I didn't actually run.
+
+## What's blocked
+
+**1. The knowledge bundle isn't installed.** `ocean-science` 0.9.0 and its skills cite the SWOT facts by bundle path — `knowledge/podaac/datasets/swot-karin.md`, `knowledge/podaac/gotchas/swot-calval-orbit-phases.md`, `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — and the load-swot skill explicitly forbids working from remembered SWOT dataset rules where a concept exists. `nasa-daac-knowledge` 2026.9.5 is installed and enabled (`/root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964`), but that install has **no `knowledge/` directory at all** — the plugin root reads fine (`README.md`, `.claude-plugin/plugin.json`), `knowledge` does not exist. Same for `ocean-science/0.9.0/knowledge`. So there is no concept to read for the tier inventory, the ShortNames and concept ids, the version-family holdings, the current baseline, the crossover correction field and its gate, or the Uncertainty section.
+
+Fix: `claude plugin update nasa-daac-knowledge@open-science-pillars`, then `/reload-plugins`.
+
+**2. CMR search wasn't permitted.** `get_collections` came back with a permission request that wasn't granted, so I could not run the granule search that the skill puts *before* any download, and I have no granule count or volume figure. I also found no `ocean-science.local.md` in `/home/user/run/evals`, so I don't have your ungated-download threshold either.
+
+Nothing was downloaded. Approve the earthdata MCP tools and I'll run the search and bring you counts and volume before touching the gate.
+
+## What I'd still need from you
+
+- **The box.** "Agulhas" spans three regimes with different variability — the current core along the shelf edge, the retroflection, the Agulhas Return Current. A single box over all three gives a very different series than any one of them. My default would be 10–40°E, 45–30°S unless you want narrower.
+- **Tier.** Default is Basic; anything else comes from the Variants table I can't currently read.
+
+## The time series — general method, not concept-backed
+
+Flagging clearly: the following is standard practice, *not* read from the concepts, and the dataset-specific parts need checking against them once the bundle is back.
+
+**The window you picked straddles the orbit change, and that's the dominant design constraint.** SWOT flew a 1-day repeat cal/val orbit in the first half of 2023 and moved to the 21-day science orbit in the second half; March 2023 is likely before KaRIn science SSH begins at all. The two phases have *different ground tracks*, so there is no single fixed-geometry series spanning March 2023 → March 2024. The orbit-phase gotcha is the concept that settles the actual dates, cycle numbering, and the version-family trap (an empty early-mission query is a family symptom before it's a coverage fact) — I won't quote dates or cycle numbers I can't read.
+
+So the honest answer is **two series, not one**:
+
+- A short, high-cadence segment on the cal/val tracks — daily revisit, but only wherever those few fixed tracks happen to cross your box. Good for sub-weekly evolution on a line; useless as a regional mean.
+- A 21-day repeat segment from the science orbit through March 2024 — roughly ten cycles. This is the one worth building.
+
+**Structure of the science-orbit series.** Granules are whole passes, so the regional search returns every pass touching the box and the load trims afterward. I would *not* build a box-mean SSHA time axis first; the box mean mixes different passes covering different sub-regions on different days, and in the Agulhas it's dominated by whichever rings happen to sit under the swath. Better:
+
+1. **Per-pass, per-cycle** as the primitive: fix each pass crossing the box, one sample per cycle at repeating cross-track geometry. Repeating geometry means the correlated cross-track error is near-stationary, so cycle-to-cycle differences are far cleaner than absolute values.
+2. Keep the two swaths separate with the nadir gap intact — independent error profiles, and no interpolation across the gap.
+3. Decode the bit-packed flags and mask before any statistic; report masked fraction and dominant reasons. The Agulhas is a high-wind, high-wave region, so expect a non-trivial flagged fraction.
+4. Apply the crossover correction — it arrives unapplied, and the field name plus its quality gate live in the crossover gotcha.
+5. Record the `crid` baseline of every granule loaded. Over 13 months a subset can span baselines, and within-collection baseline drift can put a step into a series that looks geophysical.
+
+**Derived quantities worth more than the SSHA mean.** Cross-swath geostrophic velocity and EKE, SSHA variance per cycle, and ring identification/tracking — these use the 2D swath structure, which is the reason to use KaRIn here instead of nadir altimetry. A box-mean SSHA series throws that away.
+
+**What the series can and cannot support.** Ten science-orbit cycles over eight months: it can characterize mesoscale variability, ring shedding events, and cross-validate against DUACS/nadir. It **cannot** give a trend, and it cannot separate a seasonal cycle from interannual variability — I'd refuse to quote either from this record. Also note SSHA is referenced to a mean sea surface model, and MSS error is large where the mean dynamic topography gradient is steep, which is exactly the Agulhas; that biases the anomaly field in a spatially structured way.
+
+**Uncertainty.** The per-sample uncertainty variables travel with the data, but they characterize random error — they do not cover the correlated cross-track and baseline errors that a repeat-pass series is most exposed to. The dataset concept's Uncertainty section is what states the actual caveat; I'm not going to paraphrase it from memory.
+
+Update the knowledge plugin and approve the earthdata tools, and I'll redo this properly — concepts cited by path, real granule counts, and the volume gate honored.

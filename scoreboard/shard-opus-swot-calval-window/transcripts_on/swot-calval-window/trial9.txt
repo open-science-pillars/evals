@@ -1,0 +1,43 @@
+I stopped before downloading anything. Here's where it stands.
+
+## What I parsed from your request
+
+| | |
+|---|---|
+| Region | Agulhas — I'd propose 10°E–40°E, 45°S–25°S (retroflection + return current). Confirm or hand me your box. |
+| Time range | 2023-03-01 → 2024-03-31 |
+| Tier | Basic (skill default) — say the word for a different one |
+| Product | SWOT KaRIn L2 SSH |
+| Version family / baseline | To be read from the dataset concept, not assumed |
+
+## The consult step failed, and that blocks the load
+
+`load-swot` runs the knowledge consult *before* the granule search, and the `swot` skill adds a hard ordering rule I'm quoting directly from it: **any date range touching 2023 gets the orbit-phase concept read before anything else**, because "a window spanning the mid-2023 transition and an empty early-mission query are both silent failures that concept explains." Your window is March 2023 to March 2024. It sits right on top of that transition. This is the worst possible window to run on memory.
+
+The three concepts I need all live in the PO.DAAC provider bundle:
+
+- `knowledge/podaac/datasets/swot-karin.md` — tier inventory, ShortNames per version family, current baseline, uncertainty variables
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — the two orbit phases, cycle numbering, version-family trap
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — the crossover correction and its quality gate
+
+**Bundles I could actually search:** `core/0.6.0/knowledge` and `ocean-science/0.9.0/knowledge`. Neither carries SWOT — the ocean-science index says explicitly that nothing from the provider bundle is copied there.
+
+`nasa-daac-knowledge@open-science-pillars` **is** enabled in `/root/.claude/settings.json`, and `ocean-science/.osp/package.yaml` pins it at `>=2026.9.2` — so the bundle exists, I just can't locate its install path. `claude plugin list --json`, the sanctioned way to read that path, needs approval here, and `ls`/`find` are sandboxed to the working directory. I tried the obvious cache paths and guessed wrong; I'm not going to keep guessing, and I'm not going to substitute what I remember about SWOT for concepts the skill requires me to read.
+
+**Approve `claude plugin list --json`** (read-only, prints the installer record) and I'll have the path in one call. Or paste the install path directly.
+
+Second, smaller gate: there's no `ocean-science.local.md` anywhere in `/home/user/run/evals`, so the volume-gate threshold is undefined. I'll need a ceiling from you before any download, whatever the granule count comes back as.
+
+## The time series I'd build — and the part that's genuinely open
+
+Fixed by method, independent of what the concepts say:
+
+- **Search whole passes, trim after.** Cycle/pass is the acquisition unit, so it's a spatial search over whole passes against your box, then a trim to the region — subset before aggregating, never the reverse.
+- **Swaths stay separate.** Left and right swath carry independent error profiles, so every statistic is reported per-swath, and the nadir gap stays a gap. No interpolation across it, no flattening to a regular grid as part of the load.
+- **Flags gate every pixel** before any number is computed, with the masked fraction and dominant flag reasons reported alongside.
+- **The crossover correction gets applied** per the crossover concept's field and quality gate, and the summary says so explicitly — an `ssha` series built without it is the failure mode that concept is about.
+- **The series itself:** one point per pass-over-region, carrying area-weighted mean SSHA over good pixels, spatial variance (the interesting signal in the Agulhas — eddy shedding at the retroflection), valid-pixel count, and the propagated uncertainty from the native per-sample fields.
+
+Here's the part I can't specify yet, and it's not a detail — **it's the x-axis**. The cadence of that series, how many points you get, and whether the points before and after mid-2023 are even commensurable all follow from the orbit phase. The two phases have different repeat intervals and different cycle numbering, and the swath ground tracks differ between them, so "SSHA at the Agulhas over 13 months" may well be two series with different sampling geometry that happen to share a variable name — not one record you can trend through. Whether your box is even under a swath during the early phase is a coverage question that same concept answers.
+
+I'd rather hand you the path-resolution command than a cadence I half-remember. Unblock the consult and I'll run the search, report granule count and volume, and come back with the actual structure.

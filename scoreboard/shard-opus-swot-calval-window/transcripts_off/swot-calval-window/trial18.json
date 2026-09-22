@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 164,
+  "chars": 5831,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "Although the response flags the orbit-phase split and differing cycle numbering, it never applies the version-family constraint to collection choice (no D-collection/cal-val family selection \u2014 it explicitly declines to name any collection), so the required third element is missing and nothing was actually loaded."
+    }
+  },
+  "pass": false
+}

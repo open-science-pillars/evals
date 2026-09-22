@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 168,
+  "chars": 7450,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The transcript surfaces the orbit-phase transition unprompted, splits the request into two separate per-phase time series with the cycle-numbering restart (475\u2013578 \u2192 001) acknowledged, and applies the version-family constraint by selecting the D collections and warning that *_2.0 returns zero in the cal/val era."
+    }
+  },
+  "pass": true
+}

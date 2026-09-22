@@ -1,0 +1,42 @@
+I could not complete the load. Three separate things blocked it, and one of them is scientific rather than mechanical — that one changes what the time series can be, so I'll lead with the plan and flag the gaps in place.
+
+## What blocked the load
+
+- **The PO.DAAC knowledge bundle is unreachable.** The SWOT facts this workflow requires live in `nasa-daac-knowledge` (`knowledge/podaac/datasets/swot-karin.md` and the two SWOT gotchas — named at `skills/swot/SKILL.md:29-38`). `ocean-science` 0.9.0 declares it as a dependency at `>=2026.9.2` (`.osp/package.yaml:19-20`), but I can't read the installer record (`claude plugin list --json` wasn't approved) and Bash is sandboxed to `/home/user/run/evals`, so I can't locate its install path. I tried the obvious cache paths and none resolved. **I have not read those concepts, so nothing below cites them.**
+- **The earthdata MCP tools aren't permitted**, so I couldn't run the granule search or report a real count and volume.
+- **No volume gate threshold.** The skill takes it from `ocean-science.local.md`; that file doesn't exist in this project.
+
+## The issue that shapes your answer
+
+March 2023 → March 2024 straddles SWOT's transition from the 1-day cal/val orbit to the 21-day science orbit. That is the single most consequential fact about this window, and it is exactly what `gotchas/swot-calval-orbit-phases.md` covers — the concept I couldn't read. From general mission knowledge, unverified here: the two phases differ in repeat period, in which passes cover any given box, and in cycle numbering, and they're held in different version families — so one collection queried across the whole window can come back covering only part of it, with no error. **Read that concept before committing to the range.** If the window is what you care about, expect to treat it as two records, not one.
+
+## The time series I'd build
+
+Assuming the Agulhas box as **10°E–40°E, 45°S–30°S** (current, retroflection, return current) — say if you want the retroflection alone.
+
+The honest time axis is **one sample per swath overflight of the box**, irregularly spaced, not a daily or weekly series. KaRIn L2 SSH is swath data on a cycle/pass grid; any regular cadence is something you'd impose, not something the data has.
+
+On that axis I'd build two quantities, and I'd *not* build a third:
+
+1. **Cross-front SSH difference → geostrophic transport proxy.** This is the strongest use of KaRIn here. A fixed section across the Agulhas Current, with the transport proxy from the SSH drop across the front. Unlike nadir altimetry you get the full two-dimensional cross-front gradient per overflight, so the front's position and width are observed rather than assumed — which matters in a current that meanders.
+2. **Box SSHA variance / EKE per overflight.** The Agulhas signal is mesoscale — rings shed at the retroflection — and variance captures it.
+
+I'd skip a **box-mean SSHA** series: the mean over this box averages across the current's strong dipole and mostly cancels the signal you came for.
+
+Construction rules, from the loading contract in the skill:
+- Statistics per swath, left and right kept separate — independent error profiles.
+- The nadir gap stays a void. A section that lands on it loses its centre; that overflight is a gap in the series, not a value to interpolate.
+- Quality flags decoded and pixels masked before any statistic, with the masked fraction and dominant reasons reported alongside each point.
+- The crossover correction arrives unapplied and is applied via `height_cor_xover` (`skills/swot/SKILL.md:108`); its quality gate is specified in the gotcha I couldn't read, and since your goal is statistics, that concept is not optional.
+- **Processing baseline drift is a real risk over 13 months.** Granules spanning a year may carry different baselines, which can put a step or a spurious trend into a transport series. The dataset concept records this as a known issue; the fix is to record what each granule actually carries and check for steps at baseline boundaries.
+
+Net: expect **two segmented records split at the orbit transition, on irregular per-overflight time axes**, reported with their sampling explicit — not one continuous 13-month curve. Splicing them into a single trend would be the error this window invites.
+
+## To proceed
+
+1. Approve `claude plugin list --json`, or tell me where `nasa-daac-knowledge` is installed, so I can read the three SWOT concepts.
+2. Approve the earthdata MCP tools so I can return a real granule count and volume.
+3. Set a maximum ungated download size in `ocean-science.local.md`.
+4. Confirm the bounding box and whether you want the whole window or the science-orbit segment only.
+
+Tier and version family I've deliberately left open — those come from the dataset concept's Variants table, and guessing them is how you get an empty result set.

@@ -1,0 +1,38 @@
+I got as far as the skill's consult step and stopped there. Here's the state, then the design.
+
+## What I couldn't do
+
+**The load did not happen.** Three blockers, in order of how much they matter:
+
+1. **The SWOT knowledge concepts aren't reachable.** `load-swot` and `swot` both point at `knowledge/podaac/datasets/swot-karin.md` plus the two gotchas (`swot-calval-orbit-phases.md`, `swot-crossover-unapplied.md`), which carry the tier inventory, ShortNames, version families and holdings, the current baseline, and the crossover field with its quality gate. The ocean-science plugin root (`ocean-science/0.9.0`) has no `knowledge/` directory, and the provider bundle it depends on — `nasa-daac-knowledge >=2026.9.2` per its `plugin.json` — isn't at any path I could resolve. I can only list files under `/home/user/run/evals`, and `claude plugin list --json` (the installer record consult-knowledge says to read) needs approval, so I can't distinguish "not installed" from "installed where I can't see it". Bundles actually searched: `ocean-science/0.9.0` and `core/0.6.0` roots, by path probe only.
+2. **No granule search.** `python3 -c "import earthaccess"` needs approval, so there's no granule count and no volume estimate — the hard volume gate has nothing to fire on.
+3. **No threshold to gate against.** There's no `ocean-science.local.md` in this project (only `README.md`), so the maximum ungated download size is undefined.
+
+I'm not filling the gap from memory. The tier, ShortName, version family, current processing baseline, and the crossover correction's field and gate are exactly the facts the swot skill refuses to let a skill carry, and they're what decide this particular load.
+
+## The one thing already established
+
+From a file I did read — `skills/swot/references/swot-products.md:17-20` — the cal/val era lives only in the **D version family**, and *an empty early-mission result is a family symptom before it is a coverage fact*. Your window opens in **March 2023**, in the early mission, and runs through the mid-2023 orbit-phase transition. So this range almost certainly has to be split by phase and possibly by family, and a naive single search over 2023-03 → 2024-03 is one of the silent failures the orbit-phase concept exists to prevent. What the phases actually span, and which family covers which dates, has to come from that concept.
+
+## The time series I'd build
+
+Method, not dataset facts — none of this depends on the blocked concepts.
+
+**The time axis isn't calendar time.** Granules are whole passes, so a regional search returns every pass touching the box; the region is sampled by a fixed set of passes, each repeating once per cycle, unevenly spaced within the cycle. So the primary object is a **per-pass series**: one record per (cycle, pass, swath side), stamped at the pass's mid-time over the region — not a daily or monthly mean. A per-cycle aggregate sits on top of that, and it's honest only because a cycle is the repeat unit; a monthly resample would blend passes that sample different parts of the box.
+
+**Per record, over flag-gated pixels only**, left and right swath kept separate with the nadir gap intact and no gridding at load time:
+
+- valid-pixel count and masked fraction, with the dominant flag reasons
+- area-weighted mean `ssha`, crossover correction applied per the gotcha's prescribed field and gate, stated explicitly as applied
+- spatial variance of `ssha` within the box — for the Agulhas this is the more informative series than the mean
+- the uncertainty variables the dataset concept's Uncertainty section names, carried alongside
+- the `crid` of every granule contributing, because baseline drift within a collection is a recorded known issue and consistency claims across the year depend on that record
+
+**Two things would dominate the interpretation.** First, any series crossing the mid-2023 transition has a **sampling discontinuity at the transition** — revisit interval and swath coverage change — which will look like a geophysical shift in a regional mean and isn't one. I'd plot the phases as separate segments rather than one continuous line. Second, the Agulhas retroflection is about as mesoscale-dominated as the ocean gets: a box-mean `ssha` series is largely a record of which rings and meanders happened to fall under the swath on each pass, so I'd lead with the variance/EKE-like statistic and the per-pass spatial fields, and treat the box mean as a diagnostic rather than the result. If you want a genuinely continuous regional mean across the full 13 months, SWOT alone will alias badly there and gridded multi-mission SSH is the better backbone, with SWOT supplying the structure the gridded product can't resolve.
+
+## To unblock
+
+- Approve `claude plugin list --json` (or tell me the install path of the `nasa-daac-knowledge` bundle), so I can read the three concepts.
+- Approve the `earthaccess` search so I can report granule count and volume before anything downloads.
+- Give me the maximum ungated download size, or point me at the `ocean-science.local.md` that has it.
+- Confirm the box — I'd use roughly **10°E–45°E, 45°S–25°S** to span the current and the retroflection, but say if you want the retroflection only, or the current core hugging the shelf.

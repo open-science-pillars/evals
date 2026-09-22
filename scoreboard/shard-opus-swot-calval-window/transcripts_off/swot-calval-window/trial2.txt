@@ -1,0 +1,31 @@
+I could not load the data. Here's exactly where it stopped, then the design answer, which I can give without it.
+
+## What's blocked
+
+**1. The knowledge consult failed — and this is the one request where that matters most.**
+
+The `load-swot` workflow requires reading the PO.DAAC concepts before planning a load, and the `swot` skill has a standing rule that *any* date range touching 2023 gets the orbit-phase concept read before anything else — because a window spanning the mid-2023 orbit transition and an empty early-mission query are both silent failures that concept exists to explain. March 2023 → March 2024 is precisely that window.
+
+Those concepts (`knowledge/podaac/datasets/swot-karin.md`, `knowledge/podaac/gotchas/swot-calval-orbit-phases.md`, `knowledge/podaac/gotchas/swot-crossover-unapplied.md`) live in the `nasa-daac-knowledge` plugin, a declared dependency of ocean-science 0.9.0. I searched what I could reach: the running plugin's own root (`ocean-science/0.9.0`) carries no `knowledge/podaac/` — its README confirms nothing is copied there — and the project has no `ocean-science.local.md` naming another bundle. I could not read the installer's record either: `claude plugin list` was denied, and shell access is confined to `/home/user/run/evals`, so I can't enumerate the plugin cache to find the bundle under a version I haven't guessed. I won't substitute remembered SWOT rules for it — the version family, cycle numbering, tier inventory, current baseline and crossover field are exactly the facts the skill forbids working from memory on.
+
+**2. Granule search was not approved.** The Earthdata MCP calls (`get_collections`, `get_granules`) returned a permissions error, so I have no granule count, no volume estimate, and no confirmation that the Agulhas box is covered in the early part of your window.
+
+**3. Nothing was downloaded.** No volume gate threshold is configured (no `ocean-science.local.md` in this project), and I never got past search anyway.
+
+To unblock: grant the `plugin_ocean-science_earthdata` tools, reinstall the dependency (`claude plugin install nasa-daac-knowledge@open-science-pillars`), and drop the config template into the project.
+
+## The time series I'd build — general method, not dataset fact
+
+Labeled as method because the concepts that would pin the specifics weren't readable.
+
+**It isn't a daily gridded series, and shouldn't be forced into one.** SWOT granules are whole passes. A regional request returns every pass whose swath touches the Agulhas box (I'd propose 10–40°E, 45–30°S, covering the retroflection and return current — worth confirming, since it drives volume). Each pass gives two swaths with a real nadir gap between them. So the natural record is **per-(cycle, pass)**: trim to the box, decode the bit-packed quality flags and mask, apply the crossover correction, then reduce to a regional statistic over surviving pixels — per swath, gap intact, never interpolated across.
+
+That gives an **irregular time axis** whose spacing is the repeat interval, with sample count varying across the box — locations near pass crossovers get hit far more often than locations seen by one pass.
+
+**The mid-window discontinuity is the defining feature.** The mission changes orbit phase in mid-2023, so the repeat interval, the pass set over the Agulhas, and the version family holding the data all change partway through your 13 months. A single continuous series across the whole range silently splices two sampling regimes. I'd either segment at the transition and analyze the halves separately, or — more likely what you want — restrict to the science-phase portion for one homogeneous series and treat the earlier data as a separate, sparser look. Whether the Agulhas box has *any* early coverage is an open question: the fast-repeat phase covers a limited pass set, so an empty result there would be a version-family/coverage artifact, not an absence of ocean.
+
+**Two quantities, not one.** A regional mean SSHA is the obvious series, but in the Agulhas it's the weak one — the signal there is mesoscale. I'd pair it with a per-pass variance or eddy-kinetic-energy proxy over the box, which is what actually tracks ring shedding at the retroflection and is what wide-swath altimetry buys you over nadir. Sampling-count weighting matters for both, since the pass geometry is inhomogeneous across the box.
+
+**Two caveats I'd attach to any number.** Granules across 13 months will very likely span more than one processing baseline, so I'd record the `crid` per granule and check for steps at baseline boundaries before interpreting any low-frequency change. And carry the per-sample uncertainty variables through, noting they don't cover correlated cross-track error.
+
+**What it can't answer:** 13 months is one annual cycle. There is no sea level trend in this series, and no way to separate seasonal from interannual. It's a mesoscale variability record. If a trend is the goal, this window and this instrument are the wrong tool and I'd say so before loading anything.

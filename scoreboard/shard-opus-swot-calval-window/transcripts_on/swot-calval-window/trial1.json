@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 157,
+  "chars": 6085,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial surfaced the orbit-phase risk in general terms but never split or narrowed the date range per phase, never stated the cycle-numbering discontinuity (explicitly declining to), and never applied the version-family/D-collection constraint to an actual collection choice \u2014 it blocked on missing knowledge instead of delivering the required specifics."
+    }
+  },
+  "pass": false
+}

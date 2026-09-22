@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 182,
+  "chars": 7393,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted split the window by orbit phase (empty commissioning, 1-day cal/val, transition gap, 21-day science from late July 2023), noted cycles renumber from 1 across the boundary, warned the two phases live in separate collections/version families with a silent-empty trap, refused to concatenate them into one series, and narrowed the usable record to ~Aug 2023\u2013Mar 2024."
+    }
+  },
+  "pass": true
+}

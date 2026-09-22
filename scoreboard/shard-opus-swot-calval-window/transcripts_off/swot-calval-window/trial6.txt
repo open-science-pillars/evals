@@ -1,0 +1,37 @@
+I couldn't load anything — three separate blockers, and I want to be precise about which is which before I describe the series.
+
+## What I tried
+
+**1. The knowledge bundle isn't readable here.** Both `load-swot` and `swot` refuse to carry SWOT dataset facts themselves; they point at concepts under `knowledge/podaac/` — the dataset concept `datasets/swot-karin.md` (tier/Variants table, ShortNames, version-family holdings, current baseline, uncertainty variables), `gotchas/swot-calval-orbit-phases.md`, and `gotchas/swot-crossover-unapplied.md`. Those live in the provider bundle `nasa-daac-knowledge >=2026.9.2`, declared as a dependency in `ocean-science/0.9.0/.claude-plugin/plugin.json:5`. No `knowledge/` tree exists at the ocean-science root where those paths resolve, and I couldn't enumerate the rest of the plugin cache — `ls`/`find` outside `/home/user/run/evals` is blocked by the sandbox, and `claude plugin list --json` wasn't approved. So: not found where the skills point, not confirmed absent everywhere.
+
+**2. CMR search wasn't approved.** `get_collections` returned a permissions error, so I have no ShortName, no concept id, no granule count, and no volume estimate. I'm not going to type a SWOT ShortName from memory — that's exactly what the skill's hard refusal covers, and the version-family trap makes a guessed collection fail *silently* (empty result, not an error).
+
+**3. No volume gate threshold.** The gate reads "maximum ungated download size" from `ocean-science.local.md`. This working directory is the eval-runner repo (`/home/user/run/evals`), which has no such config. A year of L2 swath data over a 30°×15° box is large enough that the gate would almost certainly fire, so I'd need the number and your confirmation anyway.
+
+## The design issue your window has
+
+March 2023 → March 2024 straddles SWOT's orbit-phase change. That is the whole reason `swot-calval-orbit-phases.md` exists, and `load-swot` says any range touching 2023 gets it read *first*. I can't read it, so I'll flag the shape of the problem without asserting its specifics: **the early part of your window is a different sampling regime from the later part** — different repeat period, different cycle numbering, and the early era is held in a different version family than the later one, so one collection query across the full range does not return a homogeneous record. Treat the dates and family names as unverified until the concept is readable.
+
+## The time series I'd build
+
+**The time axis is pass-defined, not calendar-defined.** Granules are whole passes; the Agulhas box is sampled only when a pass crosses it. So the native product is one sample per (cycle, pass) intersection — irregular spacing, and each sample covers a *different footprint* within the box.
+
+That footprint heterogeneity is the trap. A regional-mean SSHA computed per pass mostly measures *which* part of the retroflection that pass happened to cross. In a region with this much mesoscale energy, pass-to-pass differences would be dominated by eddy sampling, not by any regional signal. So I'd build it in two stages:
+
+1. **Per-pass swath level.** For each cycle/pass touching the box: decode the bit-packed quality flags, mask, apply the crossover correction with its quality gate (the field and gate come from `swot-crossover-unapplied.md`), keep left and right swaths separate with the nadir gap intact — never filled. Record valid-pixel count, flagged fraction with dominant reasons, and the granule's `crid`, since baseline drift within a collection means the subset's consistency claim depends on that record.
+2. **Bin, then average.** Grid good pixels to fixed cells (≈0.25°), build a per-cell series, then take an area-weighted regional mean over cells that have coverage in *every* period. Averaging into a fixed footprint is what makes the samples comparable; averaging raw passes does not.
+
+**Two regimes, not one series.** The pre- and post-transition segments differ in cadence and in spatial sampling, so I'd plot and report them as two segments rather than concatenating into one evenly spaced record. If you want a single cadence, resample both to a common interval and state plainly that the early segment's footprint is fixed-swath while the later one migrates.
+
+**What the series does *not* support.** Thirteen months is one annual cycle — not enough to fit and remove a seasonal climatology from the record itself, and nowhere near enough for a trend in a region this energetic. I'd refuse to quote a trend from it and would say so in the output rather than compute one quietly.
+
+**Uncertainty.** The per-sample `ssha` uncertainty variables don't cover the correlated cross-track/roll errors, so a regional mean has an error floor well above `σ/√N` and effective DOF far below the pixel count. I'd use a block bootstrap over passes, and cross-check the regional mean against gridded nadir altimetry over the same box.
+
+**A better index, if you're open to it.** Regional-mean SSHA is the weakest thing SWOT can give you here. Its actual advantage over nadir altimetry in the Agulhas is two-dimensional structure: EKE from geostrophic velocities of the SSH gradient field, SSH variance, or retroflection position. Any of those makes a more interpretable 13-month series than a box mean. Say the word and I'll plan that instead.
+
+## To unblock
+
+- Install/enable `nasa-daac-knowledge` (`>=2026.9.2`), or point me at a readable bundle root.
+- Approve the `earthdata` MCP tools so I can resolve the collection and get real granule counts and volume.
+- Give me the gate threshold, or confirm you want the search run with the number reported back before any download.
+- Confirm the box — I was going to use **10°E–40°E, 45°S–30°S** — and the tier, which I'd pick from the Variants table once it's readable.

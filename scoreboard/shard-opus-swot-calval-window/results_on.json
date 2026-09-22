@@ -1,0 +1,289 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "on",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 6,
+      "trials": 17,
+      "rate": 0.353,
+      "ci95": [
+        0.173,
+        0.587
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "swot-calval-window",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 3,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 157,
+          "chars": 6085,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial surfaced the orbit-phase risk in general terms but never split or narrowed the date range per phase, never stated the cycle-numbering discontinuity (explicitly declining to), and never applied the version-family/D-collection constraint to an actual collection choice \u2014 it blocked on missing knowledge instead of delivering the required specifics."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 144,
+          "chars": 4883,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript surfaces the orbit-phase transition unprompted with a dated cal/val vs science split, notes the cycle-numbering discontinuity (475\u2013578 then restart at 001+), refuses to build one continuous series, and applies the version-family constraint by selecting the D collection because Version C returns zero granules for the cal/val window."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 134,
+          "chars": 5295,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never surfaces the concrete orbit-phase gotcha \u2014 it only gestures at a vague 'mid-2023 phase transition' as a reason to split, without stating the cal/val vs 21-day science phases, the cycle-numbering discontinuity, or applying the D-collection version-family constraint, and it delivered no actual load or collection choice."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 177,
+          "chars": 6322,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted split the window into cal/val (1-day, cycles 475\u2013578) and science (21-day, cycles 001\u2013012) segments, flagged the cycle-numbering restart and transition gap, refused to build one continuous series, and justified the Version D collection choice because Version C holds no cal/val granules."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 139,
+          "chars": 4799,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted splits the window into cal/val, transition, and science phases, notes the cycle-numbering discontinuity (475\u2013578 vs 001\u2013012), warns that a single continuous series aliases the orbit change, and applies the D-only version-family constraint for the cal/val era."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 201,
+          "chars": 7979,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never selects collections or applies the version-family constraint (cal/val available only in the D collections) to a collection choice \u2014 it explicitly declines to name families, cycle numbers, or phase dates \u2014 so only the generic 'split the series at the transition' element is met, leaving the rubric's three-part requirement partially satisfied."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 138,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 148,
+          "chars": 4246,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response flags the orbit-phase transition in general terms but explicitly declines to supply the phase dates, cycle-numbering discontinuity, or version-family (cal/val D-collection) facts, and never splits or narrows the range per phase or applies the version-family constraint to collection choice \u2014 it blocks instead of delivering the required per-phase plan."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 143,
+          "chars": 4638,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent flagged the mid-2023 orbit-phase transition and cycle-numbering discontinuity but delivered no split or narrowed range per phase and never applied the cal/val version-family (D collection) constraint to collection choice, deferring all of it pending a blocked knowledge consult."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 157,
+          "chars": 6248,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript flags the 2023 orbit transition in general terms but never splits or narrows the range per phase, explicitly declines to pin the cycle-numbering discontinuity, and does not apply the version-family constraint (cal/val only in the D collections) to any collection choice \u2014 deferring all of it to unavailable knowledge concepts."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 176,
+          "chars": 4865,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript surfaces the orbit-phase transition and proposes splitting the record with differing cycle numbering, but it never applies the version-family constraint to collection choice \u2014 it explicitly leaves tier and version family open and never identifies the D collections as the only ones carrying cal/val data, and all orbit-phase statements are hedged as unverified."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 154,
+          "chars": 7020,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted split the request into two non-joinable series at the July 2023 cal/val-to-science transition, explicitly flagged the cycle-numbering discontinuity (cal/val 475\u2013578 vs science restarting at 001), and applied the version-family constraint by requiring the Version D collection since the *_2.0 Version C family holds nothing before 2023-07-26."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 117,
+          "chars": 3248,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent only gestured at the 2023 orbit-phase transition as something to verify later \u2014 it never split or narrowed the range per phase, never acknowledged the cycle-numbering discontinuity, and never applied the cal/val-only D-collection version-family constraint, explicitly deferring all of these as unreachable dataset facts."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 131,
+          "chars": 6968,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent flagged the orbit-phase transition and cycle-numbering discontinuity in general terms but never actually split or narrowed the range per phase and left the version family/collection choice explicitly unresolved, so the cal/val-only D-collection constraint was never applied."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 178,
+          "chars": 4501,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript surfaces the orbit-phase split and segments the series, but it never acknowledges the cycle-numbering discontinuity (only defers it to an unread gotcha) and never applies the version-family constraint to an actual collection choice \u2014 no ShortName/D-collection is identified and no data plan is concretely bound \u2014 so compliance is partial."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 157,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 179,
+          "chars": 6818,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the orbit-phase gotcha unprompted \u2014 splitting the window at the July 2023 cal/val-to-science transition into two non-commensurable series, noting the cycle-numbering discontinuity (475\u2013578 then restart at 001), and selecting SWOT_L2_LR_SSH_BASIC_D because the Version C family returns no granules for the cal/val window."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 168,
+          "chars": 7450,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript surfaces the orbit-phase transition unprompted, splits the request into two separate per-phase time series with the cycle-numbering restart (475\u2013578 \u2192 001) acknowledged, and applies the version-family constraint by selecting the D collections and warning that *_2.0 returns zero in the cal/val era."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 168,
+          "chars": 6053,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "Although the response flagged the 1-day cal/val \u2192 21-day science transition and cycle-numbering break, it never completed the task or applied the version-family constraint to an actual collection choice (never naming the D collections), and it wrongly claimed the Earthdata tools were unavailable when they were reachable via ToolSearch \u2014 so nothing was delivered beyond hedged general method."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 135,
+          "chars": 29,
+          "error": "empty or limit message"
+        }
+      ]
+    }
+  ]
+}

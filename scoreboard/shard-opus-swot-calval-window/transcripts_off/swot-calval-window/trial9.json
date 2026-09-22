@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 196,
+  "chars": 5502,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response raises the orbit-phase split but never acknowledges the cycle-numbering discontinuity and explicitly leaves the version family unresolved, so the cal/val-only D-collection constraint was never applied to collection choice."
+    }
+  },
+  "pass": false
+}

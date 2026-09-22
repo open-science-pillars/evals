@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 178,
+  "chars": 4501,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript surfaces the orbit-phase split and segments the series, but it never acknowledges the cycle-numbering discontinuity (only defers it to an unread gotcha) and never applies the version-family constraint to an actual collection choice \u2014 no ShortName/D-collection is identified and no data plan is concretely bound \u2014 so compliance is partial."
+    }
+  },
+  "pass": false
+}

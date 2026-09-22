@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 177,
+  "chars": 6322,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted split the window into cal/val (1-day, cycles 475\u2013578) and science (21-day, cycles 001\u2013012) segments, flagged the cycle-numbering restart and transition gap, refused to build one continuous series, and justified the Version D collection choice because Version C holds no cal/val granules."
+    }
+  },
+  "pass": true
+}

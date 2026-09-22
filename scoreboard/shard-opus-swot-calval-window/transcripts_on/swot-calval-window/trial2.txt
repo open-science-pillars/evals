@@ -1,0 +1,41 @@
+## Nothing loaded yet — two blockers
+
+The CMR granule search (`get_granules`) needs permission I don't have, so I haven't run step 3 of `load-swot`, and there's no `ocean-science.local.md` in `/home/user/run/evals`, so the volume gate has no configured threshold. I won't fetch anything until both are settled. What I *can* do is the consult step, and it changes the request materially.
+
+## The requested window is not one record
+
+`knowledge/podaac/gotchas/swot-calval-orbit-phases.md` (stable, human-verified 2026-09-04, severity high) — March 2023 → March 2024 straddles the mission's orbit change:
+
+| | dates | orbit | cycles |
+|---|---|---|---|
+| *(no holdings)* | 2023-03-01 → 03-27 | — | — |
+| cal/val | 2023-03-30 → 07-10 | 1-day repeat, sparse fixed tracks | 475–578 |
+| *(transition gap)* | 2023-07-10 → 07-21 | — | — |
+| science | 2023-07-21 → 2024-03-31 | 21-day repeat, global | 001+ |
+
+A single series spanning both aliases the orbit change into apparent variability — the concept names this as one of two silent failures. The other: querying the cal/val window against a Version C collection (`*_2.0`) returns **zero** granules and reads as "no data," when the data exists only in the D family. So: `SWOT_L2_LR_SSH_BASIC_D` (C3233942270-POCLOUD) for the whole window — it's the only family carrying cal/val, and it runs from cycle 473 (2023-03-27) onward, per the Variants and family-holdings tables in `knowledge/podaac/datasets/swot-karin.md` (stable, same verification).
+
+## The time series I'd actually build
+
+**Two series, not one.** My recommendation is the science phase alone — **2023-07-21 → 2024-03-31, cycles 001–~013** — as the continuous record, with the cal/val window analyzed separately as a high-cadence case study if the sparse 1-day tracks happen to cross the Agulhas at all. That last point is exactly what the blocked granule search would settle; I'm not going to assert cal/val coverage of 10–45°E, 45–25°S without it.
+
+**Its shape.** Not a regular daily or monthly series. The sampling unit is a *pass crossing the box*, so what comes out is an irregular series indexed by (cycle, pass, swath side) — several distinct passes per 21-day cycle, each sampling a different part of the region. Two honest renderings:
+
+- per-pass region-mean SSHA at native pass times (irregular, but preserves what was sampled where);
+- a cycle-aggregated regional mean at 21-day resolution (~12 points over the window) — regular, but each point is a mosaic of passes from different days within the cycle.
+
+**What constrains every value in it.** Per `knowledge/podaac/gotchas/swot-crossover-unapplied.md` (stable, human-verified, severity high): the crossover calibration is *not* pre-applied. Each value must be `ssha_karin + height_cor_xover`, gated by `height_cor_xover_qual`, and the series must say so. On the uncorrected field, flag-gated statistics carry a spurious cross-track ramp spanning about ±2.9 m — against the ~0.17 m std of real mesoscale structure on the same scene. Flag gating alone does not make a regional mean safe.
+
+Then: left and right swaths kept separate (independent error profiles), the ~20 km nadir gap left as a void, trim to the box before aggregating (CMR matches whole pole-to-pole passes; some matched passes carry zero in-box pixels), and record each granule's `crid` — a 13-month subset will likely mix baselines, and the dataset concept's known-issues section makes consistency claims across the series depend on that record.
+
+**Error bars.** `ssh_karin_uncert` is per-sample *random* noise only. It excludes the correlated swath-scale systematics (roll, phase, timing, wet-troposphere residuals) that dominate a regional mean, so uncertainty cannot be `uncert/√N`. That's the concept's Uncertainty section, and it's the part most likely to be quietly wrong in a finished plot.
+
+**Agulhas caveat, on general method — no installed concept covers this region.** A region-mean SSHA over 10–45°E, 45–25°S in a high-EKE regime is dominated by ring passage through the box rather than by any regional signal, and a 21-day repeat is marginal against ring timescales. If the target is Agulhas rings or retroflection variability, per-pass swath structure or an EKE diagnostic will carry more than the mean will. Worth deciding before the load, since it may change the tier.
+
+## To proceed I need
+
+1. Approval for `get_granules` — that produces the granule count, and at ~9.4 MB/granule for Basic, the volume estimate.
+2. A gate threshold (or a one-off go-ahead at a stated size).
+3. Confirmation of the box: **10–45°E, 45–25°S**, Basic tier. Say the word if you want Expert (full correction and uncertainty stack) or Unsmoothed (250 m posting — inflates volume sharply).
+
+**Bundle gap for the steward:** no concept covers the Agulhas region or SWOT mesoscale-aliasing limits; the regional framing above is general method, labeled as such.

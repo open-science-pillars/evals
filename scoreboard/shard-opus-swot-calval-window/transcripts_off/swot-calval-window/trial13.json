@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 232,
+  "chars": 5340,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response surfaces the orbit-phase split and the version-family symptom in general terms, but never acknowledges the cycle-numbering discontinuity across the transition and, having read none of the concepts, never applies the version-family constraint to an actual collection choice (explicitly declining to name any tier/ShortName), so compliance is only partial."
+    }
+  },
+  "pass": false
+}

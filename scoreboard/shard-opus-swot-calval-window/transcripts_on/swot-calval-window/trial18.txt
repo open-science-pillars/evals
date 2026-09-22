@@ -1,0 +1,66 @@
+I consulted the knowledge bundle before planning. Two blocks first, then the substance.
+
+## What's blocked
+
+- **CMR granule search** — `get_granules` permission not granted, so I could not run the search-before-fetch step.
+- **`claude plugin list --json`** — not approved, so I resolved the provider bundle from the running plugin's cache root instead. Bundles searched: `ocean-science` 0.9.0 and `nasa-daac-knowledge` 2026.9.5-6b0ef007a964 (`knowledge/podaac/`). No `ocean-science.local.md` exists here, so there's **no configured volume-gate threshold** — I would have stopped at the gate regardless.
+
+So: nothing downloaded. Below is the load I'd run and the honest shape of the series.
+
+## The request doesn't survive contact with the orbit record
+
+`knowledge/podaac/gotchas/swot-calval-orbit-phases.md` (stable, severity high, human-verified 2026-09-04) is decisive here. March 2023 → March 2024 **spans the mid-2023 orbit transition**, and that is one of the two silent failures the concept names:
+
+| | Cal/val | Science |
+|---|---|---|
+| Orbit | 1-day repeat | 21-day repeat |
+| Window | 2023-03-30 → 2023-07-10 | from 2023-07-21 |
+| Cycles | 475–578 (400–500s) | restart at 001 |
+| Coverage | sparse fixed track set | global |
+| Family | **D only** (`*_2.0` returns zero) | C and D |
+
+Three consequences for your window:
+
+1. **2023-03-01 → 2023-03-27 is empty in every family.** D holdings begin cycle 473 (2023-03-27); calibration starts 2023-03-30. The first four weeks you asked for don't exist.
+2. **There is no 11-day gap, there is a regime change.** Splicing 1-day and 21-day sampling into one series aliases the orbit change into apparent ocean variability — in the Agulhas, at exactly the eddy timescales you'd be looking at.
+3. **Use the D family throughout.** A cal/val-era query against `*_2.0` returns empty and reads as "no data for the Agulhas," which is a family symptom, not a coverage fact.
+
+So it's two time series, analyzed per phase, not one.
+
+## The load I'd run
+
+Box: **10°E–40°E, 45°S–25°S** (Agulhas Current, retroflection, return current). Tell me if you want the retroflection proper (tighter, ~15–25°E) or the full leakage corridor into the South Atlantic (west to 0°).
+
+Tier: **Basic** (`SWOT_L2_LR_SSH_BASIC_D`, C3233942270-POCLOUD) — it carries `ssha_karin`, core flags, and `height_cor_xover` with its qual flag, which is everything the series needs. **Expert** (`SWOT_L2_LR_SSH_EXPERT_D`, C3233942272-POCLOUD) for the subset of passes you actually analyze, if you want the full correction stack under your own control.
+
+Two searches, split at the transition: 2023-03-27→2023-07-10, and 2023-07-21→2024-03-31.
+
+**Volume, as arithmetic and not as a search result** (the search is what settles it): Basic granules run ~9.4 MB. Roughly 5–20 passes per 21-day cycle touch a box that size, × ~12 science cycles ≈ **1–2 GB**. Expert is several times that.
+
+**The cal/val number is the one to check first.** The dataset concept records ~2,780 granules per tier inside the calibration window, globally, over ~103 days — about **27 passes per day worldwide**. That is a genuinely sparse track set. Whether any of it crosses the Agulhas is an empirical question I could not answer without the search, and if it does, expect one or two passes. The whole value of phase 1 rides on that.
+
+## The time series you'd actually get
+
+**Not a scalar per date.** SWOT gives you a swath of 2 km pixels per overpass, and the region is covered by several different passes at different times within each cycle. The series is an **irregularly-sampled set of (cycle, pass) snapshots**, and the overpass times are not evenly spaced.
+
+The defensible construction is **per-pass, at fixed swath coordinates** — for each pass number crossing the box, a series across cycles at the same `(num_lines, num_pixels)`. That compares like with like: same ground location, same cross-track position, therefore the same error profile. A region-mean over whatever swath happened to fall inside the box is dominated by sampling geometry, not ocean.
+
+- **Cal/val phase:** ~100 daily samples over 3.5 months on 1–2 fixed tracks. This is the scientifically interesting half — daily revisit resolves Natal Pulses, meander growth, and ring-shedding, which are ~4–10 day processes. Nothing else observes them this way.
+- **Science phase:** ~12 samples per location from late July 2023 to March 2024. **21-day repeat undersamples the Agulhas mesoscale.** Rings and meanders evolve on 10–30 days, so you cannot track an individual eddy through this series from SWOT alone. You get snapshots of two-dimensional structure, not evolution.
+
+Better scalars than a regional mean, computed per pass: cross-track SSH gradient → surface geostrophic velocity where a pass crosses the jet (core speed, jet position, a transport proxy); SSHA variance / EKE inside the box; closed-contour ring counts.
+
+## What shapes the series, beyond the sampling
+
+- **The crossover correction arrives unapplied** (`knowledge/podaac/gotchas/swot-crossover-unapplied.md`, stable, severity high, human-verified). Add `height_cor_xover`, gated by `height_cor_xover_qual`, to `ssha_karin` before any aggregation. Uncorrected, the cross-track roll/phase ramp spans about ±2.9 m against a mesoscale signal of std ~0.17 m — it would swamp every quantity above, and it hits gradients and swath-means hardest. Flag gating alone does not make the numbers safe.
+- **`ssh_karin_uncert` is random noise only.** It excludes the correlated swath-scale systematics — roll, phase, timing, wet-troposphere residuals — and those are precisely the errors that project onto a swath-mean or a cross-track gradient. Error bars from `*_uncert` alone understate any series built here.
+- **Baseline drift.** CRIDs change across the window as forward and reprocessing interleave. A step at a CRID boundary is processing, not ocean. Record `crid` per granule at load; it's the only record of which baseline a subset came from.
+- **Varying valid fraction.** ~39% valid after flag and land gating is normal on an open-ocean pass. The Agulhas will run worse — rain flagging over the convergence zone, high sea state in the retroflection. If valid fraction varies pass to pass, a region-mean is computed over a changing footprint and you get spurious variability. Impose a minimum valid fraction and a common footprint mask.
+- **The ~20 km nadir gap stays open.** It's a real void down the centre of every pass; interpolating across it fabricates SSH.
+- **No seasonal cycle from this.** Eight months of science orbit can't resolve an annual cycle or separate seasonal from mesoscale, and there is no SWOT climatology to take anomalies against.
+
+## Recommendation
+
+For a continuous 13-month Agulhas record, SWOT is the overlay, not the backbone. Use merged gridded altimetry (DUACS/CMEMS or the MEaSUREs L4) for the continuous series, and bring SWOT in for the two-dimensional structure it uniquely resolves — with the cal/val window treated as a separate, high-cadence process study. The SWOT nadir altimeter (`SWOT_L2_NALT_GDR_D`) is a third option: conventional 1-D altimetry running continuously through both phases.
+
+Tell me which and I'll re-run the search: **(a)** the full box as above, **(b)** retroflection only, or **(c)** cal/val coverage check first, which is one cheap query and decides whether phase 1 is worth anything here. I'll need `get_granules` approved, and a download threshold for the volume gate.

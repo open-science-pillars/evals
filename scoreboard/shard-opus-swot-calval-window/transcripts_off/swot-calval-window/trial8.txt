@@ -1,0 +1,46 @@
+I ran the plugin's `load-swot` workflow. It stopped at the consult-and-search steps, before any download. Here's where it stands and what I'd build once it clears.
+
+## Nothing was loaded
+
+Three blockers, all upstream of fetching:
+
+**1. The SWOT knowledge concepts aren't readable in this session.** The `swot` skill routes every dataset fact — tier inventory, version families, current processing baseline, orbit phases, the crossover correction — to concepts under `knowledge/podaac/` in the `nasa-daac-knowledge` bundle (declared as a dependency at `>=2026.9.2` in `ocean-science/0.9.0/.claude-plugin/plugin.json:8`). I couldn't read them:
+
+- `claude plugin list --json`, the installer record that names live bundle paths, needs approval here.
+- Directory listing outside `/home/user/run/evals` is blocked, so I couldn't enumerate the plugin cache.
+- Four guessed paths for `datasets/swot-karin.md` all missed, as did `knowledge/index.md` under both the `ocean-science` and `core` roots.
+
+So I can't distinguish "not installed" from "installed somewhere I couldn't guess." Either way: no concept was consulted, and the skill's hard refusal on working from remembered SWOT rules means I won't substitute recollection for the Variants table, the ShortName, or the baseline.
+
+**2. CMR search was denied.** `get_collections` came back without permission granted, so I have no granule count, no volume estimate, and no empirical read on coverage.
+
+**3. The volume gate has no threshold.** It reads "maximum ungated download size" from `ocean-science.local.md`; there's no such file in the working directory. The gate can't fire, so I'm treating everything as above it.
+
+## The thing that reshapes this request regardless
+
+March 2023 – March 2024 straddles SWOT's orbit-phase transition. The skill's own reference states the consequence plainly (`skills/swot/references/swot-products.md:17-20`): the cal/val era lives only in the D version family, and an empty early-mission result is a family symptom before it's a coverage fact. Query the science-orbit family for March 2023 and you get silence, not an error.
+
+From general mission knowledge, labeled as such: the fast-sampling cal/val orbit ran through roughly the first half of 2023, then the mission moved to the 21-day science orbit, with a gap between. I won't pin dates from memory when the gotcha concept that owns them is unreadable and granule cycle numbers would settle it empirically.
+
+This matters more than bookkeeping. **Your 13 months are two sampling regimes, not one.** Daily revisit of a few passes, then 21-day revisit of many. They should not become one line on one axis.
+
+## The time series I'd build
+
+Assuming the Agulhas box as roughly 10–45°E, 45–25°S — covering the current core along the shelf edge, the retroflection, and the Cape Basin ring corridor. Say if you want it tighter.
+
+**Repeat-track, per pass — not a regional mean.** For each pass number crossing the box, one series over cycles of masked SSHA on that fixed swath geometry. This keeps the sampling footprint constant between samples, which a box-average does not: consecutive passes cut different slivers, so a "regional mean SSHA" series mixes spatial and temporal variability and reads as signal.
+
+**Two series, plotted separately, gap shown as a gap.** Science-orbit passes at 21-day cadence give roughly 17 samples each over the post-transition stretch. Cal/val passes give near-daily sampling of far fewer tracks. Different error profiles, different aliasing, different spatial coverage. Concatenating them manufactures a discontinuity that looks physical.
+
+**The quantity worth the swath.** Per-cycle SSHA variance, or EKE from swath-derived geostrophic velocities, per pass — these are what two-dimensional SSH buys you and what the Agulhas is interesting for. A regional-mean SSHA series is the most error-prone thing you can extract here: it lives at exactly the low wavenumbers where cross-track systematic error and the unapplied crossover correction dominate. If you want basin-mean sea level, nadir altimetry is the better instrument and SWOT is the wrong tool.
+
+**Caveats that would travel with it.** SSHA is already an anomaly against a mean sea surface model, so the series inherits that model's errors and reference epoch. Processing baseline (`crid`) gets recorded per granule — a mid-series baseline change over 13 months is a plausible step. Per-swath summaries with the nadir gap intact, never interpolated. Uncertainty from the product's own per-sample fields, with along-swath correlation respected in any error bar.
+
+**What it can't answer.** Thirteen months is one annual cycle: you cannot separate seasonal from interannual, and there's no trend to extract. Frame it as a description of mesoscale variability and ring-shedding events, not a rate. In the Cape Basin especially, 21-day sampling against ring translation speeds is an aliasing question worth checking before interpreting any peak.
+
+## To proceed
+
+1. Approve the earthdata MCP tools so I can resolve the collection and count granules against real metadata.
+2. Make the `nasa-daac-knowledge` bundle readable, or approve `claude plugin list --json` so I can find it — the ShortName, tier, and baseline come from there.
+3. Give me a download threshold, or I'll present count and size and wait either way.
+4. Confirm the bbox, the tier, and whether you want the cal/val phase at all — if the answer is mesoscale variability over the science orbit, dropping it removes the version-family problem entirely.

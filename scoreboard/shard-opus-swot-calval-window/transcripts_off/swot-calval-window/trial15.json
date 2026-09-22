@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 178,
+  "chars": 4725,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript surfaces the orbit-phase split and vaguely flags a version-family trap, but never acknowledges the cycle-numbering discontinuity (cycle counters restarting between phases) and never applies the version-family constraint to an actual collection choice (no ShortName/D-collection identified, no data loaded), so compliance is only partial."
+    }
+  },
+  "pass": false
+}

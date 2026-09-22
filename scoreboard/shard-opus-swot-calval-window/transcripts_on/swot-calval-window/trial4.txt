@@ -1,0 +1,59 @@
+## Where the load stands
+
+Two things stopped short of an actual download, and one of them is scientific rather than mechanical.
+
+**Blocked mechanically:** the CMR granule search (`get_granules`) wasn't approved, so I have no verified granule count or volume — and the skill's volume gate is a hard gate that can't be cleared by estimate. There's also no `ocean-science.local.md` in `/home/user/run/evals`, so no ungated-download threshold is configured. I need both before anything is fetched.
+
+**Blocked scientifically:** March 2023 → March 2024 is not one SWOT record. More below — this is the part that actually changes what you asked for.
+
+## Concepts consulted
+
+Searched the running plugin root (`ocean-science` 0.9.0) and the PO.DAAC provider bundle (`nasa-daac-knowledge` 2026.9.5-6b0ef007a964). I could not read the installer's record (`claude plugin list --json` is blocked in this sandbox), so that's the set of bundles searched. All three concepts below are `stable`, human-verified 2026-09-04, `stale_after` 2027-01-04 — not yet due for sweep.
+
+- `knowledge/podaac/datasets/swot-karin.md` — identity, tiers, family holdings, uncertainty, known issues
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — severity high
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — severity high
+
+## What I'd load, and how the window splits
+
+Your window straddles the cal/val-to-science orbit transition, which the orbit-phase concept flags as a silent failure mode: a series spanning July 2023 "mixes incompatible sampling regimes, aliasing the orbit change into apparent variability."
+
+| Segment | Dates | Orbit | Cycles | Status |
+|---|---|---|---|---|
+| Pre-mission | 2023-03-01 → 03-26 | — | — | **No KaRIn SSH exists.** D family begins cycle 473, 2023-03-27 |
+| Cal/val | 2023-03-30 → 07-10 | 1-day repeat | 475–578 | Daily revisit, sparse fixed tracks |
+| Transition | 2023-07-11 → 07-20 | — | — | Gap |
+| Science | 2023-07-21 → 2024-03-31 | 21-day repeat | 001 → ~012 | Global coverage; cycle 011 falls in 2024-03 |
+
+**Version family:** Version D (`*_D`) for the whole window. The Version C (`*_2.0`) collections return **zero** granules for the calibration period — a cal/val query against C reads as "no data for those dates" when the data exists. D is also the only family still growing (C's last measurements are 2025-04-27). Using D throughout also keeps one family across the split.
+
+**Collection:** `SWOT_L2_LR_SSH_BASIC_D` (C3233942270-POCLOUD) carries `ssha_karin`, its quality flag, and `height_cor_xover` — enough for regional SSHA. Switch to `SWOT_L2_LR_SSH_EXPERT_D` (C3233942272) if you want the full correction and uncertainty stack. Not Unsmoothed unless you want 250 m posting and the volume that implies.
+
+**Box:** I assumed 15–40°E, 45–30°S (Agulhas Current plus retroflection). Say if you want the retroflection's western reach included — the box drives volume, so it's worth pinning before the gate.
+
+## The time series I'd build — two, not one
+
+This is the honest answer to your question: you get **two records with different sampling**, and concatenating them into a single 13-month series would alias the orbit change into the signal.
+
+**Cal/val series (Mar 30 – Jul 10 2023).** Near-daily repeat over a fixed, sparse track set. The unit is a pass. This resolves *fast* evolution — eddy translation, ring shedding, sub-weekly mesoscale change — at the specific places tracks cross the box, and nowhere else. It cannot give you a regional mean, because the sampling is a handful of fixed lines, not the region.
+
+**Science series (Jul 21 2023 – Mar 2024).** 21-day repeat, global. The unit is a cycle: roughly 11–12 points across the window. This gives you a genuine box-mean SSHA at 21-day cadence, and per-cycle 2-D maps of the retroflection — but it cannot see anything faster than the repeat interval.
+
+For each series, the per-time-step quantity would be the area-weighted mean of **crossover-corrected** `ssha_karin` over good pixels, computed **per swath** (left/right treated as independent error profiles), with the valid-pixel fraction reported alongside every point.
+
+## Non-negotiables that shape the numbers
+
+- **Add `height_cor_xover`, gated by `height_cor_xover_qual`, before any aggregation.** The crossover calibration arrives unapplied. Uncorrected `ssha_karin` carries a spurious cross-track ramp spanning ±2.9 m; the same scene corrected shows std 0.17 m. Flag gating alone does not make an average safe — the uncorrected field is plausible, populated, and wrong.
+- **Subset before aggregating.** CMR spatial search matches whole pole-to-pole passes, so some matched granules carry zero in-box pixels.
+- **Don't quote `ssh_karin_uncert` as the error bar on a swath average.** It's per-sample random noise (1σ) and excludes the correlated swath-scale systematics — roll, phase, timing, wet-troposphere residuals — that dominate at long cross-track wavelengths.
+- **Nadir gap stays open** (~20 km between two 50 km swaths, 2 km posting). No interpolation across it at load time.
+- **Expect heavy masking.** ~39% valid after flag and land gating is normal for an open-ocean pass, not a defect. The Agulhas is rough water; I'd expect the rain and surface-classification flags to bite harder than that.
+- **Capture the `crid` attribute per granule.** Baselines drift within a collection as forward processing and reprocessing interleave; the loaded granules' `crid` values are the only record of which baseline a subset came from. Your window likely spans PGD0 into later CRIDs.
+
+## To proceed I need three things
+
+1. **Approve `get_granules`** so I can return a real count and volume instead of an extrapolation.
+2. **A gate threshold** — no `ocean-science.local.md` exists in the project. Give me a number, or I'll present the count and wait for explicit go-ahead.
+3. **Confirm the box and tier** (and whether you want the cal/val segment at all — if the goal is a seasonal or regional-mean series, the science phase alone is the cleaner product and the cal/val data is a different instrument story).
+
+For rough scale while you decide: Basic-tier granules run ~9.4 MB each, so a year of Agulhas passes is plausibly single-digit to low-tens of GB. That's an extrapolation from the dataset concept, not a CMR count — exactly the number the gate refuses to run on.

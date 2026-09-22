@@ -1,0 +1,46 @@
+I hit a wall on the required first steps, so let me report exactly where things stand before describing the analysis.
+
+## What I parsed
+
+- **Region:** Agulhas — I'd use 10°E–40°E, 45°S–30°S (retroflection + return current). Worth confirming; if you only want the current core, a tighter box changes the sampling story a lot.
+- **Time range:** 2023-03-01 → 2024-03-31
+- **Tier:** Basic (the skill's default)
+- **Version family / baseline:** to be read from the dataset concept, not assumed
+
+## What's blocked
+
+The `load-swot` workflow requires consulting the knowledge concepts *before* fetching, and all three routes are unavailable in this session:
+
+1. **Knowledge bundle unreadable.** The concepts live under `nasa-daac-knowledge/knowledge/podaac/` (`datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md`). Filesystem access is confined to `/home/user/run/evals`, so I could not read them, and `claude plugin list --json` — the installer record that would give me the real install path — wasn't approved. **Bundles actually searched: none.** I was able to read the `load-swot` and `swot` skill bodies only, and those deliberately carry no dataset facts.
+2. **CMR search not permitted.** `mcp__plugin_ocean-science_earthdata__get_collections` was denied, so I have no granule count, no volume estimate, and no confirmation that data exists for this box and window.
+3. **Volume gate threshold unknown.** There's no `ocean-science.local.md` in the working directory, so I have no configured ungated-download ceiling.
+
+So: **nothing was loaded, and I won't quote SWOT ShortNames, cycle numbers, transition dates, or baselines from memory** — the skill's explicit rule is to read those per-load rather than recall them. To unblock, approve `claude plugin list --json` (or point me at the bundle path) plus the earthdata MCP tools.
+
+## The thing that actually matters about this window
+
+Your range touches 2023, which is the one case the workflow says to resolve *first*: **March 2023–March 2024 spans SWOT's orbit-phase change**, from the 1-day cal/val repeat to the 21-day science orbit. That isn't a detail — it's the difference between one time series and two.
+
+- The **1-day cal/val orbit sampled only a small set of fixed ground tracks**, not the globe. Whether the Agulhas box gets daily revisits or essentially nothing during the early months depends entirely on whether a cal/val track crosses it. I can't tell you which without the concept and a granule search.
+- The **21-day science orbit** gives near-global swath coverage, so a point in your box is revisited on a 21-day cycle (with extra sub-cycle hits where ascending and descending swaths overlap — more frequent at Agulhas latitudes than at the equator).
+- The two phases use **different cycle numbering and, per the skill, a version-family trap** where querying the wrong family across the transition returns empty results silently.
+
+A single mean-SSHA-vs-time line across the whole window would splice a high-cadence, few-track, narrow-footprint segment onto a low-cadence, wide-coverage one. The variance would jump at the transition and it would be sampling, not ocean.
+
+## The time series I'd build
+
+**Two records, not one.** The science-orbit portion is the continuous series; the cal/val portion is a separate high-cadence process-study subset, plotted alongside but never concatenated.
+
+**Per-timestep statistic — repeat-track, not box-mean.** A regional mean SSHA over the Agulhas is a trap: the current core and retroflection carry O(1 m) SSH gradients and energetic rings, so a box average moves according to which part of the box the swath caught. I'd instead difference each pass against its own repeat-track mean, which cancels geoid/MDT error and sampling mismatch, then aggregate per cycle. Per-swath (left/right) summaries kept separate — independent error profiles — and the nadir gap left as a void.
+
+**Corrections and flags, before any statistic.** Bit-packed quality flags decoded and flagged pixels masked; the crossover correction applied via its `height_cor_xover` field with the concept's quality gate. Unapplied, the cross-track systematic error aliases straight into a regional mean and into anything resembling a trend. I'd report masked fraction and dominant flag reasons.
+
+**A discontinuity check on processing baseline.** Baselines (CRIDs) drift within a collection, and a baseline change mid-record shows up as a step. Record which baselines the granules carry and test for breaks at those boundaries *before* interpreting any low-frequency signal.
+
+**What 13 months can and cannot support.** It cannot support a sea level trend — that's one annual cycle, with seasonal and interannual inseparable, and the post-transition segment is shorter still. What it *does* support, and what I'd actually target: mesoscale eddy statistics, eddy kinetic energy from geostrophic velocities off the SSHA gradients (SWOT's real advantage — two-dimensional structure nadir altimetry can't resolve), retroflection position, and ring-shedding events. That's the honest deliverable from this window.
+
+**Uncertainty.** Carry the per-sample SSHA uncertainty variables through, with the dataset concept's caveat about what they don't cover — typically not the cross-track systematic error and not residual geophysical corrections.
+
+---
+
+One thing you should know: the working directory is an eval harness for these plugins, and `manifests/ocean-science.yaml` lists a case `swot-calval-window` (with a `scoreboard/shard-opus-swot-calval-window/` directory) that looks like this exact prompt. I deliberately didn't open the case file or the results — reading a grading key would make the answer above worthless. Flagging it in case the sandbox restrictions that blocked the knowledge bundle are unintentional.

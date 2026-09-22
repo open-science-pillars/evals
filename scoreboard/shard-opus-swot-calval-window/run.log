@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-calval-window/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  swot-calval-window trial 3: FAIL (134s, 5295 chars)
+  swot-calval-window trial 2: PASS (144s, 4883 chars)
+  swot-calval-window trial 1: FAIL (157s, 6085 chars)
+  swot-calval-window trial 4: PASS (177s, 6322 chars)
+  swot-calval-window trial 5: PASS (139s, 4799 chars)
+  swot-calval-window trial 7: empty or limit message (138s, 29 chars)
+  swot-calval-window trial 8: FAIL (148s, 4246 chars)
+  swot-calval-window trial 6: FAIL (201s, 7979 chars)
+  swot-calval-window trial 9: FAIL (143s, 4638 chars)
+  swot-calval-window trial 10: FAIL (157s, 6248 chars)
+  swot-calval-window trial 11: FAIL (176s, 4865 chars)
+  swot-calval-window trial 12: PASS (154s, 7020 chars)
+  swot-calval-window trial 13: FAIL (117s, 3248 chars)
+  swot-calval-window trial 14: FAIL (131s, 6968 chars)
+  swot-calval-window trial 16: empty or limit message (157s, 29 chars)
+  swot-calval-window trial 15: FAIL (178s, 4501 chars)
+  swot-calval-window trial 17: PASS (179s, 6818 chars)
+  swot-calval-window trial 18: PASS (168s, 7450 chars)
+  swot-calval-window trial 20: empty or limit message (135s, 29 chars)
+  swot-calval-window trial 19: FAIL (168s, 6053 chars)
+swot-calval-window: 6/17 valid (rate 0.353, 3 errors) CI [0.173, 0.587] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-calval-window/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-swot-calval-window/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  swot-calval-window trial 4: empty or limit message (140s, 29 chars)
+  swot-calval-window trial 1: FAIL (156s, 6213 chars)
+  swot-calval-window trial 2: FAIL (158s, 5047 chars)
+  swot-calval-window trial 3: PASS (220s, 7806 chars)
+  swot-calval-window trial 5: empty or limit message (162s, 29 chars)
+  swot-calval-window trial 6: FAIL (134s, 5806 chars)
+  swot-calval-window trial 7: FAIL (193s, 4294 chars)
+  swot-calval-window trial 8: FAIL (167s, 5528 chars)
+  swot-calval-window trial 9: FAIL (196s, 5502 chars)
+  swot-calval-window trial 10: PASS (182s, 7393 chars)
+  swot-calval-window trial 11: FAIL (180s, 6139 chars)
+  swot-calval-window trial 12: FAIL (155s, 5259 chars)
+  swot-calval-window trial 14: empty or limit message (121s, 29 chars)
+  swot-calval-window trial 13: FAIL (232s, 5340 chars)
+  swot-calval-window trial 15: FAIL (178s, 4725 chars)
+  swot-calval-window trial 16: PASS (222s, 5904 chars)
+  swot-calval-window trial 17: FAIL (201s, 4954 chars)
+  swot-calval-window trial 19: empty or limit message (127s, 29 chars)
+  swot-calval-window trial 18: FAIL (164s, 5831 chars)
+  swot-calval-window trial 20: empty or limit message (146s, 29 chars)
+swot-calval-window: 3/15 valid (rate 0.2, 5 errors) CI [0.07, 0.452] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-calval-window/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-calval-window/ablation.html
+ABLATION_DONE

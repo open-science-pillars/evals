@@ -1,0 +1,55 @@
+I stopped before downloading anything. Three things block the load, and one of them is worth your attention as a steward of this repo.
+
+## What I parsed
+
+- **Region:** Agulhas — I'd take ~10°E–45°E, 45°S–30°S (retroflection + return current + ring corridor). Not yet confirmed with you.
+- **Time:** 2023-03-01 → 2024-03-31.
+- **Tier / version family:** unresolved — see below.
+
+## Why I can't load it
+
+**1. The SWOT knowledge concepts are not installed.** `load-swot` and `swot` both require reading three concepts before anything else, all under `knowledge/podaac/`: `datasets/swot-karin.md` (the Variants table with ShortNames and concept ids, family holdings, uncertainty variables, known issues), `gotchas/swot-calval-orbit-phases.md`, and `gotchas/swot-crossover-unapplied.md`.
+
+The provider plugin that should carry them **is installed but ships no `knowledge/` directory at all**:
+
+- `nasa-daac-knowledge` v2026.9.5-6b0ef007a964 — contents are `CITATION.cff`, `CODEOWNERS`, `LICENSE`, `README.md`, `docs/`, `plugin.json`, `tools/`. No `knowledge/`.
+- `ocean-science` v0.9.0 declares the dependency (`knowledge: nasa-daac-knowledge >=2026.9.2`) and the version constraint is satisfied, so the installer reports no error — the bundle is simply absent from the payload.
+- `ocean-science` 0.9.0 has no `knowledge/` of its own either, and there's no project-local bundle (`ocean-science.local.md` does not exist in `/home/user/run/evals`).
+
+So this is a silent packaging gap, not a missing concept: the dependency resolves, and the facts are gone. Worth an issue against the `nasa-daac-knowledge` release.
+
+**2. CMR search wasn't permitted.** `get_collections` returned a permissions error, so I couldn't resolve the ShortName and granule inventory from live metadata as a substitute for the Variants table.
+
+**3. No volume gate threshold.** The hard gate reads "maximum ungated download size" from `ocean-science.local.md`, which doesn't exist here. With no threshold, nothing may be fetched ungated.
+
+I won't fill these from memory — the ShortName, version family, current baseline, tier postings, cycle numbering and crossover field are exactly the facts those concepts own, and guessing a ShortName is how you get a confidently empty result.
+
+## The time series — general method, not concept-backed
+
+Labeling this clearly: the following is general altimetry method plus what the two skill bodies say about the concepts. None of it is a substitute for reading them.
+
+**The shape of the object.** Not a daily gridded series. SWOT samples the box as discrete swath overpasses, so the natural product is **irregular, one record per (cycle, pass) granule trimmed to the box** — and resolved *per swath*, left and right kept separate, because the two carry independent error profiles. Each record: area-weighted mean `ssha` over good pixels, plus valid-pixel count, flagged fraction, and the granule's processing baseline (`crid`). The companion count/flag series are not diagnostics you discard; they are part of the series.
+
+**The dominant problem: your window straddles the orbit transition.** March 2023 → March 2024 spans the mid-2023 cal/val-to-science handover. That changes the sampling cadence, the cycle numbering, *and* the version family in one step — the skill notes the cal/val era lives only in the D family. Consequences:
+
+- This is **two segments, not one series**. Concatenating across the transition produces a record whose sampling geometry changes mid-stream; any trend fitted across the join is partly an artifact of that change.
+- Whether the Agulhas box was covered *at all* in the cal/val phase is a coverage question I can't answer without the concept. If an early-2023 search comes back empty, the skill is explicit that this is a **version-family symptom before it is a coverage fact** — the wrong-family query returns nothing and looks like a data gap.
+- My recommendation once the concepts are readable: build the science-orbit segment as the primary series, and treat the cal/val segment as a separate, densely-sampled comparison record rather than as the first year of one continuous line.
+
+**What would corrupt the series if skipped:**
+
+- **Crossover correction arrives unapplied.** An uncorrected cross-track tilt and inter-swath offset project directly onto a box mean, and drift in that error aliases into apparent regional sea level change. Must be applied with its quality gate, and the summary must say so explicitly.
+- **Baseline drift within a collection.** Record `crid` per granule; a series assembled across baselines can carry steps that look like events.
+- **Flag masking is not random here.** The Agulhas is a high sea-state region, and rain/sea-state flagging is seasonally modulated. A mean over good pixels therefore has a *seasonally varying sampling bias* — which is why the flagged-fraction series travels with the SSH series rather than being reported once.
+- **The nadir gap stays open.** Never interpolated. Which part of the retroflection the gap falls over varies pass to pass, so the box mean's spatial support changes between records — another reason to carry valid-pixel counts.
+- **Aliasing.** Agulhas ring shedding and mesoscale evolution run at timescales comparable to the science-orbit repeat, so a regional-mean series is aliased and shouldn't be read as a resolved eddy signal.
+
+**What I'd actually recommend computing.** For the Agulhas specifically, a box-mean SSH series is the weakest use of KaRIn — it throws away the one thing wide-swath gives you. The stronger targets, from the same loaded granules: SSH variance / geostrophic EKE from the 2D swath fields per overpass, or ring-scale SSH structure tracked across overpasses. The box mean is then a context series, not the result.
+
+## To unblock
+
+1. Reinstall or repoint `nasa-daac-knowledge` so `knowledge/podaac/` is present — that resolves tier, family, ShortName, crossover field and baseline in one step.
+2. Grant the earthdata CMR tools, so I can do the granule search and give you a real count and volume estimate for the box.
+3. Create `ocean-science.local.md` with a maximum ungated download size.
+
+Confirm the bounding box and I'll run the search the moment the first two land.

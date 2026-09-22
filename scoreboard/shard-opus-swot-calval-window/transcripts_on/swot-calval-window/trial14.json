@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 131,
+  "chars": 6968,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent flagged the orbit-phase transition and cycle-numbering discontinuity in general terms but never actually split or narrowed the range per phase and left the version family/collection choice explicitly unresolved, so the cal/val-only D-collection constraint was never applied."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,28 @@
+I hit three hard blockers before any data could be loaded. Here's where it stands.
+
+## What I could reach
+
+- `ocean-science` 0.9.0 bundle root — read its `knowledge/index.md`. It holds Argo/tide-gauge/index material only; **no SWOT concepts live there.**
+- The `swot` and `load-swot` skill bodies — both deliberately carry *no* dataset facts and point at the PO.DAAC provider bundle.
+
+## What's blocked
+
+**1. The SWOT concepts are unreachable.** They live in the `nasa-daac-knowledge` dependency (`ocean-science/0.9.0/.osp/package.yaml` pins `>=2026.9.2`), at `knowledge/podaac/datasets/swot-karin.md` plus `gotchas/swot-calval-orbit-phases.md` and `gotchas/swot-crossover-unapplied.md`. `claude plugin list --json` — the command `consult-knowledge` prescribes for locating bundle roots — needs approval, and `ls`/`find` under `/root/.claude/plugins/cache` are sandbox-blocked, so I can't discover the install path by hand. I guessed several version directories; all missed. I'm not going to substitute remembered SWOT facts for those concepts — `swot/SKILL.md:100` makes that a hard refusal, and a bundle I couldn't search is not the same as a knowledge gap.
+
+**2. No granule search.** `mcp__plugin_ocean-science_earthdata__get_collections` isn't granted, so I have no collection IDs, granule count, or volume estimate.
+
+**3. No volume gate threshold.** `load-swot` takes it from `ocean-science.local.md`; the working directory (`/home/user/run/evals`, the agent-evals repo) has no such file — only `manifests/ocean-science.yaml`.
+
+## The one thing already visible about your window
+
+`swot/SKILL.md:41-44` says any date range touching 2023 must have the orbit-phase concept read **first**, because a window spanning the mid-2023 transition and an empty early-mission query are *both silent failures*. March 2023 → March 2024 spans exactly that transition. So I'd treat "a continuous 13-month Agulhas time series" as the thing to verify, not assume — the sampling cadence and ground-track geometry are very likely not constant across it, and the version families may differ either side. What a "cycle" spans, and which family covers which span, are dataset facts I need the concept to state.
+
+Beyond that, the series design that *is* skill-owned procedure: search whole passes over the box then trim before aggregating; decode the bit-packed flags and mask before any statistic; keep left/right swaths separate with the nadir gap intact (no interpolation across it); apply the crossover correction the dataset concept prescribes and say so explicitly; carry the ssha uncertainty variables through to the plotted series. I won't put numbers on posting, swath width, or flagged fraction until the concept and the actual granules supply them.
+
+## To unblock
+
+1. Approve `claude plugin list --json`, or tell me the `nasa-daac-knowledge` install path.
+2. Grant the earthdata MCP tools.
+3. Give me a volume gate threshold (or point me at the project that has `ocean-science.local.md`).
+
+One thing I'd like confirmed meanwhile: I was going to use **15°E–45°E, 45°S–30°S**. Do you want the retroflection and return current in — that widens it west to ~10°E — or just the boundary-current core along the shelf edge? And Basic tier unless you say otherwise.

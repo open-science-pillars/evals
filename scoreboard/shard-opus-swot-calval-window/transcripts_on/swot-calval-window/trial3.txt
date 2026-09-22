@@ -1,0 +1,42 @@
+I got far enough to stop responsibly rather than hand you a fabricated load. Here's where it stands.
+
+## Nothing was downloaded — three gates are closed
+
+**1. The knowledge consult failed, and it's the one that matters most here.**
+
+The `load-swot` workflow requires the SWOT concepts be read before anything else, and it's explicit about this exact window. Quoting the `swot` skill I did read (`ocean-science/0.9.0/skills/swot/SKILL.md:40`):
+
+> One consult fires first, always: any date range touching 2023 gets the orbit-phase concept read BEFORE anything else, because a window spanning the mid-2023 transition and an empty early-mission query are both silent failures that concept explains.
+
+March 2023 → March 2024 spans that transition squarely. The three concepts I need — `datasets/swot-karin.md` (tier inventory, ShortNames, current baseline, crossover known issue), `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md` — all live in the **nasa-daac-knowledge** provider bundle (`>=2026.9.2`), not in ocean-science.
+
+Bundles searched: `ocean-science/0.9.0/knowledge/` (read in full — it carries Argo, tide-gauge and index concepts only; no SWOT). The provider bundle I could not locate: `claude plugin list --json` wasn't approved, and directory traversal outside `/home/user/run/evals` is blocked, so I couldn't resolve its installPath. Path guesses under the cache all missed.
+
+The skill's hard refusal is *"never work from a remembered SWOT dataset rule where a concept exists."* One exists for every fact that would shape this load, so I'm not going to recite orbit dates, cycle numbering, ShortNames or the baseline from memory.
+
+**2. CMR search wasn't permitted.** `get_collections` returned a permissions error, so I couldn't even do the granule-count-and-volume report that precedes any download.
+
+**3. No volume gate threshold.** There's no `ocean-science.local.md` in `/home/user/run/evals` (contents: `.github`, `.osp`, `manifests`, `runner`, `scoreboard`, plus repo boilerplate). A 13-month two-swath regional pull is not small, so I'd want that threshold or an explicit ceiling from you before fetching.
+
+## The time series I'd build — design only, labeled as general method
+
+Dataset-specific parameters below are marked *pending concept*; the structural reasoning is mine and doesn't depend on the bundle.
+
+- **Region.** I'd propose 10°E–45°E, 45°S–25°S to cover the Agulhas Current, the retroflection and the return flow. Say the word if you want it tighter or extended west into the Cape Basin — region drives volume more than anything else.
+- **The sample unit is a pass crossing, not a date.** SWOT doesn't give you a daily field over a box; it gives you a handful of swath crossings per repeat cycle. The series index is `(cycle, pass, timestamp)`, irregularly spaced — not a calendar grid. Resampling to monthly is an analysis choice made afterward, with the aliasing stated.
+- **It is almost certainly two series, not one.** The cadence and the pass geometry over the box both change at the mid-2023 phase transition. Concatenating across it into a single record is the silent failure the orbit-phase concept exists to prevent. I'd build them as two segments, plot them adjacent, and only merge if that concept says the quantity is comparable.
+- **Per-point reduction.** Box-mean of flag-passing `ssha` pixels, computed **separately for left and right swath**, nadir gap left empty, no gridding and no gap-filling at load time. Each point carries valid-pixel count, flagged fraction with dominant flag reasons, per-swath split, the processing baseline the granule actually reported, and the uncertainty variable.
+- **Crossover correction applied before any statistic** — the dataset concept names the field and its quality gate (*pending concept*), and the summary must state explicitly that it was applied.
+- **Baseline drift is a trend hazard.** Granules within one collection can carry different processing baselines; a drift across your 13 months can masquerade as signal. I'd record the baseline per point and check it before quoting any slope.
+
+**One scientific caveat worth raising now:** the Agulhas retroflection is among the highest-EKE regions in the ocean. A box-mean SSHA there is dominated by mesoscale rings entering and leaving the box — tens of cm of eddy signal aliased into the mean — not by a seasonal or secular cycle. If your question is about variability rather than a regional mean level, a box-mean series will mostly measure eddy bookkeeping. An SSHA-variance (EKE-proxy) series per cycle, or a retroflection-position / ring-shedding series, would be the more honest product from swath data over this box. Worth deciding before we pull 13 months.
+
+## To unblock
+
+Any one of these gets me moving:
+
+1. Approve `claude plugin list --json` (the sanctioned way to find the provider bundle), **or** give me the nasa-daac-knowledge installPath directly;
+2. Approve the `earthdata` MCP tools so I can report granule counts and volume for the box;
+3. Set a "maximum ungated download size" in an `ocean-science.local.md`, or just tell me a ceiling.
+
+With 1 and 2 I can give you the real granule inventory, the correct tier and ShortName, and a time series description grounded in the concepts rather than in my recollection.

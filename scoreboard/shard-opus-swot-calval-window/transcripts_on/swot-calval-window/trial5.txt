@@ -1,0 +1,47 @@
+I consulted the knowledge bundle before searching, and the consult stopped the load. Here's where it stands.
+
+## Concepts consulted
+
+- `knowledge/podaac/datasets/swot-karin.md` — stable, human-verified 2026-09-04
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — severity high, stable, human-verified 2026-09-04
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — severity high, stable, human-verified 2026-09-04
+
+## What I parsed back
+
+Region: Agulhas as bbox 10°E–45°E, 45°S–25°S (current core + retroflection). Tier: Basic (`SWOT_L2_LR_SSH_BASIC_D`, C3233942270-POCLOUD), which carries `ssha_karin`, its qual flag, and `height_cor_xover`. Range: 2023-03-01 → 2024-03-31.
+
+## The blocker: that window is not one record
+
+The orbit-phase concept fires on any range touching 2023, and this one straddles the transition. Your 13 months break into four pieces, not one:
+
+| Window | What's there |
+|---|---|
+| 2023-03-01 → 03-26 | **Nothing.** The D family's holdings start at cycle 473, 2023-03-27; calibration begins 2023-03-30. ~4 weeks of your window is empty. |
+| 2023-03-30 → 07-10 | Cal/val: 1-day repeat, sparse fixed tracks, cycles 475–578 |
+| 2023-07-11 → 07-25 | Orbit transition — no science data |
+| 2023-07-26 → 2024-03-31 | Science: 21-day repeat, global, cycles 001 → ~012 |
+
+A single series spanning July 2023 aliases the orbit change into apparent variability — daily revisits over a few fixed tracks become 21-day revisits over the whole box. That's the concept's documented silent-failure mode, and it would look like a real signal in the Agulhas.
+
+Also: use the **D family only**. Version C holds zero granules in the calibration window, so a cal/val-era query against `*_2.0` returns empty and reads as "no data for those dates." D is also the only family still growing.
+
+## The time series I would actually build
+
+**Science era, 2023-07-26 → 2024-03-31 — this is the usable one.** ~12 points.
+
+- **Unit is the cycle, not the calendar month.** 21 days doesn't divide a month, so monthly binning mixes different subsets of passes into each bin and aliases the swath sampling pattern into the series. One point per cycle, 001 through ~012.
+- **Per point:** flag-gated, crossover-corrected regional mean SSHA. That means `ssha_karin + height_cor_xover`, gated by `height_cor_xover_qual`, before any aggregation — the correction arrives unapplied and leaves a cross-track ramp of order ±2.9 m against a real mesoscale signal of ~0.17 m std. Flag gating alone does not make the mean safe.
+- **Left and right swaths reported separately** alongside the combined mean; they have independent error profiles. Nadir gap stays empty — never interpolated.
+- **Carried with each point:** valid-pixel fraction and dominant flag reasons (expect roughly 40% valid after flag and land gating — normal, not a defect), and the `crid` of every granule in the bin.
+- **A variance companion series** — within-cycle SSHA variance over the box — is the more interesting product here, since the Agulhas signal is ring shedding and retroflection position, not a basin-mean height.
+
+**Cal/val era, 2023-03-30 → 07-10 — a different object, if it exists at all here.** The 1-day orbit flew a sparse fixed track set; whether any track crosses the Agulhas box is the first thing the granule search has to answer, and I can't assert it. If tracks do cross, you get near-daily sampling at a few fixed locations over ~103 days: excellent for resolving individual ring passages, useless as a regional mean. Cycle numbers run 475–578 there.
+
+**What this series will not support:** a trend. Twelve points over eight months, with CRID drift inside the collection as forward processing and reprocessing interleave, means baseline changes can walk into the series. And error bars can't come from `ssh_karin_uncert` — that's per-sample random noise only, excluding exactly the correlated swath-scale roll, phase, timing and wet-troposphere errors that dominate a regional average.
+
+## Blocked, needs you
+
+1. **CMR search and download permissions.** Both `get_granules` and a direct CMR curl were declined, so I have no verified granule counts. Scaling the concept's observed Gulf Stream figure (8 granules / 3 days, ~9.4 MB each) to 249 science-era days gives roughly 600–700 granules, ~6 GB — a rough cross-region extrapolation, not a measurement, and almost certainly above any sane ungated threshold.
+2. **No `ocean-science.local.md` in this directory**, so I have no gate threshold to check against. Tell me the threshold, or approve the volume explicitly.
+3. **Confirm the region box** — 10–45°E / 45–25°S covers current and retroflection. Retroflection alone (15–25°E, 42–35°S) would cut volume several-fold.
+4. **Confirm the split**: two separate series per phase, or narrow to the science era only?

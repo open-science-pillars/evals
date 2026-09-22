@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 143,
+  "chars": 4638,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent flagged the mid-2023 orbit-phase transition and cycle-numbering discontinuity but delivered no split or narrowed range per phase and never applied the cal/val version-family (D collection) constraint to collection choice, deferring all of it pending a blocked knowledge consult."
+    }
+  },
+  "pass": false
+}

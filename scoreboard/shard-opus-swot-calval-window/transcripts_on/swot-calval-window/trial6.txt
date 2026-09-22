@@ -1,0 +1,62 @@
+I did not load any data. Two things block it, and one of them changes the shape of the answer you asked for. Details first, then the time-series design.
+
+## Blocker 1 — the SWOT concepts aren't reachable in this session
+
+The `load-swot` workflow requires reading the SWOT knowledge concepts before planning a load, and forbids working from remembered SWOT dataset rules where a concept exists. Those concepts exist — they're just not installed here. They live in the `nasa-daac-knowledge` provider bundle, which `ocean-science` declares as a dependency (`.osp/package.yaml`: `nasa-daac-knowledge >=2026.9.2`):
+
+- `knowledge/podaac/datasets/swot-karin.md` — tiers/ShortNames/concept ids, version families and their holdings, granule anatomy, uncertainty variables, known issues
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — orbit phases, cycle numbering, the version-family trap
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — the crossover correction and its quality gate
+
+Bundles I could actually search: `ocean-science` 0.9.0 (`knowledge/` — local conventions, Argo/tide-gauge material, no `podaac/` subtree) and `core` 0.6.0. No project local config (`ocean-science.local.md`) exists under `/home/user/run/evals`. I could not read the installer record — `claude plugin list --json` wasn't permitted and directory listing outside the working directory is blocked — so I probed candidate install paths by hand and found none. The bundle's own `knowledge/log.md` confirms why there's no fallback: the pinned in-repo snapshot of the PO.DAAC bundle was deleted on 2026-09-04, and the concepts "reach an install only as the `nasa-daac-knowledge` dependency."
+
+So I will not quote you ShortNames, concept ids, version-family letters, cycle numbers, processing baselines, or phase dates. Those are exactly the facts the missing concepts own.
+
+## Blocker 2 — no data path
+
+`earthaccess`/`python3`, and the Earthdata CMR tools were all refused in this session. Even with the concepts in hand, nothing could be searched or downloaded. Separately, the volume gate has no threshold to read (no local config), so a real load would need you to either supply one or confirm the size explicitly.
+
+## What I parsed from your request
+
+- **Region:** Agulhas — I'd take 10°E–40°E, 45°S–28°S, covering the Agulhas Current proper along the SE African shelf, the retroflection, and the near field of the Agulhas Return Current. Say if you want the retroflection alone or the Return Current further east; this drives granule count directly.
+- **Window:** 2023-03-01 to 2024-03-31.
+- **Tier:** Basic by default. The tier inventory and per-tier posting are in the unreachable dataset concept.
+
+## The thing that dominates this request
+
+Your window straddles SWOT's orbit-phase transition, and that is not a detail — it's the reason "a time series from March 2023 through March 2024" isn't one series. Two facts I can cite because I read them here, not from memory:
+
+- The `swot` skill's own reference (`skills/swot/references/swot-products.md:18-20`) states the cal/val era lives only in one version family, and that **an empty early-mission result is a family symptom before it is a coverage fact**. A naive query for March 2023 over the Agulhas returning nothing most likely means you queried the wrong family — not that SWOT missed the Agulhas.
+- The `swot` skill flags this as its one mandatory-first consult: any range touching 2023 gets the orbit-phase concept read before anything else.
+
+The bundle's change log also records, second-hand from the concept, that crossover calibration arrives unapplied in `ssha_karin` — a spurious ±2.9 m cross-track ramp until `height_cor_xover` is added (observed on a PGD0 Expert cycle). At Agulhas SSH-anomaly amplitudes of tens of centimetres, that is a factor-of-ten error masquerading as signal. Any statistic must be computed after that correction, with the quality gate the concept prescribes.
+
+## The time series I would build — general method, not concept-sourced
+
+Labeling this clearly: the following is standard swath-altimetry practice, not read from the missing concepts. Verify every product-specific choice against them before running it.
+
+**Time axis.** Not calendar-regular. Granules are whole passes, so the sampling unit is a pass overflight of the box. Two defensible constructions, and they answer different questions:
+
+1. **Per-pass series** — one series per pass number, each sampled at that pass's repeat interval, trimmed to a fixed in-box footprint. Sampling geometry is constant within a series, so differences are ocean, not coverage. This is the one I'd build.
+2. **Per-cycle regional aggregate** — one value per cycle, pooling all passes crossing the box. Denser, but each sample mixes passes acquired days apart over different sub-regions, so coverage changes alias into the signal. Only useful with an explicit constant-coverage mask.
+
+**Segmentation.** At minimum two segments, split at the phase transition, never concatenated into one curve: the sampling cadence, the pass set, the cycle numbering, and the version family all change across it. Plot them as separate panels sharing a y-axis. Whether the March 2023 portion yields any science SSH at all is precisely what the orbit-phase concept answers — treat it as an open question, not an assumed gap.
+
+**Per-swath, always.** Left and right swaths carry independent cross-track error profiles; summarize them separately and never interpolate across the nadir gap — it's a real void, and filling it fabricates SSH.
+
+**Quantities worth extracting,** in rough order of what SWOT adds over nadir altimetry:
+
+- **Cross-track SSH slope → geostrophic surface velocity**, resolved in two dimensions across the swath. This is the point of KaRIn in a boundary-current system, and the Agulhas jet is well above the noise floor.
+- **In-box SSHA variance / mesoscale energy per pass** — a scalar per sample, robust to partial coverage if the mask is fixed.
+- **Area-averaged SSHA over a fixed, fully-covered sub-box.** Only over a footprint every sample covers; averaging a varying footprint gives you a different quantity each time.
+- **Ring and retroflection structure** as a sequence of snapshots, not a track. At a 21-day repeat, rings translating at several cm/s move on the order of a hundred kilometres between samples — you get well-resolved stills, not continuous trajectories. Continuous tracking is a 1-day-phase capability, and only over that phase's fixed pass set.
+
+**What this series will not support.** About 17 samples per pass over 13 months, split across a phase change. That is a mesoscale snapshot record. It will not give you a seasonal cycle, and it will not give you a trend — any rate fitted to it would be dominated by Agulhas eddy variability, which is the largest in the global ocean. If a trend or seasonal cycle is the actual goal, SWOT is the wrong instrument for this window; the multi-mission gridded altimetry record is, with SWOT layered on for structure.
+
+**Two further cautions.** SSHA is referenced to a mean sea surface, and the MSS is itself least certain exactly where variability is highest — so "anomaly" carries a region-dependent reference error here. And the Southern Ocean storm track crosses this box, so expect a non-trivial flagged fraction; report it with the dominant flag reasons rather than silently dropping pixels.
+
+## To unblock
+
+Install the provider bundle — `claude plugin install nasa-daac-knowledge` (≥2026.9.2) — and re-run. That gets me the tier table, ShortNames, family holdings, the phase dates and cycle numbering, and the crossover gate. Enabling the Earthdata CMR tools or `earthaccess` would then make the search and the volume gate real. Tell me your ungated download threshold, or I'll present the granule count and size and wait.
+
+Worth reporting upstream: this is a knowledge gap of the recoverable kind — the concepts exist and the dependency is declared; the install is just absent here.

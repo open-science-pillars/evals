@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 134,
+  "chars": 5295,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript never surfaces the concrete orbit-phase gotcha \u2014 it only gestures at a vague 'mid-2023 phase transition' as a reason to split, without stating the cal/val vs 21-day science phases, the cycle-numbering discontinuity, or applying the D-collection version-family constraint, and it delivered no actual load or collection choice."
+    }
+  },
+  "pass": false
+}

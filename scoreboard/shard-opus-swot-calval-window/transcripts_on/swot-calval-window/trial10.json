@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 157,
+  "chars": 6248,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript flags the 2023 orbit transition in general terms but never splits or narrows the range per phase, explicitly declines to pin the cycle-numbering discontinuity, and does not apply the version-family constraint (cal/val only in the D collections) to any collection choice \u2014 deferring all of it to unavailable knowledge concepts."
+    }
+  },
+  "pass": false
+}

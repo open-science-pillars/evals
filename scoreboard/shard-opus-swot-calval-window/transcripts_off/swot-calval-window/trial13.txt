@@ -1,0 +1,38 @@
+## I did not load anything — two blockers, and one of them is scientific
+
+**Tooling:** the granule search never ran. `get_collections` was denied permission, and Bash is confined to the working directory, so I have no earthaccess/CMR path from this session. No granules, no statistics, no volume gate outcome. Nothing below is measured.
+
+**Knowledge bundle:** the `load-swot` workflow requires reading the SWOT concepts before planning. I read the pointers (`skills/swot/SKILL.md`, `references/swot-products.md`), which name three concepts under `knowledge/podaac/` — `datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md`. I could not read any of them. `claude plugin list --json` needs approval, directory listing outside `/home/user/run/evals` is blocked, and probing the cache path for `nasa-daac-knowledge` (a declared dependency of ocean-science ≥ 2026.9.2) by hand did not resolve it. So the concepts exist and were not consulted. **Everything below is general method and general mission knowledge, labeled as such — check it against those three concepts before acting on it.** In particular I am not quoting tier ShortNames, concept ids, postings, or the current processing baseline, because those are exactly what the dataset concept owns.
+
+Also worth saying: this working directory is the eval-harness repo, with no `ocean-science.local.md`, so there is no configured maximum ungated download size. The gate has no threshold to fire against.
+
+## The request itself has a problem
+
+March 2023 → March 2024 straddles SWOT's orbit change. From general mission knowledge: SWOT launched December 2022, flew a **1-day repeat cal/val orbit** through roughly April–July 2023, then moved to the **21-day science orbit** from roughly late July 2023. That gives you three separate failure modes in one window:
+
+- **March 2023 is inside commissioning.** The window opens before routine KaRIn L2 SSH exists. An empty result there is expected, not a coverage gap.
+- **The cal/val era lives in a different version family.** The pointer file is explicit that this is a family symptom before it is a coverage fact — a single ShortName query spanning the whole window returns only the science-phase part and looks like data loss. This is the silent failure the orbit-phase concept is written to catch.
+- **The sampling cadence changes mid-window.** 1-day repeat and 21-day repeat are not the same measurement. A single time series across that seam mixes two sampling regimes and any "variability" at the transition is an artifact.
+
+And the 1-day orbit sampled a limited set of ground tracks, not the globe. Whether the Agulhas box sits under one of them is something to check, not assume.
+
+## The time series I would build
+
+Region: I'd propose **10–40°E, 45–28°S** (Agulhas Current, retroflection, and return flow). Confirm or tighten — box size drives volume.
+
+**Two series, not one**, split at the orbit transition, never concatenated into a single line:
+
+1. A cal/val segment (April–July 2023) **only if** the fast-sampling tracks actually cross the box — near-daily if so, absent if not.
+2. A science segment, roughly August 2023 → March 2024: **~11–12 cycles at a 21-day step.**
+
+The sampling unit is the cycle/pass, not the day. Granules are whole passes, so a regional search returns every pass touching the box and the load trims afterward. The trap specific to this: each pass covers a *different* sub-area of the box, so a naive box-mean per cycle averages a different patch of ocean each time, and in a region as mesoscale-energetic as the Agulhas that sampling jitter will dominate the geophysical signal. I'd build **per-pass repeat-track series on the footprint each pass actually revisits**, plus per-cycle composite maps, rather than one box-mean curve.
+
+Quantities worth the trouble here: regional SSHA, and — the reason to use KaRIn rather than nadir altimetry at all — 2D geostrophic velocity and eddy kinetic energy from the swath, letting you track retroflection position and individual Agulhas ring shedding events across cycles.
+
+**What the series cannot support:** ~12 points over eight months is not a seasonal cycle and is nowhere near a trend. I'd refuse a trend rate from this window.
+
+**Non-negotiable preprocessing** (skill contract plus what the concepts govern): decode the bit-packed quality flags and mask before any statistic; apply the crossover correction — it arrives unapplied, `height_cor_xover` carries it, and the gotcha concept owns its quality gate; keep both swaths and the nadir gap intact and never interpolate across the gap; record the `crid` baseline of every granule loaded, because baseline drift within a collection means a subset spanning a reprocessing boundary is not self-consistent. Expect a higher flagged fraction than in a quiet region — the Southern Ocean sea state will cost you pixels.
+
+## To actually run this
+
+I need MCP/earthaccess permission plus Earthdata credentials, a volume-gate threshold, and — ideally — a readable `nasa-daac-knowledge` bundle. If you can approve `claude plugin list --json`, or tell me the install path, I'll read the three concepts and redo this plan against them rather than against my own recollection; the tier choice and the family split for early 2023 should come from the Variants table, not from me.

@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 158,
+  "chars": 5047,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response flags the mid-2023 orbit transition and proposes splitting/narrowing the range, but never acknowledges the cycle-numbering discontinuity and never applies the version-family constraint to collection choice (no mention that cal/val data exists only in the D collections), explicitly declining to state those specifics \u2014 partial compliance only."
+    }
+  },
+  "pass": false
+}

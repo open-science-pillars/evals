@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 201,
+  "chars": 7979,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response never selects collections or applies the version-family constraint (cal/val available only in the D collections) to a collection choice \u2014 it explicitly declines to name families, cycle numbers, or phase dates \u2014 so only the generic 'split the series at the transition' element is met, leaving the rubric's three-part requirement partially satisfied."
+    }
+  },
+  "pass": false
+}

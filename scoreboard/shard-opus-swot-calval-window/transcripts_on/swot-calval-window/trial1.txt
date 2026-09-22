@@ -1,0 +1,59 @@
+I hit three hard stops before any data moved. Here's where things stand and what I'd build once they clear.
+
+## Blocked on approvals
+
+Nothing was loaded. Three things need your approval:
+
+1. **`claude plugin list --json`** — the installer record that `consult-knowledge` uses to locate bundles. Denied, so I located roots by hand instead.
+2. **Filesystem reads outside `/home/user/run/evals`** — `ls`/`find` are sandboxed to the working directory, so I could only `Read` paths I could guess.
+3. **The `earthdata` MCP tools** (`get_collections`, `get_granules`) — denied, so I could not verify a single granule.
+
+## Knowledge consult: the SWOT concepts were not reachable
+
+I searched the two bundle roots I could resolve:
+
+- `ocean-science/0.9.0/knowledge/` — read `index.md` in full. Holds Argo/RG, tide-gauge and index concepts. **No SWOT concepts**; its index states explicitly that nothing from the provider bundle is copied there.
+- `core/0.6.0/knowledge/` — read `index.md` in full. Cross-cutting conventions only, no SWOT.
+
+Every SWOT fact lives in the **PO.DAAC provider bundle** (`nasa-daac-knowledge`, declared at `>=2026.9.2` in `ocean-science/0.9.0/.osp/package.yaml`), under `knowledge/podaac/`:
+
+- `datasets/swot-karin.md` — the Variants table (tiers, ShortNames, concept ids), family holdings, current baseline, uncertainty variables
+- `gotchas/swot-calval-orbit-phases.md` — orbit phases, cycle numbering, version-family trap
+- `gotchas/swot-crossover-unapplied.md` — the crossover correction and its quality gate
+
+I could not find that bundle at the cache path the other two use, and could not read the installer record to confirm whether it is installed, disabled with errors, or merely somewhere I couldn't guess. So: **I am not going to give you a ShortName, a tier posting, a processing baseline, or a crossover field name.** The `swot` skill's hard refusal covers exactly this, and reciting those from memory is how you end up with a plausible ShortName that silently returns zero granules.
+
+## The gate that fires anyway: your window spans the orbit transition
+
+The `swot` skill body states one consult fires first, always — *any* date range touching 2023 gets the orbit-phase concept read before anything else, because a window spanning the mid-2023 transition and an empty early-mission query are both **silent failures**.
+
+March 2023 → March 2024 is precisely that window. So treat this as the live risk, not a footnote: your 13 months are almost certainly **not one homogeneous sampling record**. They straddle the 1-day cal/val phase and the 21-day science phase, which differ in repeat period, in which passes cross the Agulhas at all, and — per the version-family trap — in *which collection family even holds the data*. A query against the science-phase family for March 2023 returns nothing, and that emptiness reads as "no coverage" when it is actually the wrong family. The exact dates and cycle numbering are in the concept; I won't guess them.
+
+## Also unresolved
+
+- **Volume gate** — the threshold comes from `ocean-science.local.md` ("maximum ungated download size"). No such file in `/home/user/run/evals`. I'd need the threshold, or your explicit confirmation on a stated count and size.
+- **Region** — I'd propose `10°E–45°E, 45°S–25°S` (retroflection + return current). A tighter retroflection-only box, `15°E–30°E, 42°S–33°S`, cuts volume substantially. Your call.
+- **Tier** — resolved from the Variants table once the bundle is readable, driven by whether you want SSHA plus core flags, the full correction/uncertainty set, or the finest posting.
+
+## The time series I would build
+
+Granules are whole passes, so the spatial search returns every pass touching the box and the load trims to the region **before** any aggregation.
+
+**The unit is the cycle-pass, not the day.** Each pass crossing the box yields one timestamped sample at pass mid-time, computed per swath (left and right kept separate — independent error profiles), over flag-gated pixels only, with the crossover correction applied and stated as applied. The nadir gap stays open; it is a real void.
+
+That gives an **irregularly sampled, two-segment series**, not a monthly one. I'd carry four layers:
+
+1. **Box-mean SSHA per pass** — a sanity baseline, dominated by the large-scale steric seasonal cycle. Coverage-weighted, because the fraction of the box a pass actually sees varies pass to pass with the gap and the flag mask.
+2. **SSHA variance / RMS per pass** — the mesoscale eddy-energy index. In the Agulhas this is the signal: ring shedding at the retroflection drives large, intermittent excursions.
+3. **Surface geostrophic velocity, relative vorticity and strain** from 2D SSHA gradients — this is what SWOT buys you over nadir altimetry, which cannot form cross-track gradients at all. Per swath, gradients never crossed over the gap.
+4. **Per-swath wavenumber spectra** — effective resolution and submesoscale content, and whether that content varies seasonally.
+
+**Three caveats that must ride with every number:**
+
+- **No trend.** Thirteen months cannot separate an annual cycle from a secular trend. I would refuse to quote a regional SSH trend from this window, and a deseasonalized series over it is not meaningful either.
+- **The two segments are not one series.** Different repeat period, different pass sets over the box. Plotted together, they get a visible break and separate statistics — never silently concatenated and resampled to a common cadence.
+- **Baseline heterogeneity.** Over 13 months a subset will carry mixed processing baselines. I'd record the `crid` of every granule loaded; the dataset concept's known issues explain why consistency claims across the window depend on that record.
+
+Per-pass uncertainty comes from the product's own uncertainty variables, with the caveat the dataset concept records about what the per-sample field does *not* cover.
+
+**To proceed, I need:** approval for the earthdata MCP tools and the plugin-list command (or the install path for `nasa-daac-knowledge`), your bounding box, and the download threshold.

@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 144,
+  "chars": 4883,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The transcript surfaces the orbit-phase transition unprompted with a dated cal/val vs science split, notes the cycle-numbering discontinuity (475\u2013578 then restart at 001+), refuses to build one continuous series, and applies the version-family constraint by selecting the D collection because Version C returns zero granules for the cal/val window."
+    }
+  },
+  "pass": true
+}

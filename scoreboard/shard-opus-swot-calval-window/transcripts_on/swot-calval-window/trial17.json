@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 179,
+  "chars": 6818,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the orbit-phase gotcha unprompted \u2014 splitting the window at the July 2023 cal/val-to-science transition into two non-commensurable series, noting the cycle-numbering discontinuity (475\u2013578 then restart at 001), and selecting SWOT_L2_LR_SSH_BASIC_D because the Version C family returns no granules for the cal/val window."
+    }
+  },
+  "pass": true
+}

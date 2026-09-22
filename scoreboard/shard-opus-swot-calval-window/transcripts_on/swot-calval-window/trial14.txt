@@ -1,0 +1,51 @@
+I stopped before downloading. Here's where things stand.
+
+## What I parsed from your request
+
+| Piece | Value | Source |
+|---|---|---|
+| Region | Agulhas — I'd propose **10°E–40°E, 45°S–30°S** (retroflection + return current) | my assumption, needs your confirmation |
+| Time range | 2023-03-01 → 2024-03-31 | your request |
+| Product | SWOT KaRIn L2 SSH | your request |
+| Tier | Basic (the workflow's default) | `skills/load-swot` |
+| Version family / baseline | **unresolved** | must come from the dataset concept |
+
+## Why I didn't fetch anything
+
+Two blockers, one hard.
+
+**1. The PO.DAAC knowledge bundle is unreadable in this session.** The ocean-science plugin carries *no* SWOT concepts of its own — its index (`knowledge/index.md`) lists only Argo, tide-gauge and MLD material. Every SWOT fact lives in the `nasa-daac-knowledge` provider bundle, which the `swot` skill names precisely:
+
+- `knowledge/podaac/datasets/swot-karin.md` — tier inventory, ShortNames, concept ids, current baseline, uncertainty variables
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — the two orbit phases, cycle numbering, version-family trap
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — the crossover correction and its quality gate
+
+That plugin is enabled (`/root/.claude/settings.json` lists `nasa-daac-knowledge@open-science-pillars: true`) and the marketplace pins it at `v2026.9.5`, but I can't reach its files. The sandbox blocks `claude plugin list --json` (the installer record that would give me its `installPath`) and blocks directory listing outside `/home/user/run/evals`, so I can't resolve the bundle root. I probed the plausible cache paths under `nasa-daac-knowledge/` — `2026.9.5`, `2026.9.4`, `2026.9.3`, `2026.9.2`, and unversioned — and none resolved. **Bundles actually searched: `ocean-science@0.9.0` only.**
+
+This matters more than usual here. Your window is March 2023 through March 2024, and the `swot` skill has an ordering rule that fires on exactly this: *"any date range touching 2023 gets the orbit-phase concept read BEFORE anything else, because a window spanning the mid-2023 transition and an empty early-mission query are both silent failures that concept explains."* Your range spans that transition. The concept exists and I can't read it — so I won't substitute remembered dates, cycle numbers or ShortNames for it. The workflow's own prohibition is explicit: never work from a remembered SWOT dataset rule where a concept exists. A wrong ShortName here doesn't error, it returns an empty granule list that looks like "no data in the Agulhas."
+
+**2. The volume gate has no threshold.** There's no `ocean-science.local.md` in `/home/user/run/evals` (I searched). The gate's "maximum ungated download size" is undefined, so I have no number to check a granule search against. A 13-month, ~30°×15° box at Basic tier is not small.
+
+## What I need
+
+Either approve `claude plugin list --json` so I can resolve the bundle root and read the three concepts, or point me at the `nasa-daac-knowledge` install path directly. And give me a gate threshold (or confirm a one-off size ceiling). With those I can run the granule search, report count and volume, and proceed.
+
+Also worth confirming: the bounding box above, and whether Basic tier is right — if you're after fine-scale structure or the full correction set, the dataset concept's Variants table has other tiers, at a cost in volume.
+
+## The time series I'd build
+
+This part I can lay out now, since it's method rather than dataset fact — but note that its *shape* depends on the orbit-phase concept I couldn't read, and I've marked where.
+
+**The unit of aggregation.** Regional SWOT work is a spatial search over whole passes, then a trim to the box before any aggregation — subset before you aggregate. So the raw series is indexed by (cycle, pass), not by calendar date, and each sample is one swath crossing of the Agulhas box. Converting that to a regular calendar axis is a deliberate analysis step, not part of loading.
+
+**Where the 2023 transition bites.** SWOT ran a fast-repeat cal/val phase before the science-orbit phase, and they differ in repeat interval, ground-track pattern and cycle numbering. Your window straddles the change, which means the series has **two regimes with different sampling density and different spatial coverage of the same box** — a revisit-rate discontinuity partway through, not a uniform record. Any trend or variance statistic computed across the whole 13 months without accounting for that is comparing unlike sampling. The exact dates, cycle numbering and the version families each phase is held under are precisely what `swot-calval-orbit-phases.md` pins down, and I'm not going to guess them. I'd likely recommend analysing the two phases separately, or restricting to the science phase for anything trend-like.
+
+**Per-sample construction, for each (cycle, pass):**
+1. Decode the bit-packed quality flags and mask failing pixels. No unflagged pixel enters a statistic — that's a hard refusal, and it's also where most of the apparent Agulhas "signal" would otherwise come from, since the retroflection is a high-variability, rain- and wave-contaminated region.
+2. Apply the crossover correction. It arrives **unapplied** in the granules; the dataset concept names the carrying field and its quality gate, and any reported statistic has to state explicitly that the correction was applied. For a region this energetic, uncorrected cross-track error is not a rounding detail.
+3. Trim to the box, keeping left and right swaths separate with the nadir gap intact. The two swaths have independent error profiles, and I will not interpolate across the gap — that fabricates SSH that was never measured.
+4. Area-weight the surviving good pixels (cos-latitude; at 30–45°S the weighting is not negligible across the box).
+
+**The resulting series.** Box-mean SSH anomaly per swath crossing, carrying with it: valid-pixel fraction, dominant flag reasons, which swath, which processing baseline that granule was produced under, and the propagated uncertainty from the product's own uncertainty variables. That last set of columns is the point — a bare SSH-vs-time line for the Agulhas would hide the three things most likely to produce a spurious result: coverage collapsing in high-sea-state months, baseline drift within a collection over a 13-month span, and the sampling discontinuity at the orbit change.
+
+**What it's good for, and what it isn't.** Thirteen months resolves the seasonal cycle and mesoscale eddy passages — for the Agulhas, ring shedding at the retroflection is the signal I'd expect to dominate, and a box mean partly averages it away. If eddies are the target, a box-mean time series is the wrong reduction and I'd build a Hovmöller or an eddy-tracking product instead; tell me which you're after. Thirteen months is too short for a sea-level trend, and spanning the orbit transition makes it worse, not better.

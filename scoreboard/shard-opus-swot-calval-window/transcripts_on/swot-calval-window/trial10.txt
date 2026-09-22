@@ -1,0 +1,48 @@
+I stopped before downloading anything. Three things block the load, and one of them is a real scientific trap rather than a plumbing problem.
+
+## What I parsed from your request
+
+- **Region:** Agulhas — I'd use 10°E–45°E, 45°S–25°S (current, retroflection and return current). Confirm or give me your box.
+- **Time:** 2023-03-01 → 2024-03-31.
+- **Tier:** default Basic, unless you want the full correction/uncertainty set or the finest posting.
+
+## Blockers
+
+**1. The SWOT knowledge concepts aren't reachable.** The `load-swot` and `swot` skills both refuse to carry SWOT dataset facts themselves — tier inventory, ShortNames per version family, current processing baseline, the crossover correction and its quality gate, and the orbit-phase rules all live in the PO.DAAC provider bundle under `knowledge/podaac/`. I searched the two bundle roots I can read (`core/0.6.0`, `ocean-science/0.9.0`); the ocean-science index confirms nothing from the provider bundle is copied locally. `~/.claude/settings.json` lists `nasa-daac-knowledge@open-science-pillars` as enabled and the marketplace pins it at `v2026.9.5`, but no bundle exists under the cache path. `claude plugin list --json` — the authoritative record, which would quote the installer's error and the command that clears it — was denied, so I can't tell you whether this is a failed install or a dependency-range error.
+
+**2. CMR search was denied.** `get_collections` / `get_granules` both came back unauthorized, so I can't do the "search before fetching" step: no granule count, no volume estimate, no confirmation that granules actually exist over the Agulhas box in this window.
+
+**3. No volume gate threshold.** There's no `ocean-science.local.md` in `/home/user/run/evals`, so the "maximum ungated download size" is unset. The gate is a hard gate; with no threshold I have nothing to check against.
+
+**4. The March 2023 problem — flag this even without the concept.** This is general mission knowledge, explicitly *not* a concept citation: SWOT spent the first part of 2023 in a 1-day repeat cal/val orbit and moved to the 21-day science orbit partway through the year. Your window straddles that transition, and the two phases are archived under different collections/version families. A single query spanning 2023-03 → 2024-03 against one ShortName will return a partial record and look like a successful load. The `swot` skill makes reading the orbit-phase concept the *first* consult for any range touching 2023 precisely because this failure is silent. I won't guess the transition date, the cycle numbering, or the ShortNames — those are exactly the numbers the concept exists to pin down.
+
+## The time series I'd build
+
+Assuming the blockers clear, here's the design — this part is method, and doesn't depend on the missing concepts.
+
+**The unit is (cycle, pass), not "a day."** The Agulhas box is crossed by a handful of passes; each gives two swaths with the nadir gap between them. So the natural series is one value per pass per cycle — irregularly spaced, clustered within each repeat period, not a daily or monthly series. I'd resist resampling to a regular grid at load time; that's an analysis choice made later and deliberately.
+
+**The quantity.** A box-mean SSHA is the obvious first cut and the weakest one. The Agulhas is among the highest-EKE regions in the ocean, and a regional mean over partial, varying swath coverage is dominated by which eddies happened to fall under the swath — sampling noise, not signal. I'd build three series instead:
+
+- **SSHA variance / eddy kinetic energy per pass**, which is what KaRIn's wide swath actually buys you over nadir altimetry, and is far more robust to partial coverage than the mean.
+- **A fixed-footprint mean** — restricted to a sub-box that a given pass covers on every cycle, so successive points are comparable. One series per pass, not one merged series.
+- **Retroflection / front position** along each pass, from the SSH gradient, which is a geometric quantity that partial coverage degrades gracefully.
+
+**Construction rules.**
+
+- Left and right swaths stay separate; cross-track systematic error varies with the signed cross-track coordinate, so a whole-swath mean blends pixels with different error profiles. Never interpolate the nadir gap.
+- Decode the bit-packed quality flags and mask before any statistic; carry the flagged fraction and dominant flag reasons alongside every point. An unflagged statistic isn't a statistic.
+- Apply the crossover correction — it arrives unapplied in L2, and the `swot` skill points at `height_cor_xover` with a quality gate defined in the concept I can't currently read. Without the concept I'd know to apply it but not what gate to apply it under, which matters for a variance series.
+- Attach the coverage fraction to every point. A regional mean from 40% swath coverage and one from 90% are not the same measurement.
+- Uncertainty: per-pixel `ssha` uncertainty variables travel with the data, but errors are spatially correlated across a swath, so √N averaging will badly overstate precision on a box mean. Block bootstrap over along-track segments is the honest route.
+
+**What the 13 months can and can't support.** One annual cycle, broken in the middle by the orbit transition — so the cal/val-phase and science-phase segments aren't a continuous record and shouldn't be plotted as one line without a visible break. No trend is extractable from this window; in a region with this much mesoscale variance, 13 months of irregular sampling won't separate seasonal from interannual either. It's a variability and structure dataset, not a trend dataset.
+
+## What I need from you
+
+1. Grant the `earthdata` CMR tools so I can verify granules and estimate volume, or confirm you want me to work offline.
+2. Install or repair `nasa-daac-knowledge` — or approve `claude plugin list --json` so I can read the installer's error and quote the fix.
+3. Set a "maximum ungated download size" in `ocean-science.local.md`.
+4. Confirm the bounding box and the tier.
+
+If you'd rather I proceed with what's available, say so and I'll do the CMR-free planning — but I won't name ShortNames, baselines, cycle numbers, or the transition date from memory when a signed concept owns them.

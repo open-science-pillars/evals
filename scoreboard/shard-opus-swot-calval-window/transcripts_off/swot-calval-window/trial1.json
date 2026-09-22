@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 156,
+  "chars": 6213,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted flags the mid-2023 cal/val-to-science transition, splits the window into two segments rather than one continuous series, names the cycle-numbering discontinuity, and applies the version-family constraint (cal/val only in the D family, with empty early-2023 results diagnosed as a family symptom rather than a coverage gap)."
+    }
+  },
+  "pass": false
+}

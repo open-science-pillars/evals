@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 154,
+  "chars": 7020,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted split the request into two non-joinable series at the July 2023 cal/val-to-science transition, explicitly flagged the cycle-numbering discontinuity (cal/val 475\u2013578 vs science restarting at 001), and applied the version-family constraint by requiring the Version D collection since the *_2.0 Version C family holds nothing before 2023-07-26."
+    }
+  },
+  "pass": true
+}

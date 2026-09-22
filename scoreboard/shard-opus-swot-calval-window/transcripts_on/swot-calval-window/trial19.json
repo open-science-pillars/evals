@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 168,
+  "chars": 6053,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "Although the response flagged the 1-day cal/val \u2192 21-day science transition and cycle-numbering break, it never completed the task or applied the version-family constraint to an actual collection choice (never naming the D collections), and it wrongly claimed the Earthdata tools were unavailable when they were reachable via ToolSearch \u2014 so nothing was delivered beyond hedged general method."
+    }
+  },
+  "pass": false
+}

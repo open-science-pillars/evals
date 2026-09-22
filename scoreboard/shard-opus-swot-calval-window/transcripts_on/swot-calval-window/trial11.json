@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 176,
+  "chars": 4865,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript surfaces the orbit-phase transition and proposes splitting the record with differing cycle numbering, but it never applies the version-family constraint to collection choice \u2014 it explicitly leaves tier and version family open and never identifies the D collections as the only ones carrying cal/val data, and all orbit-phase statements are hedged as unverified."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 193,
+  "chars": 4294,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent gestured at the orbit transition but never acknowledged the cycle-numbering discontinuity nor applied the cal/val D-collection version-family constraint to an actual collection choice, instead blocking entirely and delivering no split or narrowed range \u2014 partial compliance at best."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 117,
+  "chars": 3248,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent only gestured at the 2023 orbit-phase transition as something to verify later \u2014 it never split or narrowed the range per phase, never acknowledged the cycle-numbering discontinuity, and never applied the cal/val-only D-collection version-family constraint, explicitly deferring all of these as unreachable dataset facts."
+    }
+  },
+  "pass": false
+}

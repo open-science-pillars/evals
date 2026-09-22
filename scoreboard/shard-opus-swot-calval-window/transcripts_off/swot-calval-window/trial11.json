@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 180,
+  "chars": 6139,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial surfaced the orbit-phase split and proposed two separate series, but it never actually applied the required specifics \u2014 the cycle-numbering discontinuity is only gestured at as something it cannot read, and the cal/val-only D-collection version-family constraint is named in passing without being applied to any collection choice, since no collection was selected and the load was abandoned."
+    }
+  },
+  "pass": false
+}

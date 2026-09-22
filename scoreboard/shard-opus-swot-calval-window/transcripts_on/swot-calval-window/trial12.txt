@@ -1,0 +1,53 @@
+I could not load the data — every tool that would have done it was refused in this session — so let me be precise about what happened, and then give you the part I can fully deliver.
+
+## What blocked the load
+
+- The CMR granule search (`get_granules`) was not permission-granted, so I ran **no** granule search. Nothing below is a granule count I verified.
+- `python3` execution requires approval (denied), so no `earthaccess` search or open.
+- No `~/.netrc`, so there are no Earthdata Login credentials here to download with even if the rest cleared.
+- No `ocean-science.local.md` in `/home/user/run/evals`, so the volume gate has no configured threshold — I'd have to ask you for one before fetching anything.
+
+## What the knowledge bundle says about this specific request
+
+I read three concepts in the PO.DAAC provider bundle (`nasa-daac-knowledge` 2026.9.5). All three are `stable` and human-verified on 2026-09-04, none past `stale_after`.
+
+**`knowledge/podaac/gotchas/swot-calval-orbit-phases.md`** (severity high) — this one fires on your window and changes the answer:
+
+- SWOT flew a **1-day repeat cal/val orbit** through 2023-07-10, then the **21-day science orbit** from 2023-07-21. Your window straddles the transition. Per the concept, a series spanning it "mixes incompatible sampling regimes, aliasing the orbit change into apparent variability." The correct handling is to **split at the transition and analyze per phase** — not to build one series.
+- **March 2023 is almost entirely empty.** The Version D tiers begin at cycle 473 on **2023-03-27**; the calibration phase proper starts 2023-03-30. So "March 2023" buys you at most four or five days, not a month.
+- Cycle numbering differs by phase: cal/val cycles run 475–578, science cycles restart at 001. By 2024-03-31 you're around cycle 012–013.
+- **Version-family trap:** the `*_2.0` (Version C) collections hold *nothing* before 2023-07-26 and return zero granules for the calibration window. A single query for your whole range against Version C would come back looking like "no early data exists" when it does. This load must use the **D family** (`SWOT_L2_LR_SSH_BASIC_D`, C3233942270-POCLOUD).
+
+**`knowledge/podaac/gotchas/swot-crossover-unapplied.md`** (severity high) — crossover calibration is **not** pre-applied to `ssha_karin`. You must add `height_cor_xover`, gated by `height_cor_xover_qual`, before any aggregation. Uncorrected, the field carries a spurious cross-track ramp of order metres (±2.9 m observed) versus 0.17 m std corrected. Flag gating alone does not make a regional mean safe. `height_cor_xover` is present in the Basic tier.
+
+**`knowledge/podaac/datasets/swot-karin.md`** — two 50 km swaths, 2 km posting, ~20 km nadir gap; ~39% valid pixels after flag and land gating is normal; the `crid` global attribute is the only record of which processing baseline a granule came from, and CRIDs drift within a collection; CMR spatial search matches whole pole-to-pole passes, so a matched pass can hold zero in-box pixels — subset to the region before aggregating.
+
+**One thing I could not check and would not assume:** the cal/val orbit was a *sparse fixed track set*, not global. Whether the Agulhas box (I'd use 10–40°E, 45–25°S) sits under a cal/val track is an empirical question that needs the granule search I was denied. It may return nothing at all for Mar–Jul 2023.
+
+## The time series I would build
+
+Not one series. Two, and they don't join.
+
+**Series A — cal/val, ~2023-03-30 to 2023-07-10** *(only if Agulhas is under a fixed track)*. Near-daily revisit on a handful of tracks. This is a high-cadence, tiny-footprint record: good for eddy propagation, internal tides, and sub-inertial variability along one line. It is not a regional index and cannot be concatenated onto Series B.
+
+**Series B — science, 2023-07-21 to 2024-03-31.** Roughly **12 to 13 twenty-one-day cycles**, each giving near-complete 2-D coverage of the box. That is the governing constraint on everything downstream: **about twelve points.** One value per cycle, plotted at the cycle midpoint.
+
+For the per-cycle quantity, in order of how well they survive SWOT's error structure in this region:
+
+1. **Per-cycle SSH variance or EKE over a fixed mask** — a mesoscale-activity index. Best choice for the Agulhas, because it's built from spatial *differences* and is far less sensitive to the residual swath-scale systematics that bias any mean.
+2. **Cross-current SSH gradient across a fixed section** (e.g. near the ASCA line, ~34°S) as a geostrophic transport proxy. Plays to KaRIn's strength, but this is precisely the quantity the unapplied crossover ramp destroys if you skip `height_cor_xover`.
+3. **Area-weighted mean SSHA over the box** — the obvious choice, and the weakest. Use the *same* valid-pixel mask every cycle, or changing coverage masquerades as signal.
+
+Per-swath throughout, nadir gap left intact, no interpolation across it.
+
+**What this series can and cannot say.** Twelve points over eight months, in a region where Agulhas rings shed every one to two months and Natal pulses recur at 50–70 days: 21-day cycles marginally resolve ring shedding and completely alias the faster current dynamics. **No sea level trend should be quoted from it** — 13 months of mesoscale variability of O(20 cm) in the strongest eddy field in the ocean will produce a slope that means nothing.
+
+**Error bars cannot come from the product.** `ssh_karin_uncert` is per-sample *random* noise at 1-sigma. Averaged over the millions of pixels in a cycle-box, that term collapses to near zero — so the real uncertainty on each point is dominated entirely by the correlated swath-scale systematics (roll, phase, timing, wet-troposphere residuals) that the concept states `*_uncert` does **not** include. The error bar has to be built from cross-swath and crossover-difference statistics, not from the uncertainty variable.
+
+Two more things to carry as provenance: capture the `crid` of every granule loaded, because a step between cycles 001 and 013 can be a processing-baseline change rather than ocean signal; and note that `ssha_karin` is referenced to `mean_sea_surface_cnescls`, which cancels in cycle-to-cycle differences but not in an absolute mean.
+
+**Recommendation:** if what you actually want is a 13-month Agulhas SSH *time series*, gridded multi-mission altimetry (DUACS / MEaSUREs) is the right instrument — daily, continuous across July 2023, and no orbit discontinuity. Use SWOT for the 2-D structure *within* cycles, where nothing else comes close.
+
+## To proceed
+
+Tell me and I'll run it: (1) grant the `get_granules` permission so I can get you real counts and confirm the cal/val coverage question, (2) set a volume-gate threshold — at Basic tier's ~9.4 MB/granule an eight-month Agulhas box plausibly runs to several GB, which I'd gate on regardless, and (3) supply Earthdata Login credentials for the download. Confirm the box (10–40°E, 45–25°S) and tier (Basic, unless you want Expert's full correction set) at the same time.
