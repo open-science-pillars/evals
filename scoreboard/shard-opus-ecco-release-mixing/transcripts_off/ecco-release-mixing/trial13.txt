@@ -1,0 +1,33 @@
+I can't build this series in this session, and the reason matters more than the blocker itself. Here's what I found.
+
+## The request's premise is the trap
+
+You asked me to "use whatever ECCO SSH collections cover the full period," which assumes the 1992–2017 record is assembled by stitching collections together. In ECCO v4r4 it isn't. The installed `sea-level-analysis` skill body (`skills/sea-level-analysis/SKILL.md:70-78`) names a single monthly SSH collection — `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — and passes the whole record to it as one span, `--period 1992-01:2017-12`. One collection, one release, the full 312 months.
+
+That matters because the same skill (`:155-159`) records that a **V4R4 / V4R4B release caveat** for SSH and OBP exists, and that it is a dataset-specific rule deliberately *not* written into the skill — it lives in a knowledge concept. There is a concept file named for exactly this failure: `nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-release-mixing.md`. So "gather whatever collections span the period" is the phrasing that walks straight into a known wrong-result mode: assembling one time series across two releases produces a spurious step that a trend fit reads as signal.
+
+## Why I'm not proceeding on memory
+
+Every ECCO skill here is built on the rule that dataset facts are read fresh from concepts, never recalled — the `ecco` skill states it as a hard "must not," naming the V4R4/V4R4B caveat specifically. The concepts are not on disk. I verified this independently rather than taking it secondhand:
+
+- `runner/ablation_scope.py:67-70` globs `~/.claude/plugins/cache/*/<plugin>/*/knowledge`; `run_evals.py:316-322` tars each tree into a quarantine directory and restores it on exit.
+- `scoreboard/shard-opus-ecco-release-mixing/` contains `results_on.json` and `transcripts_off/` — this is the bundle-OFF arm of the `ecco-release-mixing` case.
+- Direct probes confirm `knowledge/` is absent under all three installed plugins.
+
+So the one concept that governs the one decision your request hinges on is the one that's been removed. I did not go into the quarantine directory to recover it; that's precisely what the harness's `--leak-check` against `concept-fingerprints.json` exists to detect, and reading it would invalidate the arm. I also left the `transcripts_off/` trials alone for the same reason.
+
+## Two further blockers, independent of the ablation
+
+- **No data.** Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` exists. The attesters refuse any receipt from a tree lacking the `RECORD.json` stamp, so even a fetch needs the verify-and-stamp step afterward.
+- **"North Atlantic" is not a registered region.** The attested `ecco-regional-sea-level` computation binds only `gulf-of-mexico`, `north-sea`, and `us-northeast-coast` (`:88-91`). A North Atlantic basin series has no sanctioned executor — it would be general method, and any trend from it could not carry a receipt.
+
+CMR discovery would have let me at least verify collection coverage against the live catalog, but the `earthdata` tool calls weren't granted.
+
+## To unblock
+
+1. Let the harness finish so it restores the knowledge trees, or reinstall `nasa-daac-knowledge` at tag `nasa-daac-knowledge--v2026.9.5`.
+2. Grant the `earthdata` MCP tools so I can verify SSH collection coverage and confirm which release actually spans 1992–2017.
+3. Stage the record under `~/ECCO_V4r4_record` (Earthdata Login required) and stamp it with `tools/science_record_verify.py --stamp`.
+4. Decide the region question: I can run the attested path on `north-sea` or `us-northeast-coast` and give you a receipted trend with an interval, or compute a true North Atlantic basin mean as general method — area-weighted on the native LLC90 grid, no receipt, trend CI from an autocorrelation-aware fit.
+
+Tell me which of those two you want for step 4 and I'll set it up to run the moment the bundle is back.

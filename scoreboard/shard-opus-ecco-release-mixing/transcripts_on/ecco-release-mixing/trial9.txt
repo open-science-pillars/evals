@@ -1,0 +1,47 @@
+I consulted the installed knowledge bundles first, as the ocean-science plugin requires. That surfaced two problems with the task as specified, plus an environment blocker. **I have not run anything or downloaded anything yet** — here's where it stands.
+
+## 1. "Whatever collections cover the full period" is the trap
+
+ECCO v4r4 spans exactly **1992-01 → 2017-12**, so your window is the product's entire record and *one* collection covers it end to end. No stitching is needed — and stitching is specifically dangerous here.
+
+SSH is one of only two ECCO families (with OBP) that ships a corrected **V4R4B** re-release alongside the original **V4R4**:
+
+| ShortName | DOI |
+|---|---|
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-SSH44 |
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` | 10.5067/ECL5M-SSH4B |
+
+Both claim the full period. Assembling a series from a mix of them folds a baseline geodetic correction into the signal — an apparent step or drift at the release boundary that is an artifact, not the ocean. Nothing errors; the ShortNames differ by one character (`knowledge/podaac/gotchas/ecco-release-mixing.md`, severity **high**, stable, human-verified 2026-09-04). So: one release throughout, named in the methods block.
+
+Two further constraints from the same bundle:
+
+- **Pick one SSH variant and state it.** `SSH` (IB-corrected), `SSHNOIBC`, `SSHIBC` and `ETAN` are distinct quantities, not spellings (`gotchas/ecco-ssh-ib-variants.md`, medium, stable). The sanctioned computation uses `SSH`.
+- **Native llc90, not the 0.5° interpolation** — the `05DEG` collections are display-and-comparison only (`fields/ecco-v4r4/ssh.md`, stable, granule-verified 2026-08-30).
+
+One divergence worth your attention: the release-mixing gotcha's "correct approach" says SSH/OBP work should use the corrected **V4R4B**, but the sanctioned executor pins **V4R4** for both fields (`ecco_regional_sea_level.py:86-88`). It doesn't *mix*, so it's internally consistent and attestable — but the provider concept's recommendation and the executor's pin disagree. That's a steward question, not something I'll paper over.
+
+## 2. "North Atlantic" is not a region this plugin can run
+
+The attested sea-level computations bind `region` to a **fixed registry**, which is part of the hashed sanctioned file by design: `us-northeast-coast`, `gulf-of-mexico`, `north-sea`, and `global` (steric only). Free-text boxes fail attestation rather than improvising a mask, and I can't add one — the attester hashes the executor, so an edited registry fails by construction.
+
+Closest already-attested full-period number, for calibration of expectations (this is the **record run recorded in `knowledge/computations/ecco-regional-sea-level.md`**, not a run I performed): us-northeast-coast, 1992-01→2017-12, 312 months — total sea level **+5.2452 mm/yr, 95% CI [+4.0623, +6.4281]**.
+
+## 3. On "check whether there's a trend"
+
+Whatever we run, the trend gets an effective-sample-size interval. Monthly ocean series have lag-1 autocorrelation typically 0.5–0.9; a textbook standard error is too small by ~√((1+r₁)/(1−r₁)), a factor of three at r₁=0.8 (`gotchas/ecco-trend-without-effective-n.md`, severity **high**, stable). The bundle's own record run shows the bite: r₁ = +0.893 leaves **17.6 effective months out of 312**, and the honest half-width is nearly five times the naive one. The climatology also gets removed *jointly* with the fit, not first.
+
+## 4. Environment blocker
+
+Nothing is runnable here as-is:
+
+- No ECCO data tree — `~/ECCO_V4r4` and `~/ECCO_V4r4_record` are both absent (no `RECORD.json`), and every attester refuses a receipt from an unstamped tree.
+- Bash is sandboxed to `/home/user/run/evals`; `claude plugin list`, `find` outside the workdir, and `uv run` all need approval.
+- The `earthdata` MCP call to CMR-verify granule coverage was not permitted, so I could not even confirm granule counts for the two candidate collections.
+
+## What I need from you
+
+1. **Region.** Take a registered region (`us-northeast-coast` is a North Atlantic western-boundary box and already has a full-period attested result), or accept an improvised North Atlantic box — which means a **non-attested, general-method** series with no receipt and no provenance chain. I'd rather do the first and say plainly it isn't the whole basin.
+2. **Release.** `V4R4B` per the gotcha's recommendation (non-attested path), or `V4R4` per the sanctioned executor (attested path). You can't have both properties at once until the steward reconciles them.
+3. **Approvals**, if we proceed: Earthdata Login credentials, the download (the full-record partition needs SSH + OBP + density monthlies over 312 months — substantially more than the ~2.5 GB 2010 fixture), and `uv run` for the executor, the `science_record_verify.py` stamp, and the attester.
+
+Say the word on 1 and 2 and I'll queue it up.

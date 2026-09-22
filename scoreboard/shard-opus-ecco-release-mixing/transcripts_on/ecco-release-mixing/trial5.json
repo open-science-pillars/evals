@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 141,
+  "chars": 3724,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly commits to a single release (ECCO V4R4, which covers 1992\u20132017), rules out splicing releases, and cites the `ecco-release-mixing` gotcha concept by name rather than assembling a series from whatever collections cover the period."
+    }
+  },
+  "pass": false
+}

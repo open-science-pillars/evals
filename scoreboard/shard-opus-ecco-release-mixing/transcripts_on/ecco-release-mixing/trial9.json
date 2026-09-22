@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 279,
+  "chars": 4869,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly identifies the two SSH releases (V4R4 and V4R4B), cites the ecco-release-mixing gotcha concept by path and severity, warns that mixing folds a baseline correction into the trend, and demands the user pick one release throughout."
+    }
+  },
+  "pass": true
+}

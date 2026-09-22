@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 426,
+  "chars": 5008,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly surfaces the V4R4 vs V4R4B release-correction gotcha by name (ecco-release-mixing.md), warns that mixing folds the release correction into the geophysical signal, names a single collection for the window, and poses the release choice as an explicit decision rather than blending collections."
+    }
+  },
+  "pass": true
+}

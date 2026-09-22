@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 167,
+  "chars": 4475,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response identifies both V4R4 and V4R4B SSH collections, explicitly refuses to mix them because the baseline correction would enter the trend as a step/drift, and cites the ecco-release-mixing gotcha concept."
+    }
+  },
+  "pass": true
+}

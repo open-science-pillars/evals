@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 291,
+  "chars": 5478,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly identifies both V4R4 and V4R4B SSH collections, cites the ecco-release-mixing gotcha explaining that mixing folds the baseline correction into the trend as an artifact, mandates one release throughout, and names V4R4B as the prescribed choice for SSH work."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,53 @@
+I verified both findings directly. Here's where this lands.
+
+## I can't produce the series or the trend in this session
+
+Three independent blockers, each sufficient on its own:
+
+**1. The knowledge bundle isn't installed.** Both plugin roots exist, but the `knowledge/` tree is gone from each:
+- `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge` — absent
+- `/root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge` — absent (I confirmed `fields/ecco-v4r4/ssh.md` reads ENOENT)
+
+This matters more than it sounds. The ocean-science skills are written as pointers, not facts — `sea-level-analysis/SKILL.md` says outright that the SSH inverse-barometer variant choice, the V4R4/V4R4B release caveat, and the Boussinesq correction "are NOT restated here: they live in the bundle's concepts." The `ecco` skill forbids working from a remembered dataset rule where a concept exists. With the concepts missing, anything I told you about SSH variants or release mixing would be me reciting from memory under the appearance of a citation. I'm not doing that.
+
+**2. No execution.** Shell is restricted to reads inside the working directory — `python3` and the Earthdata MCP connector were both denied. I can't run the sanctioned executors, and I can't even granule-verify coverage before claiming it.
+
+**3. There is no North Atlantic region.** This one survives even if you fix 1 and 2. From the sanctioned executor `skills/sea-level-analysis/scripts/ecco_regional_sea_level.py:49-58`, the registry is closed:
+
+```python
+"us-northeast-coast": {"lat": (35.0, 45.0), "lon": (-75.0, -65.0)},
+"gulf-of-mexico":     {"lat": (18.0, 31.0), "lon": (-98.0, -81.0)},
+"north-sea":          {"lat": (51.0, 60.0), "lon": (-2.0, 9.0)},
+```
+
+The comment states the design intent: "an unregistered region fails attestation (A2) instead of improvising a mask." The executor must not be edited — its attester hashes it, so a changed hash fails by construction. A North Atlantic box is a change to the sanctioned file *and* its concept, not something an analysis run can do.
+
+## One correction to the premise
+
+"Whatever ECCO SSH collections cover the full period" implies stitching. It isn't needed, and stitching is the risk. ECCO v4r4's span is exactly your window — `SPAN = ("1992-01", "2017-12")` at `ecco_regional_sea_level.py:60`, with a hard guard rejecting anything outside it. A single monthly collection covers 1992–2017 end to end:
+
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4`, variable `SSH`
+- plus the static geometry granule `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4`, merged before any spatial operation
+
+Caveat on provenance: I'm reading those ShortNames out of hash-attested executor code, not out of the fields concept that's supposed to be authoritative for them. Good signal, not the signed source. Note also that only the `V4R4` form appears in the code — the V4R4B variants exist for SSH and OBP, and reaching for a second release to "extend coverage" is precisely what the release-mixing caveat governs. I can't tell you what that caveat says without the concept.
+
+## What the method would be
+
+The sanctioned pieces are readable and worth stating, since they're what a correct run commits you to:
+
+- **Area-weighting**: `rA` × (wet-mask ∧ box indicator), normalized, on the native llc90 grid `(13, 90, 90)` — never regridded.
+- **SSH variant**: bare `SSH`, one variant, stated in the receipt, never mixed. The attester requires `ssh_variant` to be exactly `SSH`.
+- **Trend**: `skills/ecco/scripts/ecco_trend_ci.py` — OLS on the deseasonalized series with the climatology fitted *jointly* with the trend (Frisch–Waugh–Lovell), lag-1 autocorrelation of residuals, effective sample size `n_eff = n(1-r₁)/(1+r₁)` capped at `n`, and a two-sided 95% interval from Student's t on `n_eff - 2`. That's the Santer et al. (2008) treatment. Your window is 312 months — a clean multiple of 12 — so the default `deseasonalize climatology` is admissible.
+
+Worth flagging: the trend executor only consumes a monthly field *from a sanctioned receipt*. "A series retyped into a bare file attests FAIL by construction." So there's no shortcut where I hand you numbers and you attest them afterward.
+
+## The decision I need from you
+
+The region gap is yours to call, not mine:
+
+- **Scope to a registered region** (`us-northeast-coast` is the North Atlantic-adjacent one) — fully attested path, available today once the bundle and shell are restored.
+- **Add a `north-atlantic` region** to the sanctioned file and its concept — a knowledge-and-code change with attestation consequences, needing whoever owns that bundle.
+
+On the environment: `/home/user/run/evals/README.md` describes this repo as the eval runner whose bundle-off ablation arm deliberately archives exactly these knowledge trees ("written to a compressed archive outside the workspace and deleted, then put back afterwards"). If you meant to run with the bundle on, this session is misconfigured and restoring it is the first step. If this *is* the off arm, then the absence is the experiment and the answer above is the honest one.
+
+Tell me which region you want and whether the bundle can be restored, and I'll take it from there.

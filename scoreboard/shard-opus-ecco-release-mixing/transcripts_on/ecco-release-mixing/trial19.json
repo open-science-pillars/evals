@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 134,
+  "chars": 3850,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response stopped at a blocker without ever picking V4R4 or V4R4B or flagging that the two SSH releases must not be mixed, and it never cited the release-correction gotcha."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,46 @@
+I consulted the knowledge bundles first, and then hit a hard stop on execution. Here's where things stand.
+
+## Execution is blocked
+
+Every Bash call and the Earthdata MCP calls were denied in this session. So I could not verify a stamped ECCO tree exists locally, could not query CMR, and **computed nothing**. There are no numbers below that I derived — only what the installed concepts say.
+
+## What the concepts settle before any code runs
+
+**1. No collection needs stitching — and stitching is the trap.** `knowledge/podaac/fields/ecco-v4r4/ssh.md` (stable, CMR-swept 2026-08-30) lists nine SSH ShortNames. The monthly native ones each cover the whole v4r4 span on their own:
+
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — DOI 10.5067/ECL5M-SSH44
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` — DOI 10.5067/ECL5M-SSH4B, the corrected re-release
+
+Your "whatever collections cover the full period" reads as an invitation to combine them. I won't: `knowledge/podaac/gotchas/ecco-release-mixing.md` (stable, severity high, human-verified 2026-09-04) says a series spanning V4R4 and V4R4B folds the baseline correction into the signal as an apparent step or drift at the boundary. One release throughout, named in the methods block. 1992-01 through 2017-12 is the full record either way — v4r4 ends at 2017-12, so "through 2017" is the whole thing, not a subset.
+
+One conflict worth your call: that gotcha says SSH work should use the corrected **V4R4B**, but the sanctioned executor (`skills/sea-level-analysis/scripts/ecco_regional_sea_level.py:86`) hardcodes **V4R4**. Both are internally consistent; they disagree on which release is preferred.
+
+**2. One IB variant, stated.** `gotchas/ecco-ssh-ib-variants.md` (stable, medium): `SSH` (IB-corrected), `SSHNOIBC`, `SSHIBC` and `ETAN` are different quantities. I'd use `SSH` and say so.
+
+**3. Native grid, area-weighted.** Use the llc90 collection with `rA` weights and the wet mask, not `ECCO_L4_SSH_05DEG_MONTHLY_*` — the fields concept marks the 0.5° ones display-and-comparison only.
+
+**4. The trend needs the sanctioned method, not a polyfit.** `gotchas/ecco-trend-without-effective-n.md` (stable, high) and `gotchas/ecco-trend-deseasonalize-jointly.md`: climatology fitted jointly with the slope, lag-1 autocorrelation, n_eff = n(1−r₁)/(1+r₁) capped at n, Student's t on n_eff−2. The calibration in `computations/ecco-trend-ci.md` measures naive intervals covering 47–49% at r₁ 0.8 versus a nominal 95%. A bare OLS slope over 312 months would very likely be called "significant" when it isn't.
+
+**5. Framing.** ECCO is a state estimate fitted to these same altimeter missions, not an observation. For a regional box the Boussinesq global-mean correction is out of scope by construction (partition contract, criterion A3).
+
+## The blocker on "North Atlantic"
+
+The only attested route to a regional ECCO sea level series is `ocean-science/knowledge/computations/ecco-regional-sea-level.md`, and its region registry is part of the hashed file — exactly three boxes:
+
+```
+us-northeast-coast   35–45N, 75–65W
+gulf-of-mexico       18–31N, 98–81W
+north-sea            51–60N, 2W–9E
+```
+
+There is no North Atlantic basin box, and an unregistered region fails attestation (criterion A2) rather than improvising a mask. I can't edit the executor — the attester hashes it, so a changed hash fails by construction. The knock-on: `ecco_trend_ci.py` only accepts a series arriving inside a sanctioned receipt, so a hand-rolled basin series can't get an attested trend either.
+
+## What I'd do — pick one
+
+**Register the box (recommended if you want a citable number).** Ask the maintainer to add `north-atlantic` to the sanctioned registry and re-sign; then the attested partition and its trend-with-interval run over your box unchanged.
+
+**Unattested general method (fastest).** I write plain code: area-weighted `SSH` mean over a North Atlantic box on the native grid, monthly, one release, plus the same joint-deseasonalized effective-N trend arithmetic. You get a series and an honest interval, labeled unattested, with no receipt and no provenance chain.
+
+Either way I need Bash approved, and I'll need to confirm a stamped `RECORD.json` tree exists (`~/ECCO_V4r4_record`) or fetch the 312 monthly granules under an Earthdata login first.
+
+Also tell me what you mean by North Atlantic — subtropical gyre, 0–60N basin-wide, or the subpolar box? The trend differs a lot between them, and the box is the main thing the answer depends on.

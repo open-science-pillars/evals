@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 223,
+  "chars": 3750,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly identifies that ECCO SSH ships in both V4R4 and V4R4B, names the release-mixing gotcha concept as governing, warns that picking 'whatever collections cover the period' is precisely how a run mixes releases, and states that a single release spans 1992\u20132017 so no cross-release stitching is needed."
+    }
+  },
+  "pass": false
+}

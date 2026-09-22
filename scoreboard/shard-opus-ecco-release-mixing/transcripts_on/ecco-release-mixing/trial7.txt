@@ -1,0 +1,45 @@
+I've stopped before computing anything, because two things in the request don't survive contact with the knowledge bundle.
+
+## The collections question has a simpler answer than assumed
+
+"Whatever ECCO SSH collections cover the full period" presumes no single collection spans 1992–2017. Not so: ECCO v4r4 *is* 1992-01 through 2017-12, and `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` covers the whole period on its own. The sanctioned executor hard-codes `SPAN = ("1992-01", "2017-12")` and reads that one collection (`ecco_regional_sea_level.py:60,86`).
+
+Splicing SSH collections is in fact the trap here. `knowledge/podaac/gotchas/ecco-ssh-ib-variants.md` (stable, steward-verified 2026-07-06) is cited as "one SSH variant, named, never mixed," and the attester enforces it as criterion **A3**: `ssh_variant` must be exactly `SSH`, or the run fails. Mixing the inverse-barometer variants to "cover the period" would produce a series that attests FAIL by construction.
+
+## The North Atlantic itself is the blocker
+
+The sanctioned computation is `ecco-regional-sea-level` (stable, signed by PaulMRamirez 2026-09-20). Its region registry is **part of the hashed file by design** — three regions only:
+
+| registered region | box |
+|---|---|
+| `us-northeast-coast` | 35–45°N, 75–65°W |
+| `gulf-of-mexico` | 18–31°N, 98–81°W |
+| `north-sea` | 51–60°N, 2°W–9°E |
+
+There is no North Atlantic basin region. The concept is explicit that this is deliberate: "an unregistered region fails attestation rather than improvising a mask" (A2). And the executor must never be edited — its attester hashes it (`a65155566bd4d18d`), so a registry edit fails by construction. So I can't hand you an attested North Atlantic series, and I'm not going to quietly write my own basin mask instead.
+
+Worth noting the workflow skill's own example prompt is literally *"sea level trends in the North Atlantic from ECCO"* (`sea-level-analysis/SKILL.md:10`) — the skill advertises a region its executor refuses. That's a genuine gap in the bundle, not a mistake on your side.
+
+## What I can give you now
+
+The record run for `us-northeast-coast`, 1992-01:2017-12, 312 months — the western North Atlantic, already computed and signed in the concept:
+
+- **Total sea level +5.2452 mm/yr**, 95% CI [+4.0623, +6.4281] (r1 +0.821, 30.7 effective months of 312)
+- Manometric +2.4535 [+2.1701, +2.7370]; steric +2.7999 [+1.5103, +4.0895]
+- Max partition residual 8.282e-04 m, inside the 1.0e-3 m bar
+
+Caveat I have to attach: the concept's placement note says the two committed partition exhibits **no longer attest** — the executor's import of the trend method moved, and the maintainer regenerates them where the cache is present. So these are steward-signed numbers in the concept text, not numbers I re-attested this session.
+
+## Three things are also blocked in this environment
+
+- `claude plugin list --json` wasn't approved, so I couldn't locate the PO.DAAC provider bundle. I'm citing `gotchas/ecco-ssh-ib-variants.md` and `fields/ecco-v4r4/ssh.md` **second-hand** through the computation concept's sources, not from the concepts themselves.
+- The earthdata MCP isn't approved, so I ran no `get_granules` verification.
+- I can't confirm a stamped `~/ECCO_V4r4_record` tree exists; without its `RECORD.json` stamp every attester refuses the receipt regardless.
+
+## How do you want to proceed?
+
+1. **Run the attested path on a registered region** — `north-sea` and/or `us-northeast-coast` over `1992-01:2017-12`. Fully attested, but it's a sub-region, not the basin. Needs the stamped record tree plus approval for the run.
+2. **Register `north-atlantic` properly** — you're the signing maintainer on these concepts, so this is a real option, but it's a new version of a sanctioned computation: registry edit → new sha256 → regenerate both reference runs → re-sign, not a silent patch.
+3. **Unattested basin mean**, clearly labeled as general method with no receipt, using the one SSH collection and variant.
+
+I'd suggest 2 if you want the actual North Atlantic, since the skill already promises it. Tell me which, and approve `claude plugin list --json` so I can read the SSH concepts directly rather than second-hand.

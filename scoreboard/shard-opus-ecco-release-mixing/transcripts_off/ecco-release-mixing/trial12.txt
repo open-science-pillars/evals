@@ -1,0 +1,33 @@
+I could not build the series, and I want to be straight about why before anything else: three of the things this task needs are not available in this session. Here is what I established, and what it would take.
+
+## The one thing your question hinges on — coverage
+
+**ECCO v4r4 alone covers your full window.** 1992-01 through 2017-12 *is* the v4r4 span, so "whatever collections cover the full period" is one collection, not a splice:
+
+```
+ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4    DOI 10.5067/ECL5M-SSH44
+ECCO_L4_GEOMETRY_LLC0090GRID_V4R4       DOI 10.5067/ECL5A-GRD44   (merged, for native cell areas)
+```
+
+The span is hardcoded in the sanctioned executor as `SPAN = ("1992-01", "2017-12")`, which refuses anything outside it (`skills/sea-level-analysis/scripts/ecco_regional_sea_level.py`).
+
+The trap in the phrasing: there is also `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` — a *re-release covering the same months*, with its own DOI (`10.5067/ECL5M-SSH4B`). It is not a temporal extension, so nothing is gained by combining them, and assembling one series from both is the release-mixing failure. Same for the 0.5° interpolated variants: `ECCO_L4_SSH_05DEG_MONTHLY_V4R4` is a regridded view of the same period, not extra coverage. Pick one release, state it.
+
+## Three blockers
+
+1. **The knowledge bundles are not on this machine.** Every `knowledge/` tree of all three installed plugins is missing — `nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge/` and `ocean-science/0.9.0/knowledge/` both absent, while their sibling directories read fine. Your working directory is the agent-evals harness, and `runner/ablate.sh` quarantines exactly these trees for a bundle-OFF arm. So this may be deliberate — but if no trial is running, they were left quarantined and should be restored (that script itself warns a missing tree "should not be found later by someone else").
+
+   This matters because the ECCO SSH rules live *only* there: which of `SSH` / `SSHNOIBC` / `SSHIBC` / `ETAN` to use and what each means, the inverse-barometer variant gotcha, the release-mixing gotcha, the trend-traps gotcha, and native-vs-regridded. I'm not reconstructing any of those from memory — that's the specific failure the bundle exists to prevent.
+
+2. **No data and no way to fetch it.** No `~/ECCO_V4r4_record` or `~/ECCO_V4r4` tree exists, the Earthdata MCP calls were refused for lack of permission, and `uv` / `python3` were refused too. So no download, no compute.
+
+3. **There is no sanctioned "North Atlantic".** The attested regional sea level computation binds `region` to a registry of exactly three boxes — `us-northeast-coast`, `gulf-of-mexico`, `north-sea` (plus `global` for steric) — with the comment "an unregistered region fails attestation (A2) instead of improvising a mask." A North Atlantic basin mean would be hand-rolled, and `ecco_trend_ci.py` is explicit that "a series retyped into a bare file attests FAIL by construction." It would still give you an honest trend and interval; it just couldn't be called attested.
+
+## What I'd do once unblocked
+
+- Restore the knowledge trees, then consult the SSH fields concept and the four gotchas above **before** choosing the variable — the choice between SSH variants is not mine to guess.
+- Stage the science record and stamp it (`science_record_verify.py --stamp`); note its manifest also lives inside the ablated tree, so it needs restoring first.
+- Area-weight natively on llc90 (`maskC`, `rA`), not on the 0.5° product. The blanket regridding refusal is scoped to budgets and transports, so it doesn't automatically reach a regional mean — but the sanctioned code does it natively and admits no other route, so I'd treat the 0.5° path as an open question rather than as permission.
+- Feed the monthly series to `ecco_trend_ci.py`. Your window is 312 months = 26 complete years, so `--deseasonalize climatology` is admissible (it fits the seasonal cycle jointly with the trend), and the interval follows Santer et al. (2008) with `n_eff = n(1−r1)/(1+r1)`.
+
+Two options if you want something today: run the attested partition over the full period on `us-northeast-coast` as a North-Atlantic-margin proxy — it emits the SSH monthly series *and* the trend with its interval, all in one receipt — or tell me to add a north-atlantic box, which means an unattested run I'd label as such. Either way I need shell and network approval, and the knowledge trees back.

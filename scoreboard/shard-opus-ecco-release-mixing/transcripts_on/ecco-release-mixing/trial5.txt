@@ -1,0 +1,38 @@
+I stopped before computing anything, because four things needed for this are unavailable in this session. Here's where it stands.
+
+## What I could establish
+
+**Coverage is not the problem.** ECCO v4r4 spans 1992–2017, which is exactly your window — so a single release covers it and there's no need to splice V4R4 with another release. (The `ecco-release-mixing` gotcha exists precisely to discourage that splice; you don't need it here.)
+
+**The data isn't here.** Neither ECCO data root exists:
+- `~/ECCO_V4r4` (the 2010 fixture cache) — absent
+- `~/ECCO_V4r4_record` (the 1992–2017 science record) — absent
+
+and there's no `~/.netrc`, so there are no Earthdata Login credentials to fetch either. The full monthly SSH record over 26 years is a substantial download, and every attester in this plugin refuses a receipt from a data root that hasn't been stamped by `tools/science_record_verify.py`.
+
+## What's blocked
+
+| Step | Blocker |
+|---|---|
+| Read the PO.DAAC knowledge bundle | `claude plugin list --json` not approved, and `ls`/`find` are confined to `/home/user/run/evals`, so I can't locate the `nasa-daac-knowledge` install path. I read the `core` and `ocean-science` bundles; **the PO.DAAC bundle was not searched.** |
+| Verify collections in CMR | `get_collections` / `get_granules` permissions not granted |
+| Fetch granules | No Earthdata Login credentials |
+
+I deliberately did not name a ShortName for the SSH collection. The `ecco` skill routes every collection identity through `knowledge/podaac/fields/ecco-v4r4/ssh.md`, and its own Must-NOT rule forbids working from a remembered ShortName where a concept exists. Guessing one and reporting a trend off it is the failure mode this plugin is built to prevent.
+
+## Two things you should know before this runs
+
+**The SSH variants matter, and I can't yet tell you which to use.** The skill names a gotcha `ecco-ssh-inverse-barometer-variants` — ECCO ships more than one SSH field differing in the inverse-barometer correction, and a North Atlantic trend will differ between them. That choice has to come from the concept, not from me.
+
+**There is no sanctioned path to an attested SSH trend right now.** The only sanctioned trend tool is `ecco_trend_ci.py`, and it binds `--source` to a receipt from a sanctioned executor. The executors shipped here produce ocean heat content, geostrophy, wind-stress curl, and thermal wind — **none produces a regional SSH series.** The skill is explicit that "a series retyped into a bare file attests FAIL by construction," so I can't compute a regional SSH series myself and feed it in. Any SSH trend I produced would be unattested general method, and I'd have to label it as such. There's also a gotcha named for exactly this territory — `ecco-trend-traps` — whose content I couldn't read.
+
+## To unblock
+
+Fastest single step: **approve `claude plugin list --json`**, or just tell me the install path of `nasa-daac-knowledge`. That gets me the SSH collection identity, the IB-variant rule, and the trend traps.
+
+Then, depending on how far you want to go:
+1. Grant the `earthdata` MCP tools so I can verify granules over 1992–2017 for the North Atlantic box.
+2. Set up Earthdata Login and let me stage + stamp `~/ECCO_V4r4_record`. Worth confirming the download volume first — I'll gate it through `load-ecco` rather than pulling 26 years of monthly fields unannounced.
+3. Decide on the trend: accept an unattested regional SSH series computed with general method and labeled that way, or treat "regional SSH trend" as a gap to raise with the plugin steward for a sanctioned executor.
+
+Also tell me your North Atlantic bounds — I'd default to roughly 0–60°N, 80°W–0°E, but that's a real choice and it moves the number.

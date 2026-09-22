@@ -1,0 +1,43 @@
+I have enough to report. I'm not going to be able to hand you a North Atlantic trend today, and the reasons are worth stating precisely.
+
+## The good news: your window is exactly right
+
+ECCO V4r4 runs **1992-01 through 2017-12**, 312 months — your period is the full record, covered end to end with nothing missing. I confirmed this directly in the sanctioned executor, which hard-codes `SPAN = ("1992-01", "2017-12")` and rejects anything outside it (`ecco_regional_sea_level.py:60`). No collection-splicing needed; a single family covers it.
+
+The monthly SSH collections:
+
+| ShortName | DOI | Grid |
+|---|---|---|
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-SSH44 | native llc90 ← the attested path |
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` | 10.5067/ECL5M-SSH4B | native, corrected geodetic re-release |
+| `ECCO_L4_SSH_05DEG_MONTHLY_V4R4(B)` | 10.5067/ECG5M-SSH44 / -SSH4B | 0.5° interpolated |
+
+Plus static `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` for the `rA` cell areas. Note `ECCO_L4_GMSL_TIME_SERIES_MONTHLY_V4R4` is a 1-D global series and cannot be subset regionally — it won't answer this.
+
+## Two blockers
+
+**1. There is no "North Atlantic" region, and I must not invent one.** The attested computation `ecco-regional-sea-level` keeps its region registry *inside* the hashed executor by design, so an unregistered region fails attestation instead of improvising a mask. The complete registry (`ecco_regional_sea_level.py:49-58`):
+
+```
+us-northeast-coast  lat 35–45 N,  lon 75–65 W
+gulf-of-mexico      lat 18–31 N,  lon 98–81 W
+north-sea           lat 51–60 N,  lon  2 W–9 E
+```
+
+All three are coastal/marginal boxes. None is a basin. `--region` is `choices=sorted(REGIONS)`, so a North Atlantic box won't even parse — and I can't add one, because the attester hashes the file and any edit fails by construction.
+
+There's a genuine irony here worth flagging to whoever maintains this: the skill's own description advertises *"sea level trends in the North Atlantic from ECCO"* as an example invocation (`sea-level-analysis/SKILL.md:10`), but no North Atlantic region is registered. That's a real gap in the bundle, not a mistake on your part.
+
+**2. The knowledge bundles are absent from this environment.** Every `knowledge/` tree is missing — `ocean-science/knowledge/`, `nasa-daac-knowledge/knowledge/podaac/`, `core/knowledge/` — while the skills and scripts are intact. So the concepts that specifically bind *this* deliverable are unreadable: the SSH inverse-barometer variant gotcha, the V4R4/V4R4B release-mixing caveat, the Boussinesq global-mean correction, and — most relevant to you — the ECCO **trend traps**. I won't produce a trend while the concept describing how ECCO trends go wrong is unreadable.
+
+I can tell you the executor settles some of this operationally (`SSH_VARIANT = "SSH"`, `RHO0 = 1029.0`, area weighting by native `rA` over wet cells, never `cos(lat)`), and that the trend method is attested and sound — joint deseasonalize-and-fit via Frisch-Waugh-Lovell, AR(1)-adjusted `n_eff`, Santer et al. (2008) intervals. But operational constants aren't a substitute for the concepts.
+
+Separately, `get_collections`/`get_granules` and `python3` are still unapproved, so I couldn't verify granule-level coverage of all 312 months or compute anything regardless.
+
+## What I need from you
+
+**Which North Atlantic do you mean?** Subpolar gyre, subtropical gyre, basin-wide 0–60°N, or would `us-northeast-coast` actually serve? This is the fork: a registered region is runnable once the bundles are restored; a basin box needs a steward to register it in the hashed file first.
+
+**Total SSH, or the steric/manometric partition?** Total SSH alone is one small collection. The partition adds OBP and density (~0.9 GB per 12 months → well past the 2 GB gate over 312 months) and brings the Boussinesq and release-mixing constraints into play.
+
+And one framing point to settle early: ECCO is a dynamically-consistent state estimate, not an observation product, and it carries no formal error fields. A trend CI from it is a statement about sampling under an AR(1) residual model — not about model or observational error. If you want a defensible "is North Atlantic sea level rising" answer, the ECCO trend wants confronting against altimetry rather than standing alone.

@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 184,
+  "chars": 3651,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response pins a single collection (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4) across the whole record and explicitly flags that the trap is mixing SSH variants or V4R4/V4R4B releases, citing the ssh-ib-variants gotcha and the V4R4/V4R4B release caveat rather than stitching whatever collections cover the period."
+    }
+  },
+  "pass": true
+}

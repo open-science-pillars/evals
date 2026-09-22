@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 159,
+  "chars": 3970,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response mentions release mixing only in passing as a generic caveat and never identifies the two SSH releases (V4R4 vs V4R4B) or explains that the release correction would enter the trend; it also claims the governing gotcha concept is unreadable rather than citing it."
+    }
+  },
+  "pass": false
+}

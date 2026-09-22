@@ -1,0 +1,80 @@
+I could not complete the computation, and the request also has a premise worth correcting before anyone runs it. Details below.
+
+## What blocked the run
+
+This session is restricted to `Read` and `Skill`. Everything the analysis needs was refused:
+
+- `ls`/`find` outside `/home/user/run/evals` — blocked by sandbox, so I can't confirm whether the `~/ECCO_V4r4_record` cache exists or carries its `RECORD.json` stamp
+- `uv run` on the sanctioned executors — requires approval
+- `mcp__...earthdata__get_collections` / `get_granules` — permission not granted, so I could not do the Discover/Verify step the ecco skill requires before promising data exists
+
+I also could not consult the knowledge bundle. Per `core:consult-knowledge` I searched the running plugin root first: `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`. Its `skills/` tree reads fine, but **`knowledge/` does not resolve at all** — not `knowledge/index.md`, `knowledge/computations/ecco-regional-sea-level.md`, `knowledge/computations/ecco-trend-ci.md`, nor `knowledge/references/retrieval/fixtures-2010-manifest.json`. The PO.DAAC provider bundle (`nasa-daac-knowledge >=2026.9.2`, a declared dependency) resolved at no path I could reach either, and `claude plugin list --json` is gated, so I can't quote an installer error for it.
+
+**So nothing below is quoted from a concept.** It comes from files I actually read: the `ecco` and `sea-level-analysis` SKILL.md bodies, `skills/ecco/references/variable-catalog.md`, and the sanctioned executor sources. Where a concept owns the fact, I've said so rather than filling it in from memory.
+
+## The premise: there is no set of collections to stitch
+
+"Whatever ECCO SSH collections cover the full period" implies combining several. That isn't needed, and doing it is the specific trap here.
+
+`ecco_regional_sea_level.py:60` pins the span in the sanctioned code:
+
+```python
+SPAN = ("1992-01", "2017-12")   # ECCO v4r4; briefings state this boundary
+```
+
+ECCO v4r4 *is* 1992-01 through 2017-12. One collection — `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — already covers the whole period end to end. Nothing needs joining.
+
+Stitching would instead pull in the **release-mixing** problem, which both skills flag independently: the ecco skill lists a release-mixing gotcha among the `ecco-` gotchas, and `sea-level-analysis` names "the V4R4/V4R4B release caveat for SSH and OBP" as a rule that lives in the bundle. Splicing V4R4 and V4R4B to "cover" a period puts a release discontinuity inside the exact quantity you're trending — it would show up as signal.
+
+Related, and also concept-owned: the SSH family has inverse-barometer variants. The executor pins one and says so in-line (`ecco_regional_sea_level.py:44`):
+
+```python
+SSH_VARIANT = "SSH"      # one variant, stated, never mixed (ssh-ib-variants)
+```
+
+Which variant your question actually wants is decided by the `ssh-ib-variants` concept, which I couldn't read.
+
+## The harder problem: North Atlantic isn't a region the attested path has
+
+The sanctioned regional sea level computation carries a closed region registry (`ecco_regional_sea_level.py:49-58`):
+
+```python
+REGIONS = {
+    "us-northeast-coast": {"lat": (35.0, 45.0), "lon": (-75.0, -65.0)},
+    "gulf-of-mexico":     {"lat": (18.0, 31.0), "lon": (-98.0, -81.0)},
+    "north-sea":          {"lat": (51.0, 60.0), "lon": (-2.0, 9.0)},
+}
+```
+
+The comment above it is explicit that this is deliberate: an unregistered region "fails attestation (A2) **instead of improvising a mask**." There is no North Atlantic basin entry, so even with full permissions I could not have produced an *attested* North Atlantic trend. I'm not going to invent a bounding box to get around that — the registry exists precisely to stop that, and the same block records two computations that once disagreed on region bounds by 8% and 18.5% of area.
+
+Three ways forward, your call:
+
+1. **Registered proxy** — run `us-northeast-coast` over `1992-01:2017-12`. Fully attested with a receipt, but it's a western-margin box, not the basin, and margin dynamic variability is not basin mean sea level.
+2. **Register the basin properly** — a North Atlantic box added to the registry by a steward, re-attested. I can't do this myself: "Never edit an executor: its attester hashes it, and a changed hash fails by construction."
+3. **Unattested basin mean** — I compute an area-weighted native-grid SSH mean over a stated box, no receipt, labeled unattested throughout. Honest, reproducible, but it carries no verdict and the briefing-generator won't consume it.
+
+## What the trend step would be
+
+Whatever series you end up with, the trend goes through `ecco_trend_ci.py`, never a bare `polyfit`. Reading its header: it deseasonalizes by monthly climatology *jointly* with the trend (Frisch-Waugh-Lovell), because subtracting a climatology first hands `143/(144Y² - 1)` of the trend to the climatology; then OLS, lag-1 residual autocorrelation, `n_eff = n(1-r₁)/(1+r₁)` capped at `n`, and a 95% interval from Student's t on `n_eff - 2`.
+
+Your period is favorable for this: 1992-01 to 2017-12 is 312 months, a multiple of 12, so `--deseasonalize climatology` is valid (it requires complete years). And `sea-level-analysis` makes it a hard refusal — "Never quote a rate without a CI and its period" — so the answer to "is there a trend" is a rate with an interval, not a yes/no.
+
+Two framings that will apply to the result: ECCO is a dynamically consistent state estimate with **no formal error fields**, not an observational product; and a regional SSH trend over 26 years needs the internal-variability caveat, since dynamic decadal variability is typically the dominant regional signal.
+
+## To unblock
+
+Grant the earthdata MCP tools (discovery/verification), `uv run` on the plugin's `scripts/` directory, and read access to `~/ECCO_V4r4_record`. Then, for option 1:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/sea-level-analysis/scripts/ecco_regional_sea_level.py \
+  --region us-northeast-coast --period 1992-01:2017-12 \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/sea-level-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/sea-level-analysis/scripts/sea_level_partition.py /tmp/sea-level-receipt.json
+```
+
+The attester refuses a receipt from a tree without the `RECORD.json` stamp, so that verify-and-stamp step has to have been run once already.
+
+Separately worth reporting to whoever maintains the install: the `ocean-science@0.9.0` knowledge tree and the `nasa-daac-knowledge` provider bundle are both missing. Several rules above are ones the skills explicitly delegate to concepts I couldn't open — the SSH variant choice and the V4R4/V4R4B caveat especially — so they should be re-checked against the real concepts before any number goes in a writeup.
+
+Which of the three options do you want?

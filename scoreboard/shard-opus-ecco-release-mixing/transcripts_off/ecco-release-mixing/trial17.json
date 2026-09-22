@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 287,
+  "chars": 4305,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response identifies both SSH releases, designates V4R4 as the single attested path (hard-coded in the executor) rather than splicing collections, and explicitly cites the V4R4/V4R4B release-mixing caveat as a binding gotcha concept."
+    }
+  },
+  "pass": false
+}

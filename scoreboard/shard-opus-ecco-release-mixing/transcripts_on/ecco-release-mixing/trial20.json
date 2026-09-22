@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 184,
+  "chars": 5047,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly names the ECCO release-mixing gotcha, warns that combining V4R4 and V4R4B would read the baseline correction as ocean signal, and commits to a single release (V4R4B) for SSH."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,44 @@
+I stopped short of computing anything, because the environment can't support it. Here's what I established and what's blocking.
+
+## The collections question — one collection covers the whole period
+
+You don't need to splice anything. ECCO v4r4 runs **1992-01 through 2017-12**, and the monthly native SSH collection spans that whole record:
+
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — total sea level, full span
+- `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` — static grid granule, merged with every native load
+- (`ECCO_L4_OBP_...` and `ECCO_L4_DENS_STRAT_PRESS_...` only if you want the manometric/steric split)
+
+So "whatever collections cover the full period" resolves to *one*, and that matters: the bundle's gotchas specifically forbid the alternative. The sanctioned executor pins `SSH_VARIANT = "SSH"` at `ecco_regional_sea_level.py:44` with the comment *"one variant, stated, never mixed"*, citing `knowledge/podaac/gotchas/ecco-ssh-ib-variants.md`; the SSH collection carries several inverse-barometer variants as separate variables, and a series assembled from more than one is not a sea level series. The same discipline applies to **V4R4 vs V4R4B** — `ocean-science:sea-level` names mixing those releases as a recorded trap. Stitching collections to "cover the period" is exactly the failure mode both concepts exist to prevent.
+
+## North Atlantic isn't in the attested region registry
+
+The attested computation `ecco-regional-sea-level` (status stable, steward-verified 2026-09-20) registers exactly three regions in its sanctioned file: `us-northeast-coast`, `gulf-of-mexico`, `north-sea`. There is no North Atlantic basin. The registry is *inside* the hashed executor by design, so an unregistered region fails attestation rather than improvising a mask — and I can't add one, since the attester hashes the file and any edit fails by construction. A North Atlantic box is a **new computation**, not a parameter.
+
+That means a North Atlantic series would be general-method work, labeled as such, not an attested number.
+
+## What blocked the actual computation
+
+Three independent blockers, none of which I can work around:
+
+1. **No ECCO data locally.** No `RECORD.json` under `~/ECCO_V4r4` or `~/ECCO_V4r4_record` at either candidate home — no stamped tree, and every attester refuses a receipt from an unstamped tree.
+2. **No Earthdata credentials** (no `.netrc`), so I can't fetch the 312 monthly granules.
+3. **Tool permissions not granted** — the CMR connector (`get_collections`/`get_granules`), `claude plugin list --json`, and directory listing outside `/home/user/run/evals` were all refused. So I could not run the Verify step against CMR, and I could not read the **provider bundle** at all.
+
+On that last point, per the consult-knowledge convention I should say what I searched: I read the **ocean-science** bundle (its index, `computations/ecco-regional-sea-level.md`, `computations/ecco-trend-ci.md`) and the `ecco`, `sea-level`, `sea-level-analysis` skills. I could **not** read `knowledge/podaac/*` — `ecco-ssh-ib-variants`, the release-mixing gotcha, `ecco-trend-without-effective-n`, `ecco-trend-deseasonalize-jointly`, `fields/ecco-v4r4/ssh.md`, `datasets/ecco-v4r4.md`. I'm citing those by the titles and content the ocean-science concepts quote, not from the concepts themselves. Their full text may say more.
+
+## The path, once unblocked
+
+For a registered region the whole thing is two commands (a run costs one month of memory; months stream):
+
+```bash
+uv run $ROOT/skills/sea-level-analysis/scripts/ecco_regional_sea_level.py \
+  --region north-sea --period 1992-01:2017-12 \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/sl-receipt.json
+uv run $ROOT/skills/sea-level-analysis/scripts/sea_level_partition.py /tmp/sl-receipt.json
+```
+
+The trend comes out of the receipt, never from a separate fit: each trend carries the `ecco-trend-ci` interval block — climatology removed *jointly* with the slope, lag-1 autocorrelation, effective sample size, and a t-interval on the effective degrees of freedom. That correction is not cosmetic. The method's own calibration measured naive intervals covering 47–49% at φ=0.8 where they promise 95%.
+
+For calibration on what a full-record answer looks like, the signed record run over your exact window (1992-01:2017-12, `us-northeast-coast`, a coastal box — **not** the North Atlantic) reads total **+5.2452 mm/yr, 95% CI [+4.0623, +6.4281]**, r1 +0.821, 30.7 effective months out of 312. Context only; it is not an answer to your question.
+
+**What I need from you** — either approve the Earthdata connector plus `earthaccess` login so I can fetch and stamp a record tree, or point me at an existing stamped `--data-root`. And tell me how you want North Atlantic handled: I can run the registered `north-sea` box attested, or do a genuine basin-wide North Atlantic mask as unattested general-method work with the trend CI computed by the same method — but I'd be stating plainly that it carries no receipt.

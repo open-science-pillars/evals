@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 306,
+  "chars": 5236,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response commits to a single release (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4, noting v4r4's span exactly covers 1992\u20132017 so no stitching is needed) and explicitly flags that reaching for V4R4B to extend coverage is governed by the release-mixing caveat, rather than assembling a series from whatever collections cover the period."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,48 @@
+I've consulted the installed knowledge bundles. I need to stop and report rather than hand you a number: **I can answer the collections question fully, but I cannot build the series or the trend in this environment.** Two independent blockers, one environmental and one about scope.
+
+## What I did establish — the collections
+
+ECCO v4r4 spans exactly your window, 1992 through 2017, monthly (`knowledge/podaac/datasets/ecco-v4r4.md`, stable, human-verified 2026-09-04). There is no multi-collection stitching to do: **one monthly SSH collection carries the whole record.** From the Variants table of `knowledge/podaac/fields/ecco-v4r4/ssh.md` (stable; CMR ShortName sweep 2026-08-30, human-verified 2026-09-04):
+
+| ShortName | DOI |
+|---|---|
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` | 10.5067/ECL5M-SSH4B |
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-SSH44 |
+
+Plus `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` for native area weights. The variable is `SSH` (IB-corrected dynamic height) — not `SSHNOIBC`, `SSHIBC`, or `ETAN`, which are distinct quantities, never mixed in one series (`gotchas/ecco-ssh-ib-variants.md`).
+
+**A conflict you should know about.** `gotchas/ecco-release-mixing.md` (severity high, stable, human-verified) states plainly: *"SSH and OBP work uses the corrected V4R4B."* But the sanctioned executor hardcodes the **original** release — `ecco_regional_sea_level.py:86-87` reads `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` and the V4R4 OBP. So the attested path runs on the release the stable gotcha steers away from. I can't reconcile that myself and I must not edit the executor (the attester hashes it). That's a maintainer call.
+
+## Blocker 1 — no data, no credentials, no way to fetch
+
+- Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` carries the `RECORD.json` stamp; every attester refuses a receipt from an unstamped tree.
+- `~/.netrc` does not exist, so there is no Earthdata Login — and EDL is required for all ECCO access.
+- The CMR/earthdata MCP connector is not permitted in this session, so I couldn't even run the Verify step.
+- Bash is sandboxed to `/home/user/run/evals`; `claude plugin list`, `uv run`, and any fetch require approval that isn't available.
+
+## Blocker 2 — "North Atlantic" is not a registered region
+
+The sanctioned executor's region registry is part of the hashed file by design, so an unregistered region *fails attestation rather than improvising a mask*. I read it directly at `ecco_regional_sea_level.py:49-58`:
+
+```python
+REGIONS = {
+    "us-northeast-coast": {"lat": (35.0, 45.0), "lon": (-75.0, -65.0)},
+    "gulf-of-mexico":     {"lat": (18.0, 31.0), "lon": (-98.0, -81.0)},
+    "north-sea":          {"lat": (51.0, 60.0), "lon": (-2.0,   9.0)},
+}
+```
+
+No North Atlantic basin. So even with data and credentials, the attested route cannot produce the region you asked for, and hand-rolling a basin mask is explicitly the thing the registry exists to prevent. The trend tool closes the same loop from the other side: it only accepts a series arriving inside a sanctioned receipt, so a series I computed by hand "attests FAIL by construction."
+
+## What I'd need from you
+
+1. **Bash approval + Earthdata Login credentials** (`~/.netrc`), so I can fetch and stamp a tree. The full record across SSH+OBP+density is roughly 20+ GB (12 months ≈ 0.9 GB); SSH alone is far smaller if you only want the series.
+2. **A decision on region.** Either:
+   - run the attested path on `north-sea` or `us-northeast-coast` for `1992-01:2017-12` — a real North Atlantic sub-region, fully receipted; or
+   - have the maintainer add a `north-atlantic` box to the sanctioned executor and re-sign it; or
+   - accept an explicitly **unattested** basin-mean series, which I'd label as general method throughout and which no receipt will back.
+3. **V4R4 or V4R4B**, given the conflict above.
+
+Tell me which and I'll run it. One thing I won't do is quote you the on-record `us-northeast-coast` figures as if they answered this — that's a 10°×10° coastal box, not the North Atlantic.
+
+Two other things worth flagging: `ecco-trend-ci.md` and `ecco-regional-sea-level.md` both carry `status: stable` in frontmatter while their bodies say they sit at draft pending maintainer re-signature after the 2026-09-20 ADR-E move, and the ocean-science `knowledge/index.md` is stale — it lists only `argo-ohc` under local computations when ~19 are present.

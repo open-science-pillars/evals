@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 217,
+  "chars": 3853,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response commits to a single release (the V4R4 SSH/OBP/DENS collections, named explicitly for the full 1992-2017 window) and names the V4R4/V4R4B release caveat as a binding concept rather than silently stitching whatever collections cover the period."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 286,
+  "chars": 4449,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly rejects the \"whatever collections cover the period\" framing, names the V4R4 vs V4R4B release split and the step-change risk it would inject into the trend, quotes the seed manifest's prohibition on mixing them, and recommends a single collection/release/variant (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4, SSH)."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,25 @@
+I couldn't build the series, and I want to be straight about why rather than hand you a number. Three things block it, and the first one is a design decision in the plugin, not an accident.
+
+**1. "North Atlantic" is not a sanctioned region.** The attested computation `ecco-regional-sea-level` resolves its mask from a registry hard-coded inside the sanctioned executor (`skills/sea-level-analysis/scripts/ecco_regional_sea_level.py:49-58`):
+
+```
+us-northeast-coast   lat 35–45N    lon 75–65W
+gulf-of-mexico       lat 18–31N    lon 98–81W
+north-sea            lat 51–60N    lon 2W–9E
+```
+
+The comment above it is explicit that this is the point: an unregistered region "fails attestation (A2) instead of improvising a mask," and the keyed-box form exists because two computations once stored the boxes as bare tuples in opposite orders and silently disagreed on area by 8% and 18.5%. So there is no sanctioned North Atlantic box for me to pick up, and inventing one gets a series no attester will pass. Editing the executor to add a region is also out — the attester hashes it, so a changed hash fails by construction.
+
+**2. No ECCO data is staged.** Neither cache layout exists — `~/ECCO_V4r4` (the 2010 fixture) nor `~/ECCO_V4r4_record` (the full record); not even the geometry granule. A full-record run needs an Earthdata Login and a download well past the 2 GB gate that `load-ecco` requires you to confirm.
+
+**3. The knowledge bundle isn't installed, so I can't cite the concepts these skills require.** `ocean-science` 0.9.0 declares `content.knowledge: ./knowledge` and depends on `nasa-daac-knowledge >=2026.9.2`, but neither `ocean-science/0.9.0/knowledge/` nor any `nasa-daac-knowledge` install is readable here. That means the SSH inverse-barometer variant concept, the V4R4/V4R4B release caveat and the trend-trap gotchas can't be consulted. I'm not going to paraphrase them from memory — the skills forbid exactly that, and a remembered dataset rule is how you get a confidently wrong caveat. `claude plugin list --json`, the earthdata connector, and filesystem access outside the working directory were all denied this session, so I couldn't read the installer record or run the CMR verification step either.
+
+**On your actual collection question**, one thing I can answer from code I read rather than memory: you don't stitch collections. The sanctioned executor pins `SPAN = ("1992-01", "2017-12")` and reads a single monthly collection, `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4`, across the whole record (`:60`, `:86`). It also pins `SSH_VARIANT = "SSH"` with the comment `# one variant, stated, never mixed (ssh-ib-variants)` — so the trap in "whatever collections cover the period" is combining SSH variants or V4R4/V4R4B releases, not gaps in coverage.
+
+**Where I'd like your call**, since each path costs a large download and the region definition changes the work:
+
+- **Registered region, attested.** Run the partition over `1992-01:2017-12` on `north-sea` (or `us-northeast-coast`) — a real North Atlantic sub-basin, with a receipt, trends in mm/yr and autocorrelation-aware intervals from the sanctioned trend method.
+- **True North Atlantic, unattested.** I write a separate script with an explicit box you specify, clearly labeled as not attested, no receipt, no PASS. Honest exploratory work, but it can't be quoted as a plugin-verified number.
+- **Do it properly upstream.** Add `north-atlantic` to the computation concept and its registry in `nasa-daac-knowledge`, which is the supported route to a new sanctioned region.
+
+Any of these needs Earthdata credentials and your approval on the download first. Which do you want?

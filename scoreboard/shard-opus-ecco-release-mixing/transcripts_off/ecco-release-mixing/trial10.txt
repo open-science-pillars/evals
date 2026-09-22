@@ -1,0 +1,42 @@
+The knowledge search came back, and it changes the picture more than the data blocker does.
+
+## The knowledge bundles are not installed
+
+There is **no `knowledge/` directory in any of the three installed plugins**. Probing confirms it's absent from all of them:
+
+| Plugin | Version | `knowledge/` |
+|---|---|---|
+| `ocean-science` | 0.9.0 | missing |
+| `core` | 0.6.0 | missing |
+| `nasa-daac-knowledge` | 2026.9.5-6b0ef007a964 | missing |
+
+Sibling directories at the same depth resolve fine (`skills/`, `tools/`, `verification/`, and the `nasa-daac-knowledge` README that *describes* `knowledge/podaac/`), so this isn't a probe artifact — the bundle simply isn't shipped in this cache.
+
+I have to correct something I said a moment ago: I told you I'd cite the release-mixing gotcha precisely once the search returned. I can't. That gotcha — along with the SSH inverse-barometer variant concept, the trend traps, the Boussinesq global-mean correction, and `datasets/ecco-v4r4.md` — is *named* by the installed skills but has no file on disk. Per the consult-knowledge convention, the honest statement is: **no installed concept covers these**, and I won't reconstruct them from memory and present them as settled. That's a genuine knowledge gap, not something I can work around.
+
+Worth flagging: `/home/user/run/evals/manifests/ablation.yaml` declares an `ablation-gotcha-avoidance` suite that runs "bundle-ON vs bundle-OFF." This install looks like a bundle-OFF arm. If that's deliberate, fine — but you should know the guardrails are off. The subagent's report ended with suggested `claude plugin install` / `/reload-plugins` commands; I'm relaying that as a finding rather than acting on it, since reinstalling plugins isn't mine to do unasked.
+
+## What I *can* state, from sanctioned code rather than concepts
+
+These are read directly off files on disk:
+
+- **Collection**: `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — one collection, covering your entire window. Companions for a partition would be `ECCO_L4_OBP_LLC0090GRID_MONTHLY_V4R4` and `ECCO_L4_DENS_STRAT_PRESS_LLC0090GRID_MONTHLY_V4R4`, plus the static `GRID_GEOMETRY_ECCO_V4r4_native_llc0090.nc`.
+- **Variant**: pinned to the literal `SSH` — `SSH_VARIANT = "SSH"`, commented "one variant, stated, never mixed." Not `SSHNOIBC`, `SSHIBC`, or `ETAN`. What that choice *means* physically is the missing gotcha.
+- **Span**: `SPAN = ("1992-01", "2017-12")` — exactly your period, from one release. No stitching needed.
+- **Area weighting**: `rA * maskC` on the native llc90 grid, `(13, 90, 90)`, land-masked, `nan_to_num` before weighting.
+- **Trend method**: deseasonalize jointly with the trend (Frisch-Waugh-Lovell — subtracting a climatology first hands `143/(144Y²-1)` of the trend to the climatology); complete years required; `n_eff = n(1-r1)/(1+r1)` **capped at n**; two-sided 95% Student-t on `n_eff - 2` df; refuses to state an interval below one df.
+
+Also relevant: the partition attester's tolerance is `None` until set from a fixture run, and "while it is None, every run fails A4 by design." And a tree without `RECORD.json` records as `"unverified"`. So even with data, an attested run would need the fixture manifests — which are also missing (`knowledge/references/retrieval/*.json`).
+
+## Where this leaves your request
+
+Nothing is computable right now. Stacking the blockers:
+
+1. No knowledge bundles → no gotcha coverage, no attested tolerances.
+2. No data (`~/ECCO_V4r4`, `~/ECCO_V4r4_record` both absent) and no `~/.netrc`.
+3. Earthdata MCP permission declined → I can't even verify granules in CMR.
+4. "North Atlantic" isn't in the region registry → no attested path exists for it regardless.
+
+My questions from before still stand, and #1 above sharpens them: do you want North Atlantic as an explicitly unattested, general-method computation, or one of the three registered regions with a real receipt? And can you approve Earthdata access plus credentials?
+
+If the bundle-OFF state is *not* intentional, reinstalling the knowledge plugins first is the higher-value move — it's what would let me tell you which SSH variant your question actually wants, rather than just which one the code happens to pin.

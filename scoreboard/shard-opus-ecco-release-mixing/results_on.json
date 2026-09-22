@@ -1,0 +1,254 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "on",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 6,
+      "trials": 12,
+      "rate": 0.5,
+      "ci95": [
+        0.254,
+        0.746
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "ecco-release-mixing",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 8,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 167,
+          "chars": 4475,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response identifies both V4R4 and V4R4B SSH collections, explicitly refuses to mix them because the baseline correction would enter the trend as a step/drift, and cites the ecco-release-mixing gotcha concept."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 196,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 147,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 426,
+          "chars": 5008,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly surfaces the V4R4 vs V4R4B release-correction gotcha by name (ecco-release-mixing.md), warns that mixing folds the release correction into the geophysical signal, names a single collection for the window, and poses the release choice as an explicit decision rather than blending collections."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 141,
+          "chars": 3724,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly commits to a single release (ECCO V4R4, which covers 1992\u20132017), rules out splicing releases, and cites the `ecco-release-mixing` gotcha concept by name rather than assembling a series from whatever collections cover the period."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 152,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 168,
+          "chars": 4182,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never addresses the V4R4 vs V4R4B release-correction gotcha \u2014 it treats the SSH concern solely as the inverse-barometer variant issue and asserts a single V4R4 collection covers the period without flagging that the corrected V4R4B release must not be mixed into the trend."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 121,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 279,
+          "chars": 4869,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly identifies the two SSH releases (V4R4 and V4R4B), cites the ecco-release-mixing gotcha concept by path and severity, warns that mixing folds a baseline correction into the trend, and demands the user pick one release throughout."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 223,
+          "chars": 3750,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly identifies that ECCO SSH ships in both V4R4 and V4R4B, names the release-mixing gotcha concept as governing, warns that picking 'whatever collections cover the period' is precisely how a run mixes releases, and states that a single release spans 1992\u20132017 so no cross-release stitching is needed."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 291,
+          "chars": 5478,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly identifies both V4R4 and V4R4B SSH collections, cites the ecco-release-mixing gotcha explaining that mixing folds the baseline correction into the trend as an artifact, mandates one release throughout, and names V4R4B as the prescribed choice for SSH work."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 142,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 137,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 120,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 413,
+          "chars": 4381,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response identifies both the V4R4 and V4R4B SSH collections, cites the ecco-release-mixing gotcha (noting it directs SSH/OBP work to the corrected V4R4B while the sanctioned executor hardcodes V4R4), refuses to build a mixed or improvised series, and makes the release choice an explicit decision point rather than stitching together whatever collections cover 1992\u20132017."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 627,
+          "chars": 6199,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response names both ECCO SSH releases (V4R4 and V4R4B), cites gotchas/ecco-release-mixing.md explaining that mixing folds the release correction into the trend, and picks one release (recommending V4R4B) while flagging the bundle conflict."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 200,
+          "chars": 4972,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly pins the V4R4 collections and flags that V4R4 and V4R4B must not be mixed, citing the recorded release-mixing trap in the ocean-science:sea-level concept rather than splicing whatever collections cover the period."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 138,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 134,
+          "chars": 3850,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response stopped at a blocker without ever picking V4R4 or V4R4B or flagging that the two SSH releases must not be mixed, and it never cited the release-correction gotcha."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 184,
+          "chars": 5047,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly names the ECCO release-mixing gotcha, warns that combining V4R4 and V4R4B would read the baseline correction as ocean signal, and commits to a single release (V4R4B) for SSH."
+            }
+          },
+          "pass": false
+        }
+      ]
+    }
+  ]
+}

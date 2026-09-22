@@ -1,0 +1,40 @@
+I stopped before computing anything. Three things block this run, and one of them changes the shape of the request. Here's what I found.
+
+## The premise: it's one collection, not several
+
+"Whatever ECCO SSH collections cover the full period" implies stitching. It doesn't need stitching — ECCO v4r4's record **is** 1992-01 through 2017-12, exactly your window, in a single collection. The sanctioned executor pins both:
+
+- `SPAN = ("1992-01", "2017-12")` — `ecco_regional_sea_level.py:60`
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — `ecco_regional_sea_level.py:86`
+
+So the right move is one collection, one release. Combining V4R4 with V4R4B, or splicing SSH variants, would be the error rather than the fix. The same file pins `SSH_VARIANT = "SSH"` with the comment *"one variant, stated, never mixed (ssh-ib-variants)"* (`:44`) — SSH, SSHIBC and SSHNOIBC differ by the inverse-barometer correction and a trend fit across a mixed series is meaningless.
+
+## Three blockers
+
+**1. The knowledge bundle isn't actually installed.** `nasa-daac-knowledge` 2026.9.5 is in the installer's record with no errors, but its install tree (`.../nasa-daac-knowledge/2026.9.5-6b0ef007a964/`) contains only `docs/`, `tools/`, and the repo boilerplate — **no `knowledge/` directory**. Its own README says the bundles ship under `knowledge/podaac/`. So every concept the ecco and sea-level-analysis skills require me to read before acting is unreadable: the ECCO v4r4 dataset concept, `fields/ecco-v4r4/ssh.md` (the signed ShortName and Schema rows), the SSH inverse-barometer gotcha, the SSH/OBP release caveat, the trend traps, native-vs-regridded. `ocean-science` 0.9.0 likewise ships no `knowledge/computations/`, so the `ecco-regional-sea-level` and `ecco-trend-ci` contracts — which own the pass bars — are missing too, though their executor scripts are present.
+
+I'm flagging the gap rather than substituting remembered rules for it. What I stated above about SSH variants and the v4r4 span comes from skill bodies and executor source I actually read, not from the concepts.
+
+**2. No data and no credentials.** Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` exists, so there's no `RECORD.json` stamp — and every attester refuses an unstamped tree by construction. There's no `~/.netrc` and no Earthdata Login environment, so `earthaccess` can't fetch it. The Earthdata MCP discovery tool also isn't permission-granted in this session, so I couldn't even run the Verify step against CMR. `uv` is present, so the executors themselves would run.
+
+**3. "North Atlantic" is not a registered region.** This is the one that needs your decision. The executor's region registry (`ecco_regional_sea_level.py:49-58`) holds exactly three boxes:
+
+| region | lat | lon |
+|---|---|---|
+| `us-northeast-coast` | 35–45 N | 75–65 W |
+| `gulf-of-mexico` | 18–31 N | 98–81 W |
+| `north-sea` | 51–60 N | 2 W–9 E |
+
+The registry is inside the sanctioned file deliberately — its own comment says an unregistered region "fails attestation (A2) instead of improvising a mask," and the file's docstring forbids editing it, since the attester hashes it and a changed hash fails by construction. So I can't add a North Atlantic box myself; that's a new computation for the steward to sign, not an edit.
+
+## What I'd need from you
+
+For the blockers I can't resolve alone:
+
+- **Region.** Either commission a `north-atlantic` box through the steward, or retarget to a registered basin — `us-northeast-coast` is the closest true North Atlantic box, `north-sea` the closest eastern one. I'd take `us-northeast-coast` if you want a result this week.
+- **Credentials.** An Earthdata Login in `~/.netrc`, then the full-record fetch. The full 1992–2017 pull is substantial — the skill quotes ~0.9 GB per twelve months, most of it the density collection, so roughly 23 GB for 26 years. I'll confirm the volume with you before starting it.
+- **The bundle.** `claude plugin update nasa-daac-knowledge@open-science-pillars`, or a reinstall — the installed artifact looks truncated, since a bundle with no `knowledge/` directory contradicts its own README. Worth reporting upstream.
+
+Once the tree is stamped with `science_record_verify.py --stamp`, the run itself is two commands — the executor over `--period 1992-01:2017-12`, then `sea_level_partition.py` on the receipt — and the trend with its autocorrelation-aware 95% interval comes out of the receipt's interval block rather than a fit I do by hand.
+
+I could have hand-rolled a series and quoted you a rate. Without the data it would have been fiction, and without the concepts I couldn't have told you whether the variant and release were right.

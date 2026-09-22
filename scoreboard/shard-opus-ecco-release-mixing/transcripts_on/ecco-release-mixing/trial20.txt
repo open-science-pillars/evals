@@ -1,0 +1,37 @@
+I've consulted the knowledge bundles and mapped the data plan. Two things block the computation itself, and one of them changes the premise of the request.
+
+## The premise needs correcting
+
+There is no ECCO SSH collection that fails to cover 1992–2017, so nothing needs stitching. ECCO v4r4's entire span *is* 1992-01 through 2017-12, and each monthly SSH collection covers all of it — the sanctioned executor hard-codes `SPAN = ("1992-01", "2017-12")` and refuses anything outside it (`skills/sea-level-analysis/scripts/ecco_regional_sea_level.py:60`).
+
+Taking "whatever collections cover the full period" literally would mean combining `..._MONTHLY_V4R4` with `..._MONTHLY_V4R4B`, and that is exactly the trap `knowledge/podaac/gotchas/ecco-release-mixing.md` (severity high, stable, human-verified 2026-09-04) exists to stop: SSH and OBP are the two families PO.DAAC re-released with a baseline correction, the ShortNames differ by one character, and a series spanning both reads the release correction as ocean signal. Nothing errors — you just get a step at the boundary.
+
+The correct plan is one release, one variant, throughout:
+
+- **Collection:** `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B`, native llc90, DOI `10.5067/ECL5M-SSH4B` (`knowledge/podaac/fields/ecco-v4r4/ssh.md`, stable, CMR-swept 2026-08-30). The gotcha's correct approach names V4R4B specifically for SSH.
+- **Variant:** `SSH` (IB-corrected), not `SSHNOIBC`, `SSHIBC` or `ETAN` — four distinct quantities, not spellings (`gotchas/ecco-ssh-ib-variants.md`, medium, stable).
+- Plus the geometry granule for `rA`/`maskC` area weighting.
+
+A basin-scale North Atlantic box over 312 months sits squarely inside `validity-domains/ecco-large-scale-statistics.md` (draft — voiced as unverified), which supports trend claims on native monthly fields for 1992–2017 and explicitly warns that its *small*-box answers are the weak case. Your question is the well-posed one.
+
+## Why I can't hand you the series
+
+**1. "North Atlantic" is not a registered region.** The attested computation `ecco-regional-sea-level.md` is the sanctioned route to a monthly ECCO SSH regional series with a trend, and its region registry is part of the hashed executor by design — `us-northeast-coast`, `gulf-of-mexico`, `north-sea`, and nothing else (`ecco_regional_sea_level.py:49-58`). The concept states the reason plainly: "an unregistered region fails attestation rather than improvising a mask." I could add a North Atlantic box in thirty seconds, and the attester would then fail every receipt it produced, because it hashes the file. That's the mechanism working, not a bug to route around.
+
+**2. No ECCO data is staged here, and no way to fetch it.** Neither `~/ECCO_V4r4` (the 2010 fixture) nor `~/ECCO_V4r4_record` (the 1992–2017 science record) exists; there's no `~/.netrc`, so earthaccess has no Earthdata Login; and the CMR MCP tools were denied permission, so I couldn't even run the Discover/Verify step. Every attester also refuses a receipt from a tree without the `RECORD.json` verification stamp.
+
+So there is no honest path to a number today, and I'd rather say that than fit a line to something I invented.
+
+## What the trend answer would have to look like
+
+Worth stating now, because it's where this analysis usually goes wrong. Two high-severity stable gotchas govern it, and the sanctioned method `ecco-trend-ci.md` closes both: the climatology is removed **jointly** with the trend, not first (sequential removal hands the climatology 143/(144Y²−1) of the slope — negligible at 26 years, a quarter of it at two), and the interval uses an effective sample size `n(1−r₁)/(1+r₁)`, capped at n. For reference, the record run over the US northeast coast gives total sea level +5.2452 mm/yr, interval [+4.0623, +6.4281], with r₁ +0.821 leaving just 30.7 effective months out of 312. A North Atlantic basin mean will be similarly autocorrelated — the naive interval would be roughly three times too narrow.
+
+## To unblock
+
+1. **Run it for a registered region** — `us-northeast-coast`, `gulf-of-mexico`, or `north-sea` — once the science record tree is staged and stamped. Fully attested, no caveats.
+2. **Get `north-atlantic` into the registry** as a new version of the sanctioned computation with its own hash and steward signature. That's the maintainer's call, not an edit I should make.
+3. **Unattested exploratory run**, clearly labelled as such, if you want a number now and can supply Earthdata credentials plus permission for the CMR tools. It would follow the same collection and method choices above but carry no receipt.
+
+One thing to flag for the steward either way: the sanctioned executor reads `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` and `..._OBP_..._V4R4` (`:86-88`) — the non-B release. It's internally consistent, so it doesn't *mix*, but it doesn't follow the provider gotcha's instruction that SSH and OBP work uses the corrected V4R4B. Under the precedence rule the provider bundle wins, which suggests the executor is due a revision.
+
+Which of the three would you like?

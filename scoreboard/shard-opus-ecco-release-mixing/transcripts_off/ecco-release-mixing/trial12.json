@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 531,
+  "chars": 4411,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly identifies both V4R4 and V4R4B SSH releases, names release-mixing as the gotcha, notes V4R4B covers the same months rather than extending coverage, and instructs picking one release (V4R4 alone covers 1992-2017)."
+    }
+  },
+  "pass": false
+}

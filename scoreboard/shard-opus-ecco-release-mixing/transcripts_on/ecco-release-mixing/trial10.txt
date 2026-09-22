@@ -1,0 +1,39 @@
+I've hit two hard blockers. Rather than guess my way past either, here's exactly where things stand.
+
+## What I established
+
+**The ECCO v4r4 state estimate does span your window.** The plugin's ECCO skill states v4r4 covers 1992 to 2017 on the llc90 grid (`ocean-science/0.9.0/skills/ecco/SKILL.md`). So a single release covers 1992–2017 and there is no need to stitch collections across releases — which matters, because the skill names a **release-mixing gotcha** and an **SSH inverse-barometer variants gotcha** that govern exactly this. Your phrasing ("whatever ECCO SSH collections cover the full period") is the shape of request those two concepts exist to catch: ECCO SSH ships in both V4R4 and V4R4B variants, and picking "whatever covers the period" is how a run ends up mixing them.
+
+## Blocker 1 — the governing knowledge bundle is not on disk
+
+The ECCO facts this analysis needs (exact ShortNames, the SSH Schema, the release caveat, the trend traps) live in the PO.DAAC provider bundle, not in any skill. It is enabled but not installed:
+
+- `/root/.claude/settings.json` enables `nasa-daac-knowledge@open-science-pillars`
+- the marketplace record pins it at `nasa-daac-knowledge--v2026.9.5`
+- nothing is readable at `…/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5/` — not `knowledge/podaac/index.md`, not `.claude-plugin/plugin.json`
+
+Bundles I **did** search and read: `core/0.6.0/knowledge/` and `ocean-science/0.9.0/knowledge/`. Neither carries ECCO SSH concepts — ocean-science's index states the PO.DAAC bundle is a dependency and that "nothing from it is copied here."
+
+Reinstalling it is the fix: `claude plugin install nasa-daac-knowledge@open-science-pillars`.
+
+## Blocker 2 — I can't verify or fetch anything
+
+Three calls were declined, so I have no verified ground truth and no data:
+
+| Blocked | What it was for |
+|---|---|
+| `get_collections` / `get_granules` (earthdata MCP) | Resolving the real SSH ShortName and confirming granules actually exist 1992-01→2017-12 |
+| `python3 -c …` | Checking for `earthaccess`/`xarray`, Earthdata Login credentials, and whether a stamped `~/ECCO_V4r4_record` tree exists |
+| `claude plugin list --json` | The installer's record of bundle paths |
+
+## Why I stopped rather than delivered
+
+I can recite plausible ECCO SSH ShortNames from memory. I won't — the load-ecco skill's rule is that a ShortName resolves through the fields concept or a granule load, never from recall, and `get_variables`-style metadata isn't ground truth either. A time series built on a guessed collection, with the release and inverse-barometer gotchas unread, would look exactly like a correct one and I'd have no way to tell you it wasn't.
+
+Worth flagging separately: the ocean-science package ships five attested ECCO executors (OHC, trend-with-CI, geostrophy, wind-stress curl, thermal wind). **None produces an SSH time series.** So even fully unblocked, this is a new analysis rather than a sanctioned run — the `ecco-trend-ci` executor could supply the trend and interval, but only downstream of a receipt from some sanctioned computation, and there isn't one for SSH.
+
+## To unblock
+
+Approve the earthdata MCP tools and Bash, and reinstall the provider bundle. Then I'll: read the SSH fields concept and the release/inverse-barometer/trend gotchas → resolve the ShortName and verify granules over the full window → size the download and put it through the volume gate → build the area-weighted North Atlantic monthly mean on the native grid with geometry merged → deseasonalize and fit the trend with an autocorrelation-aware interval.
+
+One thing I'd want from you when we get there: "North Atlantic" needs a box. I'd default to 0–65°N, 80°W–0°E unless you have a specific definition in mind.

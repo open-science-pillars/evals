@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 364,
+  "chars": 4949,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly identifies the V4R4/V4R4B release split, warns that the variants/releases must never be mixed, names the single V4R4 SSH collection that spans 1992-2017 on its own (so no stitching is needed), and attributes the mixing rule and trend-traps gotcha to the ECCO knowledge concepts rather than assembling a series from whatever collections cover the period."
+    }
+  },
+  "pass": true
+}

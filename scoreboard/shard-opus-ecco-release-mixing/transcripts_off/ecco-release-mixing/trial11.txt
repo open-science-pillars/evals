@@ -1,0 +1,37 @@
+I stopped before fetching anything, because the analysis as specified can't be run attested. Here's what I found.
+
+## The collection question is settled
+
+One collection covers your entire period — no stitching needed:
+
+**`ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4`**, monthly, native llc90 grid.
+
+The sanctioned executor hard-codes `SPAN = ("1992-01", "2017-12")` (`ecco_regional_sea_level.py:60`) — ECCO v4r4's full record is exactly the window you asked for. The partition computation also pulls `ECCO_L4_OBP_LLC0090GRID_MONTHLY_V4R4` and `ECCO_L4_DENS_STRAT_PRESS_LLC0090GRID_MONTHLY_V4R4` for the mass/steric split.
+
+## Three things block the run
+
+**1. "North Atlantic" is not a registered region.** The attested computation `ecco-regional-sea-level` binds `region` from a registry inside the sanctioned file (`ecco_regional_sea_level.py:49-58`), and it holds only:
+
+| region | lat | lon |
+|---|---|---|
+| `us-northeast-coast` | 35–45 N | 75–65 W |
+| `gulf-of-mexico` | 18–31 N | 98–81 W |
+| `north-sea` | 51–60 N | 2 W–9 E |
+
+`--region` uses `choices=sorted(REGIONS)`, so anything else is rejected outright, and the file's docstring is explicit: consumers "MUST NOT edit this file; the attester hashes it." Defining my own North Atlantic box in a side script is exactly the failure the registry exists to prevent — the comment at line 50 records that two computations once stored these as bare positional tuples and the same region names resolved to different water, `gulf-of-mexico` off by 8% in area and `north-sea` by 18.5%.
+
+**2. No ECCO data is staged.** There's no `RECORD.json` under `~/ECCO_V4r4` or `~/ECCO_V4r4_record`. `data_identity()` would stamp the receipt `"unverified: no RECORD.json in this tree"`, and the attesters refuse an unstamped tree. A full-record run needs all three collections fetched under an Earthdata Login — roughly 23 GB at the ~0.9 GB/year the skill quotes, most of it density.
+
+**3. I could not read the binding knowledge concepts.** Glob/search on `/root/.claude/plugins` is refused in this session (the ecco-scout agent hit the same wall), and I only have exact-path reads. So the SSH inverse-barometer variant gotcha, the V4R4/V4R4B release caveat, and the ECCO trend-trap gotcha are unread. Both skills explicitly refuse to restate those facts inline so that corrected concepts change behavior without a skill edit — I'm not going to paraphrase them from memory. The trend gotcha in particular bears directly on a 1992–2017 SSH trend, which is precisely your question.
+
+What I can say from the sanctioned source rather than recall: the variant is pinned to `SSH_VARIANT = "SSH"`, "one variant, stated, never mixed."
+
+## How you can unblock it
+
+- **Closest attested answer now:** run `ecco-regional-sea-level` over `--period 1992-01:2017-12` on `us-northeast-coast` (the most North-Atlantic-adjacent registered box). Real receipted numbers, but it is a shelf region, not the basin.
+- **What you actually asked for:** get a North Atlantic box added to the registry upstream as a steward change to the sanctioned file, then run it unedited.
+- **Ad-hoc script:** possible, but it forfeits attestation entirely — and `ecco_trend_ci.py` only accepts a sanctioned receipt or a bare mapping, so a hand-built series carries no data provenance.
+
+Worth knowing for the trend itself: the sanctioned method is Santer et al. (2008) — joint deseasonalization by monthly climatology, OLS, then lag-1 autocorrelation with `n_eff = n(1-r1)/(1+r1)` capped at `n`, and a 95% interval from Student's t on `n_eff - 2` DOF. At 312 months you'd have ample DOF, and it reports `significant_at_confidence` directly. The partition receipt already carries `trend_total_interval` for the SSH series, so no separate fit is needed.
+
+Which of the three do you want? If it's the second, I can draft the registry entry and the bounds for review.

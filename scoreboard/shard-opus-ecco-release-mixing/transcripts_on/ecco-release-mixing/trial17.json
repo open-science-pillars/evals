@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 200,
+  "chars": 4972,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly pins the V4R4 collections and flags that V4R4 and V4R4B must not be mixed, citing the recorded release-mixing trap in the ocean-science:sea-level concept rather than splicing whatever collections cover the period."
+    }
+  },
+  "pass": true
+}

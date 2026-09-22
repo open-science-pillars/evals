@@ -1,0 +1,53 @@
+I could not produce the time series, and I don't want to hand you a number that isn't real. Here's what I found and where it stopped.
+
+## Three blockers, all verified
+
+**1. No ECCO data is staged.** Neither tree the executors read exists:
+
+```
+/root/ECCO_V4r4_record  → MISSING   (the 1992–2017 science record)
+/root/ECCO_V4r4         → MISSING   (the 2010 fixture cache)
+```
+
+Fetching ~312 months of SSH granules needs an Earthdata Login, and the `get_collections`/`get_granules` MCP tools weren't approved this session, so I couldn't even verify granule coverage in CMR.
+
+**2. The knowledge bundle is half-installed.** This is a real install defect, not normal state:
+
+```
+.../nasa-daac-knowledge/2026.9.5-6b0ef007a964/tools      → exists (EISDIR)
+.../nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge  → does not exist
+.../ocean-science/0.9.0/knowledge                        → does not exist
+```
+
+`tools/` landed and `knowledge/` didn't, for a plugin whose README says the knowledge tree is its entire reason to exist. Every ECCO skill here is written to carry pointers rather than facts (`skills/ecco/SKILL.md`: *"This skill carries the pointer, not the facts"*), so the skills are currently pointing at nothing. The documented fix needs your approval:
+
+```bash
+claude plugin update nasa-daac-knowledge@open-science-pillars
+```
+
+**3. "North Atlantic" has no attested path.** The attested `ecco-regional-sea-level` computation accepts only a fixed registry — `gulf-of-mexico`, `north-sea`, `us-northeast-coast` (plus `global` for steric). A general North Atlantic box means a bespoke area-weighted average, which is a materially different plan: the sanctioned trend tool accepts a bare `{"YYYY-MM": value}` mapping, but a series that doesn't come from a sanctioned receipt inherits no run id, code hash, or tree stamp, so it attests FAIL by construction.
+
+## Your premise needs one correction
+
+You asked me to "use whatever ECCO SSH collections cover the full period." That framing has a trap in it. ECCO v4r4 *is* 1992–2017, and monthly SSH covers the whole span in a **single** collection. The nine `ECCO_L4_SSH_*` ShortNames aren't complementary pieces to stitch — they're alternative renderings of the same estimate along three axes:
+
+- **Release:** `V4R4` vs `V4R4B`, the latter the corrected geodetic re-release. The shipped seed manifest says verbatim: *"never mix V4R4 and V4R4B in one analysis without saying so."* Concatenating them across 1992–2017 could manufacture a step that a linear fit would absorb as signal — precisely the trend you asked me to test for. (Note `SNAPSHOT` exists only in V4R4.)
+- **Grid:** `LLC0090GRID` (native) vs `05DEG` (interpolated). For a regional average the workflow wants native, area-weighted.
+- **IB convention:** `SSH`, `SSHIBC`, `SSHNOIBC`, `ETAN` live *inside* the collection and mean different things.
+
+So: one collection, one release, one variant — not a union.
+
+**My recommendation:** `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` (DOI `10.5067/ECL5M-SSH44`), variable `SSH`, area-weighted natively.
+
+⚠️ Voice this as provisional. It comes from a *seed* file (`tools/ecco_v4r4_families.yaml`) whose own header says *"treat verify_cmr output as the authority and this file as the seed"*, and from the attested partition's pass bar requiring `ssh_variant` exactly `SSH`. The gotcha that would actually rule on the IB variant for a regional trend — `gotchas/ecco-ssh-ib-variants.md` — is one of the missing files. I'm not going to assert that rule without it.
+
+## The method, once data exists
+
+This part I can state firmly, because the executor ships and I read it. `ecco_trend_ci.py` deseasonalizes by monthly climatology **jointly** with the trend (Frisch–Waugh–Lovell), then OLS, lag-1 residual autocorrelation, `n_eff = n(1−r1)/(1+r1)` capped at `n`, and a two-sided 95% Student-t interval on `n_eff − 2` dof — the Santer et al. (2008) treatment. Your window is 312 months / 26 complete years, so `--deseasonalize climatology` is available.
+
+## What I need from you
+
+1. **Approve the plugin update** (and ideally the earthdata MCP tools) so the collection choice has a citable source.
+2. **Give me the North Atlantic bounds** you want — e.g. 0–60°N, 80°W–0°E, or subpolar only. This determines whether we go bespoke or whether one of the registry regions is close enough to what you actually care about.
+
+I'd rather restore the bundle first than proceed with every dataset caveat marked uncited.

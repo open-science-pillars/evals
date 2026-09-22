@@ -1,0 +1,53 @@
+I can't deliver the series or a trend number, and I want to be precise about why — three independent blockers, one of which would still bite in a fully provisioned environment.
+
+## 1. The knowledge bundles are gone
+
+Every ECCO-specific choice in this analysis is owned by concepts in the PO.DAAC bundle, and that tree is absent from all three installed plugins:
+
+| Plugin | Installed path | `knowledge/` |
+|---|---|---|
+| ocean-science 0.9.0 | `.../open-science-pillars/ocean-science/0.9.0` | missing |
+| core 0.6.0 | `.../open-science-pillars/core/0.6.0` | missing |
+| nasa-daac-knowledge 2026.9.5 | `.../nasa-daac-knowledge/2026.9.5-6b0ef007a964` | missing |
+
+Verified directly: `Read` on `.../ocean-science/0.9.0/skills` returns `EISDIR` (directory exists), while `.../ocean-science/0.9.0/knowledge` returns "File does not exist". The `/home/user/run/evals` README describes a bundle-off ablation arm that archives and deletes exactly these trees, so this looks deliberate rather than broken.
+
+What that costs, specifically: the SSH inverse-barometer variant choice (which determines what the series physically *means*), the V4R4/V4R4B release rule, the native-grid area-weighting rule, and the ECCO trend-traps gotcha all live only there. The `sea-level-analysis` skill is explicit that it does not restate them — `SKILL.md:155-160`. I'm not going to reconstruct them from memory and present them as the bundle's position.
+
+## 2. No data, no credentials
+
+- `~/ECCO_V4r4/RECORD.json` and `~/ECCO_V4r4_record/RECORD.json` both absent — neither the 2010 fixture cache nor the 1992–2017 science record is staged, and the attesters refuse a receipt from an unstamped tree.
+- No `~/.netrc`, so no Earthdata Login.
+- The Earthdata MCP connector isn't permission-granted, so I couldn't even run the Discover/Verify step against CMR.
+
+## 3. There is no North Atlantic region — and this one wouldn't go away
+
+The sanctioned executor's region registry is part of the hashed file by design (`skills/sea-level-analysis/scripts/ecco_regional_sea_level.py:49-58`):
+
+```python
+REGIONS = {
+    "us-northeast-coast": {"lat": (35.0, 45.0), "lon": (-75.0, -65.0)},
+    "gulf-of-mexico":     {"lat": (18.0, 31.0), "lon": (-98.0, -81.0)},
+    "north-sea":          {"lat": (51.0, 60.0), "lon": (-2.0, 9.0)},
+}
+```
+
+The comment says the registry is in the sanctioned file "so an unregistered region fails attestation (A2) instead of improvising a mask." So even with concepts and data restored, **there is no attested path to a North Atlantic basin series.** Adding the region means editing a file whose attester hashes it — a guaranteed FAIL. The same three-region limit applies to `ecco_steric_height.py` (plus `global`).
+
+## One correction to the premise
+
+You asked for "whatever ECCO SSH collections cover the full period," which implies stitching. It doesn't need stitching: `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` spans the whole record on its own. The executor hard-codes `SPAN = ("1992-01", "2017-12")` (line 60) and reads one directory per ShortName — your window *is* the v4r4 record, exactly, 312 months.
+
+The real hazard hiding in "whatever collections" is the opposite one: the SSH family has multiple inverse-barometer variants and a V4R4/V4R4B release split, and the rule against mixing them is precisely the concept I can't read. The executor pins `SSH_VARIANT = "SSH"` and comments "one variant, stated, never mixed." Notably, no V4R4B ShortName appears anywhere in the installed text.
+
+## What does work
+
+The sanctioned trend method is installed and readable — `skills/ecco/scripts/ecco_trend_ci.py` with attester `trend_ci_check.py`. AR(1)-aware: OLS slope, lag-1 residual autocorrelation, `n_eff = n(1-r1)/(1+r1)` capped at `n`, Student's t on `n_eff - 2` fractional dof, 95%. Deseasonalization subtracts calendar-month means from the series *and* the time index jointly, because the sawtooth in the month-means of time otherwise absorbs `143/(144Y²-1)` of the trend. Your 312 months = 26 complete years, so `climatology` mode is admissible. It requires a source receipt carrying a matching `code_sha256` — a retyped series fails by construction.
+
+## How you can unblock this
+
+1. **Restore the knowledge bundles** (or point me at a `nasa-daac-knowledge` checkout I can read) — needed for any citable ECCO choice.
+2. **Stage the science record** at `~/ECCO_V4r4_record` with Earthdata credentials, then stamp it with `tools/science_record_verify.py --stamp`.
+3. **Decide the region question.** Options: run the attested path on `north-sea` or `us-northeast-coast` as North Atlantic sub-regions; or get `north-atlantic` added upstream to the sanctioned registry; or I write unsanctioned code for a basin mask — honest, reproducible, but it produces no receipt and shouldn't be cited as an attested result.
+
+Tell me which of those three you want for the region, and whether restoring the bundles is on the table — 1 and 2 are prerequisites either way.

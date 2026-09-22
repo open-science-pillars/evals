@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 442,
+  "chars": 3925,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly flags the V4R4/V4R4B split for SSH, cites the ecco-release-mixing gotcha by name, warns that stitching releases is the risky move, and notes v4r4 alone spans 1992\u20132017 so one release suffices."
+    }
+  },
+  "pass": false
+}

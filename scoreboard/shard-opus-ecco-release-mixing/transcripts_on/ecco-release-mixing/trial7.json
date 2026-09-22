@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 168,
+  "chars": 4182,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response never addresses the V4R4 vs V4R4B release-correction gotcha \u2014 it treats the SSH concern solely as the inverse-barometer variant issue and asserts a single V4R4 collection covers the period without flagging that the corrected V4R4B release must not be mixed into the trend."
+    }
+  },
+  "pass": false
+}

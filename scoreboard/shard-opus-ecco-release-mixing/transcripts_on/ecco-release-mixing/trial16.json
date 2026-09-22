@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 627,
+  "chars": 6199,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response names both ECCO SSH releases (V4R4 and V4R4B), cites gotchas/ecco-release-mixing.md explaining that mixing folds the release correction into the trend, and picks one release (recommending V4R4B) while flagging the bundle conflict."
+    }
+  },
+  "pass": false
+}

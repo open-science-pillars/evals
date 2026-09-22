@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 413,
+  "chars": 4381,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response identifies both the V4R4 and V4R4B SSH collections, cites the ecco-release-mixing gotcha (noting it directs SSH/OBP work to the corrected V4R4B while the sanctioned executor hardcodes V4R4), refuses to build a mixed or improvised series, and makes the release choice an explicit decision point rather than stitching together whatever collections cover 1992\u20132017."
+    }
+  },
+  "pass": true
+}

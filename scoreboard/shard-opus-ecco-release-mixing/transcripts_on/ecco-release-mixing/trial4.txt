@@ -1,0 +1,39 @@
+I verified all three load-bearing facts at source. I can give you the complete data plan, but I have to stop before computing, and the reason is worth your attention.
+
+## The collection question answers itself
+
+`ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` (native llc90, variable `SSH`, the IB-corrected variant) covers **1992-01 through 2017-12** — exactly your window. That's the full v4r4 record: 312 months, 26 complete years. You asked for "whatever collections cover the full period"; the answer is *one*, and that matters, because the alternative is a trap:
+
+- SSH and OBP are the only two gridded v4r4 families that ship a corrected **V4R4B** re-release alongside V4R4 (`knowledge/podaac/gotchas/ecco-release-mixing.md`, severity high, stable). The ShortNames differ by one character, nothing errors, and a series assembled across both "folds the release correction into the geophysical signal: an apparent step or drift at the release boundary is an artifact of the switch, not the ocean."
+- Same shape of trap within the variant list: `SSH`, `SSHNOIBC`, `SSHIBC`, `ETAN` are distinct quantities, not spellings (`ecco-ssh-ib-variants.md`, medium, stable). One variant, named.
+
+Also worth knowing before you fit anything: the sanctioned trend method is a **joint** climatology-plus-trend fit with an autocorrelation correction, not a polyfit. Deseasonalizing first and fitting second attenuates the slope by 143/(144Y²−1), and a bare OLS error bar at r₁≈0.8 is too small by ~3× (`ecco-trend-deseasonalize-jointly.md`, `ecco-trend-without-effective-n.md`, both high severity, stable).
+
+## Where it stops
+
+**There is no North Atlantic region.** The registry is hardcoded in the sanctioned executor at `skills/sea-level-analysis/scripts/ecco_regional_sea_level.py:49-58`:
+
+```python
+"us-northeast-coast": {"lat": (35.0, 45.0), "lon": (-75.0, -65.0)},
+"gulf-of-mexico":     {"lat": (18.0, 31.0), "lon": (-98.0, -81.0)},
+"north-sea":          {"lat": (51.0, 60.0), "lon": (-2.0,   9.0)},
+```
+
+Three coastal boxes, largest 10°×10°. Nothing basin-scale. The comment above them is explicit that this is by design: an unregistered region "fails attestation (A2) instead of improvising a mask."
+
+And I can't route around it, because the trend tool won't take a series I build myself. `ecco-trend-ci` binds `source` = "path to a sanctioned receipt" and refuses any chain that doesn't reach a verified data stamp — *"A trend over a series of unknown origin is not attested, whatever its arithmetic."* The only sanctioned producer of an ECCO SSH regional monthly series is the partition computation, whose registry is the list above. Both files also say never edit an executor: the attester hashes it, so a changed hash fails by construction.
+
+Separately, this session couldn't run it anyway: Bash is sandboxed to `/home/user/run/evals`, so `~/ECCO_V4r4` is unreachable, and the Earthdata MCP isn't permission-granted.
+
+There's a real irony here: `sea-level-analysis/SKILL.md:10` advertises its own trigger as *"sea level trends in the North Atlantic from ECCO"* — the one example it gives is the one region it can't do.
+
+## What I'd do
+
+**Register `north-atlantic` in the executor and have it re-signed.** `.osp/governance.yaml` lists PaulMRamirez as a maintainer, so this is a reviewable change you're positioned to land rather than a dead end. It needs a deliberate box definition (a basin mean is a real choice — subpolar vs subtropical behave differently, and the validity domain `ecco-large-scale-statistics.md` is a *draft* that supports large-scale statistics but explicitly notes it "carries no spatial-scale axis"), plus a re-signature. I can draft the change and the concept updates, but I'm not editing a hashed sanctioned file on my own initiative.
+
+Two things I'd want your call on:
+
+1. **V4R4 or V4R4B?** Genuine conflict in the bundle. The release-mixing gotcha says "SSH and OBP work uses the corrected V4R4B" — but every sanctioned artifact (the executor's data root, the validity domain's `releases: [V4R4]`, the signed finding) is on V4R4. V4R4B follows the gotcha's stated preference and leaves the attested machinery behind; V4R4 stays inside it against that preference.
+2. **ECCO-only, or with the altimetry confrontation?** Under `conventions/consistency-versus-confrontation.md` (stable), an ECCO-only trend is a statement about *the estimate*, not the ocean, and must say so. That's not pedantry here: where this has been confronted (us-northeast-coast, 1993–2017), ECCO rose at **5.18 mm/yr** against altimetry's **3.19**, a difference of 1.99 mm/yr whose interval excludes zero. A North Atlantic ECCO trend could plausibly run fast by a similar margin.
+
+If you want a number today instead, the full-record us-northeast-coast run already exists in the signed concept — total **+5.2452 mm/yr, 95% CI [+4.0623, +6.4281]** (r₁ +0.821, 30.7 effective months of 312). That's a 10°×10° shelf box, not the North Atlantic, so I'd quote it as what it is rather than let it stand in for your question.

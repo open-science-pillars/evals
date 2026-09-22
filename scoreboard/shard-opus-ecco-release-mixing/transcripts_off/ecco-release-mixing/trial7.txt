@@ -1,0 +1,37 @@
+I stopped before running anything, because the checks turned up blockers that would have made any number I produced unciteable. Here's what I found.
+
+## Your premise needs one correction
+
+You don't need multiple collections. ECCO v4r4 spans exactly 1992-01 to 2017-12, and monthly SSH for that whole span lives in a single collection, `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` (named in `skills/sea-level-analysis/SKILL.md:72`; the span is hardcoded as `SPAN = ("1992-01", "2017-12")` in the sanctioned executor at `ecco_regional_sea_level.py:60`). Stitching in a second collection to "cover the full period" is unnecessary, and stitching across releases — V4r4 with V4r4b or V4r5 — is the specific thing the release-mixing caveat warns against. One collection, one release.
+
+## Four blockers
+
+**1. "North Atlantic" is not a sanctioned region.** The regional sea level executor carries its region registry inside the hashed file, and it holds exactly three entries (`ecco_regional_sea_level.py:49-58`):
+
+- `us-northeast-coast` — 35–45°N, 75–65°W
+- `gulf-of-mexico` — 18–31°N, 98–81°W
+- `north-sea` — 51–60°N, 2°W–9°E
+
+The code says why, in a comment: an unregistered region "fails attestation (A2) instead of improvising a mask." I could write a North Atlantic box myself, but editing the executor changes its hash and the attester then fails by construction — so it would produce a series no one can stand behind. That's the real blocker; the rest are fixable.
+
+**2. The knowledge bundle is missing from this install.** `nasa-daac-knowledge@2026.9.5` is installed with no errors, and its `.osp/package.yaml:10-11` declares `content: knowledge: ./knowledge` — but the installed tree has only `docs/` and `tools/`. No `knowledge/podaac/` at all, and `ocean-science` ships no `knowledge/computations/` either. So the concepts that govern exactly this analysis are unreadable here: the SSH inverse-barometer variant choice, the V4R4/V4R4B release caveat, the Boussinesq global-mean correction, the trend gotchas, and the pass bars for the attested computations. This is a broken install, not a gap in the upstream bundle — the skills cite these concepts by path and the paths resolve nowhere.
+
+**3. No ECCO data locally.** Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` exists, so there's no RECORD.json stamp — and every attester refuses a receipt from an unstamped tree. Note the volume: the partition executor reads SSH, OBP *and* density, which the skill puts at ~0.9 GB per 12 months, so the full 1992–2017 record is roughly 23 GB.
+
+**4. No Earthdata credentials.** No `~/.netrc`, no token, so nothing can be fetched. The earthdata MCP tool also isn't approved in this session, so I couldn't even run the Discover/Verify step against CMR.
+
+## What I'd suggest
+
+Repair the install first — it's one command and it unblocks the citations regardless of which region you land on:
+
+```
+claude plugin update nasa-daac-knowledge@open-science-pillars
+```
+
+then `/reload-plugins`. If the knowledge directory still doesn't appear, the release itself is packaged wrong and is worth an issue upstream.
+
+Then pick the region honestly. `us-northeast-coast` is the registered box closest to what you asked for, and I can run the full 1992-01:2017-12 period on it and give you the trend with the interval the receipt carries. If you genuinely need a basin-scale North Atlantic box, the legitimate route is getting `north-atlantic` added to the registry upstream, alongside its computation concept — not a local edit.
+
+I can also write you a plain exploratory SSH series over a North Atlantic box if you want something to look at now. But be clear on what it is: no receipt, no attestation, and with the bundle missing I couldn't even tell you which SSH variant is the right one or whether the Boussinesq correction applies to what you're reading. I wouldn't quote a trend from it.
+
+Which way do you want to go — repair and run `us-northeast-coast`, or the unattested exploratory version?

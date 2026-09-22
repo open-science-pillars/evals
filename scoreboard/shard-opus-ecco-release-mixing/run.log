@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-ecco-release-mixing/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  ecco-release-mixing trial 3: empty or limit message (147s, 29 chars)
+  ecco-release-mixing trial 1: PASS (167s, 4475 chars)
+  ecco-release-mixing trial 2: empty or limit message (196s, 29 chars)
+  ecco-release-mixing trial 5: FAIL (141s, 3724 chars)
+  ecco-release-mixing trial 6: empty or limit message (152s, 29 chars)
+  ecco-release-mixing trial 7: FAIL (168s, 4182 chars)
+  ecco-release-mixing trial 8: empty or limit message (121s, 29 chars)
+  ecco-release-mixing trial 4: PASS (426s, 5008 chars)
+  ecco-release-mixing trial 12: empty or limit message (142s, 29 chars)
+  ecco-release-mixing trial 10: FAIL (223s, 3750 chars)
+  ecco-release-mixing trial 9: PASS (279s, 4869 chars)
+  ecco-release-mixing trial 13: empty or limit message (137s, 29 chars)
+  ecco-release-mixing trial 11: PASS (291s, 5478 chars)
+  ecco-release-mixing trial 14: empty or limit message (120s, 29 chars)
+  ecco-release-mixing trial 18: empty or limit message (138s, 29 chars)
+  ecco-release-mixing trial 17: PASS (200s, 4972 chars)
+  ecco-release-mixing trial 19: FAIL (134s, 3850 chars)
+  ecco-release-mixing trial 15: PASS (413s, 4381 chars)
+  ecco-release-mixing trial 20: FAIL (184s, 5047 chars)
+  ecco-release-mixing trial 16: FAIL (627s, 6199 chars)
+ecco-release-mixing: 6/12 valid (rate 0.5, 8 errors) CI [0.254, 0.746] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-ecco-release-mixing/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-ecco-release-mixing/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  ecco-release-mixing trial 2: empty or limit message (186s, 29 chars)
+  ecco-release-mixing trial 4: PASS (286s, 4449 chars)
+  ecco-release-mixing trial 3: PASS (306s, 5236 chars)
+  ecco-release-mixing trial 5: empty or limit message (140s, 29 chars)
+  ecco-release-mixing trial 6: empty or limit message (100s, 29 chars)
+  ecco-release-mixing trial 1: FAIL (442s, 3925 chars)
+  ecco-release-mixing trial 7: FAIL (159s, 3970 chars)
+  ecco-release-mixing trial 8: PASS (162s, 4650 chars)
+  ecco-release-mixing trial 9: empty or limit message (188s, 29 chars)
+  ecco-release-mixing trial 11: PASS (217s, 3853 chars)
+  ecco-release-mixing trial 10: FAIL (328s, 4181 chars)
+  ecco-release-mixing trial 14: PASS (180s, 6913 chars)
+  ecco-release-mixing trial 13: PASS (405s, 3907 chars)
+  ecco-release-mixing trial 12: FAIL (531s, 4411 chars)
+  ecco-release-mixing trial 16: empty or limit message (212s, 29 chars)
+  ecco-release-mixing trial 15: PASS (364s, 4949 chars)
+  ecco-release-mixing trial 19: empty or limit message (163s, 29 chars)
+  ecco-release-mixing trial 17: FAIL (287s, 4305 chars)
+  ecco-release-mixing trial 18: empty or limit message (273s, 29 chars)
+  ecco-release-mixing trial 20: PASS (184s, 3651 chars)
+ecco-release-mixing: 8/13 valid (rate 0.615, 7 errors) CI [0.355, 0.823] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-ecco-release-mixing/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-ecco-release-mixing/ablation.html
+ABLATION_DONE

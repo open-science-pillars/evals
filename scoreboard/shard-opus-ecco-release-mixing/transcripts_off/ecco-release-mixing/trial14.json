@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 180,
+  "chars": 6913,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response pins a single release (V4R4, 1992-01\u20132017-12, one collection covering the full period) and explicitly warns that splicing V4R4 with V4R4B would put a release discontinuity into the trended quantity, citing the release-mixing gotcha and the V4R4/V4R4B caveat by name rather than stitching arbitrary collections."
+    }
+  },
+  "pass": true
+}

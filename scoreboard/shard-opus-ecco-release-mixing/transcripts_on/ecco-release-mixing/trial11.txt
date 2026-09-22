@@ -1,0 +1,50 @@
+I consulted the installed knowledge bundles before touching anything. Three findings change your request, and one blocks it outright.
+
+## Collections: "whatever covers the full period" is the trap
+
+`knowledge/podaac/fields/ecco-v4r4/ssh.md` (stable, granule-verified 2026-08-30, human-verified) lists nine SSH ShortNames. The monthly ones that span 1992–2017:
+
+| ShortName | Grid | Release | DOI |
+|---|---|---|---|
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` | native llc90 | V4R4 | 10.5067/ECL5M-SSH44 |
+| `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` | native llc90 | **V4R4B (corrected)** | 10.5067/ECL5M-SSH4B |
+| `ECCO_L4_SSH_05DEG_MONTHLY_V4R4` | 0.5° interp | V4R4 | 10.5067/ECG5M-SSH44 |
+| `ECCO_L4_SSH_05DEG_MONTHLY_V4R4B` | 0.5° interp | V4R4B | 10.5067/ECG5M-SSH4B |
+
+All four cover the full period, so "use whatever collections cover it" would sweep in both releases. `knowledge/podaac/gotchas/ecco-release-mixing.md` (severity **high**, stable, human-verified) says a series assembled from a mix of V4R4 and V4R4B folds the baseline correction into the signal — an apparent step or drift at the release boundary that is an artifact, not the ocean. Nothing errors; the ShortNames differ by one character. So: **one release throughout, named in the report.** The gotcha's prescription for SSH work is V4R4B.
+
+Two more that bind the plan:
+- `gotchas/ecco-ssh-ib-variants.md` (stable): SSH is not one field. `SSH` (inverse-barometer corrected), `SSHNOIBC`, `SSHIBC`, `ETAN` are distinct quantities. For a sea level trend the variant is `SSH`, stated.
+- `gotchas/ecco-boussinesq-global-steric.md` (stable): the Greatbatch mass-conservation correction bites the *global mean* only. A North Atlantic basin mean is regional, so it does not need the correction — but it is also therefore not a statement about global sea level rise.
+
+## "North Atlantic" has no attested path
+
+The sanctioned executor `skills/sea-level-analysis/scripts/ecco_regional_sea_level.py` carries its region registry inside the hashed file, by design, so an unregistered region fails attestation rather than improvising a mask. The registry is exactly `us-northeast-coast`, `gulf-of-mexico`, `north-sea` (plus `global` for the steric computation). No North Atlantic box exists, and I can't add one — the attester hashes the executor, so an edit fails by construction.
+
+## The trend method, whichever region you pick
+
+Two high-severity gotchas govern this and both are already closed by the sanctioned method (`knowledge/computations/ecco-trend-ci.md`, stable):
+- `ecco-trend-deseasonalize-jointly.md`: removing the monthly climatology first and fitting second hands the climatology 143/(144Y²−1) of the trend. Over 26 years that's small (0.15%), but a *raw* fit with no climatology carries a seasonal projection instead — worth 0.19 mm/yr, 7%, on the bundle's own 312-month steric example.
+- `ecco-trend-without-effective-n.md`: monthly ocean series have lag-1 residual autocorrelation around 0.5–0.9, so a textbook standard error is too small by roughly √((1+r₁)/(1−r₁)). Calibration on the sanctioned code measures 92–95% coverage for the corrected interval at ≥120 months against 47–49% for the naive one at r₁ = 0.8.
+
+So: one joint least-squares fit of trend plus twelve monthly offsets, effective sample size n(1−r₁)/(1+r₁) capped at n, Student's t on n_eff − 2. Never a bare polyfit.
+
+## What's blocking execution
+
+I can't produce the series here, for two reasons I verified rather than assumed:
+
+1. **No data.** Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` exists, so there's no stamped tree — and every attester refuses a receipt from a tree without the `RECORD.json` stamp.
+2. **No Earthdata Login.** There's no `~/.netrc`, so I can't fetch the granules. The earthdata MCP connector also wasn't granted permission this session, so I couldn't even run the Discover/Verify step against CMR — the collection table above comes from the signed, granule-verified fields concept, not from a live CMR check.
+
+I'd rather tell you that than hand you a number I couldn't stand behind.
+
+## What I need from you
+
+**The region.** Two honest options, and they answer different questions:
+
+- **Attested, but not the basin:** run the sanctioned chain on `us-northeast-coast` or `north-sea`. You get a receipt, a machine-checked partition residual, and trends with intervals that an attester recomputes. The bundle's own record run for `us-northeast-coast`, 1992-01 to 2017-12, reads total +5.2452 mm/yr, 95% interval [+4.0623, +6.4281] — that's their published reference, not something I computed.
+- **The basin you actually asked for, unattested:** a custom North Atlantic box, area-weighted on the native llc90 grid with `rA` and the wet mask, trend by the same joint-fit + effective-N method mirrored from the sanctioned file. No receipt, no attestation — I'd label it general method throughout. `validity-domains/ecco-large-scale-statistics.md` (draft, so voiced as unverified) supports basin-scale trend claims on native monthly fields over exactly 1992–2017, so a North Atlantic basin mean is inside the supported scale; a small box would not be.
+
+**Earthdata credentials**, either way. Once you have an Earthdata Login in `~/.netrc`, the native monthly SSH record for 312 months is roughly 2.5 GB; I'd confirm the volume before pulling it.
+
+Tell me which region and which release, drop in credentials, and I'll fetch, stamp the tree, run it, and report the trend with its interval and the convention block.

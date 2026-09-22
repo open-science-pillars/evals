@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 162,
+  "chars": 4650,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly pins a single release (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4), states that combining V4R4 with V4R4B would be the error rather than the fix, and cites the SSH/OBP release caveat gotcha concept by name alongside the inverse-barometer variant rule."
+    }
+  },
+  "pass": true
+}

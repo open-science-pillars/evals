@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 405,
+  "chars": 3907,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly flags the V4R4/V4R4B release-mixing hazard as the trap in the request's 'whatever collections cover the period' framing, cites the ecco-release-mixing gotcha concept by path, and names the single V4R4 monthly SSH collection covering 1992\u20132017 rather than stitching releases."
+    }
+  },
+  "pass": true
+}

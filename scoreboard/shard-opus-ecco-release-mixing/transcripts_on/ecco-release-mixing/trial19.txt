@@ -1,0 +1,31 @@
+I've hit a hard blocker, and it's worth being precise about it rather than producing a plausible-looking series.
+
+## What I verified
+
+**Installed and readable:**
+- `ocean-science` v0.9.0 — its knowledge index states plainly that the PO.DAAC concepts are a *dependency*, and "nothing from it is copied here." Its local concepts cover Argo, tide gauges, and climate indices — no ECCO SSH.
+- `core` v0.6.0 — cross-cutting conventions only (calendars, fill values, trend NaN trap). No ECCO.
+- `ocean-science/.claude-plugin/plugin.json` declares `nasa-daac-knowledge >= 2026.9.2`.
+
+**Not reachable:** the `nasa-daac-knowledge` bundle. I probed two plausible version paths and found nothing. I want to flag the limit of that check honestly: directory listing outside `/home/user/run/evals` is sandboxed and `claude plugin list --json` needs approval, so I could not read the installer's record. I can say I couldn't reach the bundle; I can't prove it's uninstalled.
+
+That bundle is not incidental here. Per the ECCO skill, it owns every fact this task turns on: the SSH collection ShortNames, the **SSH inverse-barometer variants** gotcha, the **native-vs-regridded** gotcha, and the **ECCO trend traps** gotcha. The skill's explicit rule is not to work from remembered dataset rules where a concept exists. "Which ECCO SSH collection, and which SSH variable" is exactly the question those concepts answer — ECCO v4r4 ships more than one SSH variable, and the choice among them changes a trend. Naming collections from memory is the specific failure these gotchas exist to prevent, so I've stopped rather than guess.
+
+## Three things block the run
+
+1. **Provider knowledge bundle unreachable** — need `claude plugin list --json` approved to read the record (it also reports an `errors` field naming the install command if the dependency failed a version constraint).
+2. **Earthdata MCP not approved** — `get_collections` was denied, so I couldn't even do the Discover/Verify step against live CMR to confirm which SSH collections actually span 1992–2017.
+3. **No data root** — the executors read from `~/ECCO_V4r4_record` (the 1992–2017 science record) and refuse any receipt from a tree without the `RECORD.json` stamp. That path is outside the sandbox; I couldn't confirm it exists, and Earthdata Login credentials are unverified.
+
+## A structural gap worth knowing before you unblock
+
+Even with all three cleared, this plugin has **no sanctioned executor for a regional SSH time series**. Its attested computations are ocean heat content, geostrophic balance, wind-stress curl/Ekman, thermal-wind reconstruction, and `ecco-trend-ci`.
+
+That matters because `ecco_trend_ci.py` is the sanctioned trend path, but it binds `source` to *a receipt from a sanctioned executor* — it inherits that receipt's run id, code hash, and data stamp. A series I computed myself and wrote to a JSON file would, in the skill's words, "attest FAIL by construction." So the trend half of your request can't be laundered through the attested path by feeding it a hand-built series.
+
+That leaves two honest routes, and the choice is yours:
+
+- **Attested:** treat a North Atlantic SSH regional mean as a *new* attested computation — a new executor plus attester and a concept under `knowledge/computations/`. Correct and reusable, but it's a development task, not a run.
+- **Unattested:** I write a plain script, area-weighted on the native grid, and label the result clearly as general method with no receipt. Faster, but it inherits none of the gotcha protection — and with the SSH-variant concept still unreachable, I'd be picking the SSH variable from memory, which is the weakest link in the whole chain.
+
+To move on the first route, the most useful thing you can approve is `claude plugin list --json` and the earthdata MCP. Tell me which route you want and I'll proceed.

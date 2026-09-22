@@ -1,0 +1,54 @@
+I built the plan and the tooling, but I could not run anything in this session — so there is no series and no trend number yet. Here's where it stands.
+
+## What blocked execution
+
+Three things I'd normally do are denied here: `python3`/`uv run` (not allowlisted), the Earthdata MCP connector (`get_collections`/`get_granules` — permission not granted), and directory listing outside `/home/user/run/evals`. So I resolved the collections from the installed knowledge bundles, wrote the code, and stopped at the point where data would move. **I have not granule-verified coverage** — `load-ecco` forbids promising data exists from a collection-level match alone, and that check needs the connector.
+
+## The collections, and the trap in "whatever covers the full period"
+
+1992–2017 *is* the entire ECCO v4r4 record (`knowledge/podaac/datasets/ecco-v4r4.md`, stable: "Period 1992 through 2017"), so no stitching is needed — every SSH collection spans the whole window. The trap is the opposite of what the phrasing suggests: PO.DAAC ships **two releases** of SSH, and combining them is a high-severity error.
+
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` — DOI 10.5067/ECL5M-SSH44
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` — the corrected re-release, DOI 10.5067/ECL5M-SSH4B
+
+Per `gotchas/ecco-release-mixing.md` (high, stable, human-verified): "An SSH or OBP series, trend, or comparison assembled from a mix of V4R4 and V4R4B granules folds the release correction into the geophysical signal: an apparent step or drift at the release boundary is an artifact of the switch, not the ocean." One release throughout, named in the methods.
+
+**There is a live conflict in the bundle here, and I'm not resolving it silently.** That gotcha says SSH work uses the corrected V4R4B. But `validity-domains/ecco-large-scale-statistics.md` scopes its support to `releases: [V4R4]`, and the bundle's own SSH trend finding declares against V4R4. Precedence (stable outranks draft; the validity domain is an unsigned draft) points to **V4R4B** for the headline series — that's my recommendation, and it's a one-flag change. Note the consequence: the sanctioned executors hardcode V4R4, so any cross-check against the attested partition has to be run on V4R4.
+
+Second convention: SSH is not one field. `SSH` (IB-corrected), `SSHNOIBC`, `SSHIBC`, `ETAN` are distinct quantities (`gotchas/ecco-ssh-ib-variants.md`, medium, stable). I defaulted to `SSH`; it must be stated, and it must match the IB convention of any altimetry you later compare against.
+
+## The part you should decide on
+
+**"North Atlantic" has no attested path.** The sanctioned regional sea level computation carries a closed region registry — I read it in the executor itself (`ecco_regional_sea_level.py:49-58`): `us-northeast-coast`, `gulf-of-mexico`, `north-sea`. An unregistered region fails attestation by design, and the executor must not be edited. So:
+
+- **Attested, wrong region:** run the sanctioned partition on `north-sea` or `us-northeast-coast` and get a receipt that passes its attester.
+- **Right region, unattested:** the script I've sent builds a real North Atlantic area mean on the native grid (rA weights over surface-wet cells, months read one at a time). Its series feeds the *sanctioned* trend executor, so the arithmetic is the bundle's one trend method — but `trend_ci_check.py` will FAIL it on the provenance chain, because the series didn't come from a sanctioned receipt. That FAIL is correct and gets reported as a FAIL, not worked around.
+
+I defaulted the box to 0–70°N, 80°W–0°E. That includes the Gulf of Mexico, the Caribbean and a slice of the western Mediterranean — tell me the bounds you actually want.
+
+## The trend, when you get there
+
+Never a bare `polyfit`. Two high/stable gotchas govern it, and both are closed by one sanctioned tool (`skills/ecco/scripts/ecco_trend_ci.py`, hash pinned by its concept):
+
+- `ecco-trend-without-effective-n.md`: monthly ocean series are serially correlated; OLS's textbook error is too small by ~√((1+r₁)/(1−r₁)), a factor of three at r₁ = 0.8. The bundle's nearby SSH series shows exactly this — r₁ 0.82 collapsing 312 months to ~31 effective samples.
+- `ecco-trend-deseasonalize-jointly.md`: removing the climatology first and fitting second hands the climatology 143/(144Y²−1) of the trend. At 26 years that's small (0.15%), but the *raw* fit is the bigger error — on the bundle's record steric series it reads +2.9932 vs +2.7958 mm/yr, ~7% of the trend.
+
+312 months is 26 complete years, so `--deseasonalize climatology` is available and is the right setting — this is the regime the method is calibrated for (91.8–95.1% measured coverage at ≥120 months).
+
+For expectation-setting only: the bundle's `findings/us-northeast-sea-level-rise.md` (**draft, unsigned, verdict UNADJUDICATED**) reports 5.25 mm/yr [4.06, 6.43] over the 35–45°N, 75–65°W box for this period. A basin-wide North Atlantic mean should come out well below that — don't treat it as a target.
+
+## To run it
+
+```bash
+S=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills
+python3 ecco_north_atlantic_ssh.py --fetch --data-root ~/ECCO_V4r4_record   # prints count+MB, waits for y
+python3 ecco_north_atlantic_ssh.py --data-root ~/ECCO_V4r4_record --out na_ssh_series.json
+uv run $S/ecco/scripts/ecco_trend_ci.py --source na_ssh_series.json \
+    --field ssh_area_mean_m_by_month --value-units m --scale 1000 \
+    --report-units mm --deseasonalize climatology --receipt na_ssh_trend.json
+uv run $S/ecco/scripts/trend_ci_check.py na_ssh_trend.json   # expect FAIL on provenance; see above
+```
+
+Add `--short-name ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4B` for the corrected release. Whichever you use gets cited per-collection with its own DOI (`cite-ecco`), and any rate I report will carry its interval, r₁, n_eff and period — ECCO ships no formal error fields, so the interval is a sampling statement under an AR(1) residual model, not model error.
+
+Two things I need from you: **the box bounds**, and **approval to run `python3`/`uv`** (plus the Earthdata connector, so I can granule-verify coverage and size the download before fetching). With those I'll produce the series and the trend.

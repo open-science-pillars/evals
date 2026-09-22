@@ -1,0 +1,261 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "off",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 8,
+      "trials": 13,
+      "rate": 0.615,
+      "ci95": [
+        0.355,
+        0.823
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "ecco-release-mixing",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 7,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 442,
+          "chars": 3925,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly flags the V4R4/V4R4B split for SSH, cites the ecco-release-mixing gotcha by name, warns that stitching releases is the risky move, and notes v4r4 alone spans 1992\u20132017 so one release suffices."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 186,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 306,
+          "chars": 5236,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response commits to a single release (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4, noting v4r4's span exactly covers 1992\u20132017 so no stitching is needed) and explicitly flags that reaching for V4R4B to extend coverage is governed by the release-mixing caveat, rather than assembling a series from whatever collections cover the period."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 286,
+          "chars": 4449,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly rejects the \"whatever collections cover the period\" framing, names the V4R4 vs V4R4B release split and the step-change risk it would inject into the trend, quotes the seed manifest's prohibition on mixing them, and recommends a single collection/release/variant (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4, SSH)."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 140,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 100,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 159,
+          "chars": 3970,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response mentions release mixing only in passing as a generic caveat and never identifies the two SSH releases (V4R4 vs V4R4B) or explains that the release correction would enter the trend; it also claims the governing gotcha concept is unreadable rather than citing it."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 162,
+          "chars": 4650,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly pins a single release (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4), states that combining V4R4 with V4R4B would be the error rather than the fix, and cites the SSH/OBP release caveat gotcha concept by name alongside the inverse-barometer variant rule."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 188,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 328,
+          "chars": 4181,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never surfaces the V4R4 vs V4R4B release distinction \u2014 it merely reports the collection pinned in the code and explicitly states it cannot cite the release-mixing gotcha, so the required flag/citation of the gotcha concept is absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 217,
+          "chars": 3853,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response commits to a single release (the V4R4 SSH/OBP/DENS collections, named explicitly for the full 1992-2017 window) and names the V4R4/V4R4B release caveat as a binding concept rather than silently stitching whatever collections cover the period."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 531,
+          "chars": 4411,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly identifies both V4R4 and V4R4B SSH releases, names release-mixing as the gotcha, notes V4R4B covers the same months rather than extending coverage, and instructs picking one release (V4R4 alone covers 1992-2017)."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 405,
+          "chars": 3907,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly flags the V4R4/V4R4B release-mixing hazard as the trap in the request's 'whatever collections cover the period' framing, cites the ecco-release-mixing gotcha concept by path, and names the single V4R4 monthly SSH collection covering 1992\u20132017 rather than stitching releases."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 180,
+          "chars": 6913,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response pins a single release (V4R4, 1992-01\u20132017-12, one collection covering the full period) and explicitly warns that splicing V4R4 with V4R4B would put a release discontinuity into the trended quantity, citing the release-mixing gotcha and the V4R4/V4R4B caveat by name rather than stitching arbitrary collections."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 364,
+          "chars": 4949,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly identifies the V4R4/V4R4B release split, warns that the variants/releases must never be mixed, names the single V4R4 SSH collection that spans 1992-2017 on its own (so no stitching is needed), and attributes the mixing rule and trend-traps gotcha to the ECCO knowledge concepts rather than assembling a series from whatever collections cover the period."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 212,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 287,
+          "chars": 4305,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response identifies both SSH releases, designates V4R4 as the single attested path (hard-coded in the executor) rather than splicing collections, and explicitly cites the V4R4/V4R4B release-mixing caveat as a binding gotcha concept."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 273,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 163,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 184,
+          "chars": 3651,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response pins a single collection (ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4) across the whole record and explicitly flags that the trap is mixing SSH variants or V4R4/V4R4B releases, citing the ssh-ib-variants gotcha and the V4R4/V4R4B release caveat rather than stitching whatever collections cover the period."
+            }
+          },
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

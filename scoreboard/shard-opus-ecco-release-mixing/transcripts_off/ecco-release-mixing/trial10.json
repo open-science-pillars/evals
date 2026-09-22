@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 328,
+  "chars": 4181,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The response never surfaces the V4R4 vs V4R4B release distinction \u2014 it merely reports the collection pinned in the code and explicitly states it cannot cite the release-mixing gotcha, so the required flag/citation of the gotcha concept is absent."
+    }
+  },
+  "pass": false
+}
