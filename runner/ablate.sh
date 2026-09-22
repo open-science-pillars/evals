@@ -46,37 +46,90 @@ uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN" --check || {
 }
 mapfile -t KDIRS < <(uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN")
 [ "${#KDIRS[@]}" -gt 0 ] || { echo "ERROR: no installed knowledge tree to ablate"; exit 1; }
+# The workspace carries the same trees as ordinary files. They move aside for
+# both arms, not for the off arm alone: with them present the bundle-ON arm is
+# not reading the installed bundle either, and the thing the experiment
+# manipulates has to be the only copy on the machine. The record and the release
+# lock are built before they move, so nothing in the record is affected.
+mapfile -t WDIRS < <(uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN" --workspace-trees)
+
+# The release lock digests the content tree, knowledge included, so it can only
+# be checked while the knowledge is still in place. It is checked here, before
+# anything moves, and the arms then run with --no-lock-check so that a tree this
+# script moved on purpose is not recorded as a stale lock. The verdict is written
+# beside the results rather than left in a log.
+mapfile -t PLUGINS < <(uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN" --plugins)
+
+# What a trial can read is not what the arm change controls. Setting the
+# subprocess working directory does not confine it either: a headless run whose
+# working directory was an empty temporary directory read an absolute path under
+# the workspace without difficulty, checked on 2026-09-22. So the copies have to
+# be absent, and absence is established by searching for the text rather than by
+# predicting where copies live.
+MARKS="$WS/evals/runner/concept-fingerprints.json"
+[ -f "$MARKS" ] || { echo "ERROR: $MARKS is missing; freeze it with --freeze where the concepts are readable"; exit 1; }
+# The runner sets these aside once it has loaded what it needs from them, runs
+# the leak check in that state, and puts them back when the trials are done. The
+# case directories go too and it finds those itself.
+# The bundle-ON arm sets aside the workspace copies only, so the installed
+# bundle is the one thing a trial can consult, which is what bundle-ON means.
+# The bundle-OFF arm sets aside the installed trees as well.
+QUAR_ON=()
+for w in "${WDIRS[@]}"; do QUAR_ON+=(--quarantine "$w"); done
+QUAR_OFF=("${QUAR_ON[@]}")
+for k in "${KDIRS[@]}"; do QUAR_OFF+=(--quarantine "$k"); done
 
 mkdir -p "$OUT"
 
-restore() {
-  local back=0
-  for k in "${KDIRS[@]}"; do
-    [ -d "$k.ABLATION_OFF" ] && mv "$k.ABLATION_OFF" "$k" && back=$((back+1))
+# The runner sets every tree aside and puts it back, on its own exit and on a
+# signal, so there is nothing for this script to restore. What it does check is
+# that the runner kept its word, because a missing tree is worse than a failed
+# run and should not be found later by someone else.
+check_restored() {
+  local missing=0
+  for k in "${KDIRS[@]}" "${WDIRS[@]}"; do
+    [ -d "$k" ] || { echo "ERROR: $k was not put back"; missing=$((missing+1)); }
   done
-  [ "$back" -gt 0 ] && echo "restored $back knowledge tree(s)"
+  [ "$missing" -eq 0 ] || echo "$missing knowledge tree(s) are missing; the runner's holding directory is under the system temp directory"
   return 0
 }
-trap restore EXIT INT TERM
+trap check_restored EXIT INT TERM
+
+echo "== release locks, checked before anything moves =="
+LOCKS="$OUT/release-locks.json"
+{
+  echo "{"
+  sep=""
+  for pl in "${PLUGINS[@]}"; do
+    if [ -f "$WS/$pl/.osp/release-lock.json" ]; then
+      if uv run --quiet "$WS/build-kit/scripts/osp.py" lock "$WS/$pl" --check >/dev/null 2>&1; then
+        v="current"
+      else
+        v="STALE"
+      fi
+    else
+      v="no release lock"
+    fi
+    echo "  $sep\"$pl\": \"$v\""
+    sep=","
+    echo "  $pl: $v" >&2
+    [ "$v" != "STALE" ] || { echo "ERROR: $pl has a stale release lock; the run would not describe a released tree" >&2; exit 1; }
+  done
+  echo "}"
+} > "$LOCKS" || exit 1
+echo "wrote $LOCKS"
 
 echo "== bundle-ON arm =="
 python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
-  --trials "$TRIALS" --model "$MODEL" --bundle on --out "$OUT/results_on.json" \
+  --trials "$TRIALS" --model "$MODEL" --bundle on --no-lock-check --leak-check "$MARKS" "${QUAR_ON[@]}" --out "$OUT/results_on.json" \
   --transcripts "$OUT/transcripts_on" $EXTRA || {
     echo "ERROR: the bundle-ON arm failed; not spending the bundle-OFF arm after it"
     exit 1
   }
 
-echo "== stripping every cited knowledge tree for the bundle-OFF arm =="
-for k in "${KDIRS[@]}"; do
-  [ -d "$k" ] || { echo "ERROR: $k is not there to ablate"; exit 1; }
-  echo "  ablating $k ($(find "$k" -name '*.md' | wc -l) concepts)"
-  mv "$k" "$k.ABLATION_OFF"
-done
-
 echo "== bundle-OFF arm =="
 python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
-  --trials "$TRIALS" --model "$MODEL" --bundle off --out "$OUT/results_off.json" \
+  --trials "$TRIALS" --model "$MODEL" --bundle off --no-lock-check --leak-check "$MARKS" "${QUAR_OFF[@]}" --out "$OUT/results_off.json" \
   --transcripts "$OUT/transcripts_off" $EXTRA || {
     echo "ERROR: the bundle-OFF arm failed"
     exit 1

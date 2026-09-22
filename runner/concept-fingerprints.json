@@ -1,0 +1,93 @@
+{
+  "salt": "osp-ablation-leak-check",
+  "words": 14,
+  "cases": {
+    "native-grid-refusal": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md": [
+        "995b6bb7b6965181012a4160ce71a442",
+        "df0277846ff045733c867d7589226a8d",
+        "3628ee24c7d320c2387845de439abdb7"
+      ]
+    },
+    "geothermal-omission": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-geothermal-flux.md": [
+        "008a706a928bee6ea9778a0e009f638c",
+        "a58f906707b33e2ca23a4c58c66c0640",
+        "2cabca5a902d176e4e627ae7e57b4458"
+      ],
+      "nasa-daac-knowledge/knowledge/podaac/recipes/ecco-heat-budget.md": [
+        "f82b99616911150f99a0924f4119d693",
+        "176227598854de137d014a62f75e9e36",
+        "4873b7a19ed5459ff93dc11c1273a09c"
+      ],
+      "ocean-science/knowledge/computations/ecco-heat-budget.md": [
+        "550f101d58bb1df4af9add2431b41ca7",
+        "e6dc4c3efa2def8905e504d4c1b2c907",
+        "446b1ad5c643dc6545928e8206895ffe"
+      ]
+    },
+    "swot-calval-window": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/swot-calval-orbit-phases.md": [
+        "2af5dbff2b336508a7e5508dae03d3d3",
+        "d27e83c48e8d0b2a96a4be29ae56e0c6",
+        "40b70fec4d732f4a2ba1ed62ef1bde11"
+      ],
+      "nasa-daac-knowledge/knowledge/podaac/datasets/swot-karin.md": [
+        "c480c703aaf34f12db13ebcd05688768",
+        "7bae62529811bbe483921e77fa011638",
+        "eeb96b2a41b16d23b54d28bf8c4ccc67"
+      ]
+    },
+    "grace-leakage": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/grace-coastal-leakage.md": [
+        "84429cb4dd9e556c4bbf5db77fa13244",
+        "fc054e26d3a9bf52266e41a0d257b67d",
+        "dd576372fe0e4211a5030fce8adc9c92"
+      ],
+      "nasa-daac-knowledge/knowledge/podaac/datasets/grace-fo-mascons.md": [
+        "4210b73a05b0f54dac2d56d62f09d00f",
+        "d8d793b9d0391ab10f68a303f3f7d312",
+        "6ec7182a213a9b47c52ed93e24c2700e"
+      ]
+    },
+    "ecco-release-mixing": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-release-mixing.md": [
+        "acb02e43a689e37915241232fa09c169",
+        "d1a6c9e3e8d5da7dbffec923fc2ecc12",
+        "a703632ad99dcc376a2d82c2e6c8e1be"
+      ],
+      "nasa-daac-knowledge/knowledge/podaac/fields/ecco-v4r4/ssh.md": [
+        "3fa9c5fa58094d5e41fcd95a9030eb36",
+        "28557da75b7ab47331b54e37ceedc93a",
+        "c8e5c68155240bfd83c6921b3daaa700"
+      ]
+    },
+    "mht-basin-scope": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-mht-basin-scope.md": [
+        "683b3913449c77dc0f3999cb14c015a7",
+        "bb4b41b6bac902500a324ce056f2e773",
+        "c1be7bec5da00be0ed858eff17dfeea7"
+      ],
+      "nasa-daac-knowledge/knowledge/podaac/recipes/ecco-mht-26n.md": [
+        "4fc5aa97609b31f2912c40c9641aa429",
+        "07f1e21f03d6220dfaa04b67b98be49b",
+        "85961bbe4395418ed978a1185bf3cd42"
+      ]
+    },
+    "swot-crossover-unapplied": {
+      "nasa-daac-knowledge/knowledge/podaac/gotchas/swot-crossover-unapplied.md": [
+        "41acc804a8f1f282dbbe185c1e51729c",
+        "5bde24b45236fcca85e5eb5ae2a5bb10",
+        "d2ca8bdae1d29edd9157a1d9af7519c5"
+      ],
+      "nasa-daac-knowledge/knowledge/podaac/datasets/swot-karin.md": [
+        "c480c703aaf34f12db13ebcd05688768",
+        "7bae62529811bbe483921e77fa011638",
+        "eeb96b2a41b16d23b54d28bf8c4ccc67"
+      ]
+    }
+  },
+  "fixtures": [
+    "agent-evals/ecco/fixtures/native-grid/ecco_05deg_stub.nc"
+  ]
+}

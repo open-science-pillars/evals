@@ -159,4 +159,45 @@ knowledge outside that scope. A suite the arm cannot ablate stops rather than
 returning a number. The pilot that defect invalidated is withdrawn in place at
 `scoreboard/pilot/`.
 
+Deriving the scope was still a better guess about where copies live, and a
+re-pilot on 2026-09-22 showed the arm is not off even with three trees moved:
+the same knowledge sits in the workspace as ordinary checked-out files, and
+recorded passing answers to these exact cases sit beside them under `results/`
+and `fixtures/` directories. Setting the trial's working directory does not
+close this. A headless run whose working directory was an empty temporary
+directory read an absolute path under the workspace without difficulty, so
+confinement is not available through the launcher.
+
+`leak_check.py` is therefore not a guess. It takes text out of the concepts the
+cases cite and looks for that text on disk, so a copy is found because it is a
+copy. It collapses whitespace first, because a concept wraps its prose and a
+transcript quoting it does not, and a line-oriented search reports such a copy
+as absent. It gates both arms: the bundle-off arm may have no cited concept
+readable anywhere, and neither arm may have a recorded answer to a case in the
+run readable, because an answer contaminates the rate itself and not only the
+difference between the arms. Only the exact fixture files a case declares are
+allowed beside it.
+
+A run workspace is therefore prepared rather than cloned whole, and the check is
+what says it is prepared. `prepare_workspace.py` builds one and refuses to hand
+it over until the check passes on it.
+
+Two things the check found that nothing else was looking for. A tree renamed to
+`knowledge.ABLATION_OFF` is still there, and a trial reading an absolute path
+reads it under the new name just as well, so the harness had never actually
+taken a tree away. Each set-aside directory is now written to a compressed
+archive outside the workspace and deleted, then put back afterwards, on exit and
+on a signal. The archive is not readable as text and these cases are granted
+`Read` and `Skill` and no shell; that is the boundary, and a case granted a
+shell should not be run this way. The check also found a second copy of the
+provider bundle in the plugin cache, installed under a different marketplace
+name by an earlier qualification run, which would have defeated the off arm
+without appearing in the scope derivation at all.
+
+The runner owns all of this rather than the ablation script, because only the
+runner knows when it has finished loading the cases it is about to take away. A
+case's `notes` field states what a passing answer must contain, so a case file
+is an answer sheet sitting in the workspace; every run sets the case directories
+aside now, not only the ablation.
+
 License: Apache-2.0.
