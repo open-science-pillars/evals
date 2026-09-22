@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-grace-leakage/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no recorded answer to the 1 cases is readable under /; the cited concepts are readable, which is what this arm is
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  grace-leakage trial 1: empty or limit message (149s, 29 chars)
+  grace-leakage trial 4: PASS (162s, 4711 chars)
+  grace-leakage trial 2: PASS (169s, 6022 chars)
+  grace-leakage trial 3: PASS (171s, 3796 chars)
+  grace-leakage trial 7: empty or limit message (127s, 29 chars)
+  grace-leakage trial 8: empty or limit message (160s, 29 chars)
+  grace-leakage trial 6: empty or limit message (181s, 29 chars)
+  grace-leakage trial 9: empty or limit message (151s, 29 chars)
+  grace-leakage trial 5: PASS (360s, 5295 chars)
+  grace-leakage trial 10: empty or limit message (180s, 29 chars)
+  grace-leakage trial 11: empty or limit message (170s, 29 chars)
+  grace-leakage trial 15: PASS (168s, 5292 chars)
+  grace-leakage trial 14: PASS (221s, 5833 chars)
+  grace-leakage trial 13: empty or limit message (248s, 29 chars)
+  grace-leakage trial 12: PASS (336s, 4915 chars)
+  grace-leakage trial 16: empty or limit message (149s, 29 chars)
+  grace-leakage trial 17: empty or limit message (153s, 29 chars)
+  grace-leakage trial 18: PASS (136s, 4819 chars)
+  grace-leakage trial 20: empty or limit message (123s, 29 chars)
+  grace-leakage trial 19: PASS (764s, 4518 chars)
+grace-leakage: 9/9 valid (rate 1.0, 11 errors) CI [0.701, 1.0] -> PASS
+wrote /home/user/run/evals/scoreboard/shard-opus-grace-leakage/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-grace-leakage/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  grace-leakage trial 1: empty or limit message (146s, 29 chars)
+  grace-leakage trial 2: PASS (176s, 4476 chars)
+  grace-leakage trial 4: PASS (284s, 4822 chars)
+  grace-leakage trial 5: empty or limit message (183s, 29 chars)
+  grace-leakage trial 6: empty or limit message (194s, 29 chars)
+  grace-leakage trial 3: FAIL (412s, 280 chars)
+  grace-leakage trial 7: empty or limit message (146s, 29 chars)
+  grace-leakage trial 9: empty or limit message (155s, 29 chars)
+  grace-leakage trial 8: PASS (269s, 4900 chars)
+  grace-leakage trial 10: empty or limit message (193s, 29 chars)
+  grace-leakage trial 11: empty or limit message (173s, 29 chars)
+  grace-leakage trial 14: PASS (249s, 5847 chars)
+  grace-leakage trial 15: PASS (286s, 6479 chars)
+  grace-leakage trial 12: PASS (370s, 5055 chars)
+  grace-leakage trial 16: empty or limit message (128s, 29 chars)
+  grace-leakage trial 13: PASS (388s, 5244 chars)
+  grace-leakage trial 18: empty or limit message (161s, 29 chars)
+  grace-leakage trial 20: PASS (217s, 5624 chars)
+  grace-leakage trial 19: PASS (293s, 5419 chars)
+  grace-leakage trial 17: PASS (392s, 4832 chars)
+grace-leakage: 10/11 valid (rate 0.909, 9 errors) CI [0.623, 0.984] -> PASS
+wrote /home/user/run/evals/scoreboard/shard-opus-grace-leakage/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-grace-leakage/ablation.html
+ABLATION_DONE

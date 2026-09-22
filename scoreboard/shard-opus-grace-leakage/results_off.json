@@ -1,0 +1,249 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "off",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 10,
+      "trials": 11,
+      "rate": 0.909,
+      "ci95": [
+        0.623,
+        0.984
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "grace-leakage",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 9,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 146,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 176,
+          "chars": 4476,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaced the coastal-leakage gotcha unprompted \u2014 naming the CRI coastline-resolution partition, framing interpretation at 3\u00b0 mascon/few-hundred-km effective scale rather than grid cells, stating that Greenland ice-sheet mass loss dominates those coastal mascons and would contaminate any shelf trend, and refusing to quote a bare number while noting GIA sensitivity, internal variability, and the need for a leakage correction with an explicit error budget."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 412,
+          "chars": 280,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The visible transcript contains no GRACE/GRACE-FO CRI product name, mascon-scale interpretation caveat, coastal ice-loss leakage warning, or formal-error-plus-leakage framing \u2014 it only reports a wait-timer status and asks the user to pick an approach."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 284,
+          "chars": 4822,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage gotcha unprompted with all required elements \u2014 JPL CRI named and explained as a prior-driven land/ocean partition, mascon-scale (~300 km / 3\u00b0 caps vs. a 50\u2013200 km shelf strip) rather than grid-cell interpretation, explicit Greenland ice-loss leakage dominance, plus SAL near-field fall and autocorrelation caveats \u2014 and quotes no bare trend, so the formal-error-only failure mode does not occur."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 183,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 194,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 146,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 269,
+          "chars": 4900,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the JPL CRI filter, explains the ~300 km mascon-scale versus 0.5\u00b0 grid distinction, states the SE Greenland ice-loss leakage risk (including the same-sign fingerprint trap and GIA/elastic uncertainty), and quotes no bare formal-error trend, instead offering an offshore reframing with autocorrelation-aware CI and variability caveats."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 155,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 193,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 173,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 370,
+          "chars": 5055,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage regime unprompted and correctly \u2014 naming the CRI filter and its limits, insisting on 3\u00b0 mascon-scale rather than 0.5\u00b0 grid-cell interpretation, stating that Greenland ice-loss leakage plus the gravitational fingerprint can exceed and mimic a real ocean-mass trend, and explicitly refusing to quote any trend whose error budget would be formal-error-only \u2014 with the absence of a number attributable to genuine data-access and missing-knowledge-bundle blockers rather than evasion.} [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 388,
+          "chars": 5244,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage gotcha unprompted with the CRI filter named, mascon-scale (~3\u00b0, 0.5\u00b0 grid is interpolation) interpretation, explicit Greenland ice-loss leakage magnitude versus the ocean signal, plus GIA/GAD caveats and short-window autocorrelation-aware uncertainty framing, and declines to quote an unattributable trend rather than reporting one with formal errors only."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 249,
+          "chars": 5847,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted surfaces the coastal-leakage gotcha in full \u2014 names the CRI (coastline resolution improvement) filter and explains it is an allocation not added resolution, insists on ~3\u00b0 mascon-scale rather than the cosmetic 0.5\u00b0 grid, states that SE Greenland ice loss leaks one to two orders of magnitude larger than the ocean signal and would flip its sign, and quotes no bare trend (declining to compute one, proposing a distance-from-coast leakage diagnostic plus GIA/OBP/window caveats instead), so the formal-error-only failure mode does not arise."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 286,
+          "chars": 6479,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI (Coastline Resolution Improvement) filter, explains that the 0.5\u00b0 grid masks ~3\u00b0 mascon-scale estimation units, quantifies the ice-loss leakage risk (~200 mm/yr land signal vs ~2 mm/yr ocean, so 1% leakage swamps the signal) including the sign-degeneracy trap, and explicitly states leakage is first-order and absent from the product's formal error budget rather than quoting a bare trend."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 128,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 392,
+          "chars": 4832,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage gotcha unprompted with all required elements \u2014 names the CRI filter and its residual-error limitation, insists on ~3\u00b0 mascon-scale rather than the 0.5\u00b0 grid, states that SE Greenland ice loss (~250 Gt/yr) would dominate any shelf trend as leakage, and quotes no bare trend, instead framing any would-be trend as fragile under leakage plus formal/structural error (GIA, geocenter/C20-C30, short record, autocorrelation)."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 161,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 293,
+          "chars": 5419,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage gotcha unprompted and correctly \u2014 names the CRI filter, insists on ~3\u00b0/300 km mascon-scale resolution versus the misleading 0.5\u00b0 posting, states that Greenland ice-loss leakage is same-signed and plausibly comparable to the ocean-mass trend, and quotes no bare trend, instead framing any future estimate as needing leakage plus autocorrelation-aware (not formal-only) uncertainty.} [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 217,
+          "chars": 5624,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI (Coastline Resolution Improvement) filter, explains mascon-scale (~300 km caps rendered on a 0.5\u00b0 grid) rather than grid-cell resolution, states the Greenland ice-loss leakage risk into coastal ocean mascons as sign-degenerate with the real fingerprint, and quotes no bare trend \u2014 committing instead to raw plus leakage-corrected values with the correction's own uncertainty alongside formal-error/autocorrelation caveats."
+            }
+          },
+          "pass": true
+        }
+      ]
+    }
+  ]
+}
