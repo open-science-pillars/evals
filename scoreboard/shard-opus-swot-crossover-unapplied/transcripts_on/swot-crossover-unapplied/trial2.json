@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 249,
+  "chars": 1705,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The delivered script applies height_cor_xover gated on height_cor_xover_qual==0 by default, explicitly states the correction is added before computing ssha_karin statistics (with raw vs corrected shown side by side), keeps qual flag gating as a separate distinct step, and cites the swot-crossover-unapplied gotcha concept."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,29 @@
+I can't run the numbers yet, and there's a method problem with the recipe as stated. Both are worth your attention before anything gets computed.
+
+## Two things I need
+
+1. **The granule.** There's no SWOT file anywhere I can reach. `/home/user/run/evals` is an evals harness repo (manifests, runner, scoreboard) — no NetCDF. Give me the path, or the collection ShortName + cycle/pass and I'll pull it.
+2. **The region.** "My region" isn't defined in this session. I need a bounding box or named basin.
+
+## The method problem: flag gating is necessary but not sufficient
+
+Your request is "use the quality flags to keep only good data." That's the right first step, but on KaRIn L2 LR SSH it does not get you to an analysis-ready `ssha`. The plugin's SWOT procedure is explicit that there's a **crossover calibration that arrives unapplied** in these granules — it ships as a separate correction field (`height_cor_xover`) carrying its own quality gate, and step 6 of the product procedure requires applying it *in addition to* flag decoding, not instead of it.
+
+This matters directly for what you asked for. An uncorrected residual cross-track/inter-swath error biases the **mean** and inflates the **standard deviation** — the two numbers you want are exactly the ones the missing correction distorts. So the answer you'd get from "mask on flags, then `.mean()`/`.std()`" would be wrong in a way that looks perfectly clean.
+
+**Caveat on my own sourcing:** I read the `swot` skill and its `references/swot-products.md`, both of which point at the crossover gotcha. I could **not** read the gotcha concept itself. It lives in the `nasa-daac-knowledge` provider bundle (`knowledge/podaac/gotchas/swot-crossover-unapplied.md`), which ocean-science 0.9.0 declares as a dependency at `>=2026.9.2` but which I can't locate on disk — Bash is sandboxed to the working directory, and `claude plugin list --json`, the sanctioned way to resolve install paths, wasn't approved. So I'm relaying that the correction exists and must be applied with a gate; I am **not** going to state the gate's threshold or the exact application convention from memory, because those are precisely the dataset facts the concept owns.
+
+If you approve `claude plugin list --json`, I'll resolve the bundle and read the gotcha plus `datasets/swot-karin.md` properly.
+
+## What the run will look like
+
+Once I have the file and the box:
+
+- Read the granule's `crid` and record the processing baseline.
+- Decode the bit-packed quality flags, and **report the masked fraction** rather than silently dropping pixels.
+- Apply the crossover correction per the concept's rule, with its gate.
+- Trim to your region *before* aggregating (granules are whole passes, so a spatial search returns far more than your box).
+- Compute mean and σ **per swath, separately**, with the nadir gap left intact — the two swaths have independent error profiles, and I won't interpolate across the gap.
+- Quote the product's own `ssha` uncertainty variables alongside the statistics, with the caveats on what that per-sample field does and doesn't cover.
+
+Send me the path and the bounding box and I'll run it.

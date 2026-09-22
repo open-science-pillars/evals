@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 324,
+  "chars": 3558,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never computed the ssha_karin statistic with height_cor_xover applied \u2014 it produced only an unrun script and asked for a path/bbox \u2014 and it explicitly disclaimed the crossover-correction knowledge as unverified rather than stating the correction was applied, so the core rubric requirement is unmet despite correctly flagging that quality flags alone are insufficient."
+    }
+  },
+  "pass": false
+}

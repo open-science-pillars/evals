@@ -1,0 +1,26 @@
+I can't run the numbers yet — two things are missing, and one of them would change the answer even if I had them.
+
+## The granule isn't reachable, and the region isn't defined
+
+The working directory (`/home/user/run/evals`) is the eval-harness repo; there's no `.nc` file in it, and I can't list outside it. I need:
+
+- **the granule path** (the `SWOT_L2_LR_SSH_*_2.0.nc` file), and
+- **the region** — a bounding box (lon min/max, lat min/max), since "my region" hasn't been specified anywhere in this session.
+
+## Quality flags alone won't give you a trustworthy mean
+
+This is the part worth pausing on. Gating on `ssha_karin_qual` is **necessary but not sufficient** for L2 LR SSH statistics. The SSH anomaly in these granules ships with the **crossover calibration unapplied** — the correction travels in the granule as a separate field (`height_cor_xover`) that you add, and that field carries its own quality gate, so some pixels that pass the SSHA flag still have to be dropped rather than corrected.
+
+Left unapplied, the residual is a large-scale cross-track/along-track tilt. Over a regional box that's exactly the error structure that biases the **mean** and inflates the **standard deviation** — so a flags-only computation gives you a number that looks clean and is wrong.
+
+Source and a caveat on it: this comes from the ocean-science plugin's SWOT skill (`skills/swot/SKILL.md`, `skills/swot/references/swot-products.md`) and its loading workflow (`skills/load-swot/SKILL.md`), which requires SSHA statistics to be computed with the crossover correction applied and to say so explicitly. Those skills deliberately hold no dataset facts of their own — they point at `knowledge/podaac/datasets/swot-karin.md` and `knowledge/podaac/gotchas/swot-crossover-unapplied.md` for the exact correction field and its gate condition. **I could not read those concepts in this session**: the `nasa-daac-knowledge` bundle isn't at any path I could reach (`claude plugin list --json` and directory listing outside the working dir are both blocked here). So I'll read the gate condition from the concept, or failing that from the granule's own variable attributes, before I quote a number — I'm not going to apply a correction from memory.
+
+## What I'd do once you give me the path and box
+
+1. Read the concepts (or the granule's metadata) for the correction field and its gate.
+2. Trim to your box first, then aggregate — keeping both swaths separate, with the nadir gap intact and never interpolated across.
+3. Decode the bit-packed flags, mask, and **report the masked fraction and the dominant flag reasons** alongside the statistics.
+4. Apply the crossover correction with its gate, and state explicitly that it was applied.
+5. Report mean and std **per swath as well as combined**, with valid pixel counts, the processing baseline (`crid`) the granule actually carries, and the product's own uncertainty variables — a regional std over a swath mixes real SSH structure with correlated instrument error, so the bare number needs that context.
+
+Send me the file path and the bounding box and I'll run it.

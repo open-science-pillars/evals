@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 135,
+  "chars": 3617,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never applied height_cor_xover under its quality gate or produced the statistics \u2014 it only flagged the crossover gotcha and stopped for missing inputs, which is at best partial compliance."
+    }
+  },
+  "pass": false
+}

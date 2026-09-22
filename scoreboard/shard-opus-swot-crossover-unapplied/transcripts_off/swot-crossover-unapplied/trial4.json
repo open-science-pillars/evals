@@ -1,0 +1,14 @@
+{
+  "trial": 4,
+  "elapsed_s": 146,
+  "chars": 3282,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never applied height_cor_xover or produced any statistic \u2014 it stopped at blockers and only described the correction as future work, so the required \"correction was applied\" outcome is absent despite correctly citing the crossover gotcha. [salvaged from a truncated judge reply]",
+      "salvaged": true
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 143,
+  "chars": 3508,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial never applied height_cor_xover (gated by height_cor_xover_qual) to ssha_karin nor produced any statistic stating the correction was applied \u2014 it only flagged the gotcha and stopped, which is partial compliance at best."
+    }
+  },
+  "pass": false
+}

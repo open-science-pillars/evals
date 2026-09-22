@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 151,
+  "chars": 2733,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent cited the crossover gotcha but never actually applied height_cor_xover (gated by height_cor_xover_qual) to ssha_karin nor computed/stated any corrected statistic \u2014 it stopped at a warning-only script and a request for inputs, which is partial compliance at best."
+    }
+  },
+  "pass": false
+}

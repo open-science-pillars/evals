@@ -1,0 +1,20 @@
+I consulted the SWOT knowledge before touching anything, and hit two blockers plus one thing that changes your answer.
+
+**Blockers — I need these from you:**
+
+1. **The granule path.** The working directory (`/home/user/run/evals`) is the evals repo; there's no SWOT NetCDF in it, and I can't search outside that directory. Give me the path, or the collection ShortName + cycle/pass and I'll do the earthaccess search instead.
+2. **The region.** "My region" isn't defined anywhere in this session — give me a bounding box (lon/lat), and I'll trim the pass to it before aggregating.
+
+**The thing that changes the numbers:** quality-flag gating alone will not give you a correct mean. Per the `ocean-science:swot` skill, this plugin holds a known-issue concept, `gotchas/swot-crossover-unapplied.md`, recording that the KaRIn crossover calibration arrives **unapplied** in the L2 LR SSH product, carried in `height_cor_xover` with its own quality gate (`height_cor_xover_qual`). The `load-swot` workflow makes this explicit: SSHA statistics must be computed with that correction applied, and the summary must say so. It matters most for exactly what you asked for — the uncorrected cross-swath bias/tilt lands almost entirely in the **mean**, and inflates the **standard deviation** through the left/right swath offset.
+
+**Caveat on my sourcing:** I could read the `swot` and `load-swot` skill bodies, but this session blocks directory listing outside the working directory and I could not resolve the `nasa-daac-knowledge` bundle root, so I have **not** read `datasets/swot-karin.md` or the crossover gotcha themselves — only the skill's pointers to them. I won't quote the correction's details, the quality-flag bit meanings, or the current processing baseline from memory. If you approve `claude plugin list --json` (or tell me the bundle path), I'll read the concepts and work from them.
+
+**What I'll run once you give me the path and box:**
+
+1. Open the granule, report the version family and processing baseline the file actually carries.
+2. Decode the bit-packed `ssha_karin*_qual` flags per the concept's rules — not a `== 0` guess — and mask; report the flagged fraction and the dominant flag reasons.
+3. Apply the crossover correction via `height_cor_xover`, gated by its own quality field, and state that it was applied.
+4. Trim to your bounding box, keeping both swaths and the nadir gap intact — no regridding, no interpolation across the gap.
+5. Report mean and standard deviation over good pixels, **per swath as well as combined** (the two swaths have independent error profiles), with the valid-pixel count and the product's own uncertainty variables alongside.
+
+Send the path and the bbox and I'll run it.

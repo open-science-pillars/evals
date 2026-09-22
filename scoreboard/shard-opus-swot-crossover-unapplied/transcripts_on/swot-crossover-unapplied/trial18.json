@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 186,
+  "chars": 3620,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The model correctly cited the crossover gotcha and described a corrected pipeline, but never applied height_cor_xover or produced any ssha_karin statistic \u2014 it stopped at a plan and a request for inputs, so the required 'correction was applied' result was never delivered."
+    }
+  },
+  "pass": false
+}

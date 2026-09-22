@@ -1,0 +1,34 @@
+I can't run the numbers yet — there's no granule in `/home/user/run/evals`, and I don't know your region. But the consult turned up something that changes the method you asked for, so let me lead with that.
+
+## Flag gating alone will give you a confidently wrong answer
+
+Your plan — mask on the quality flags, then take mean and std of `ssha_karin` — is necessary but not sufficient on this product.
+
+In SWOT KaRIn L2 LR SSH, **the crossover calibration arrives unapplied** in `ssha_karin` / `ssh_karin`. The granule metadata and the Product Description both instruct the user to add `height_cor_xover` themselves (`knowledge/podaac/gotchas/swot-crossover-unapplied.md`, severity high, status stable, human-verified 2026-09-04).
+
+What happens if you skip it: the uncorrected field carries a spurious roll/phase systematic that shows up as a linear **cross-track ramp of order meters** — a span of about ±2.9 m observed on a PGD0 Expert-tier granule, cycle 011. The same scene with the correction applied had std 0.17 m of physically sensible mesoscale structure. So a flag-gated mean and std over your region, computed on the raw field, would be off by an amount that dwarfs the signal — and nothing about the result would look wrong.
+
+The correct sequence is:
+
+1. Gate pixels on `ssha_karin_qual`.
+2. Gate `height_cor_xover` on `height_cor_xover_qual` (0 good, 1 suspect, 2 bad).
+3. **Add `height_cor_xover` to `ssha_karin`**, then subset to your region, then aggregate.
+4. Report the masked fraction. A valid fraction around 39% after flag and land gating is normal on an open-ocean pass, not a defect.
+
+`height_cor_xover` is present in the Basic tier as well as Expert, so this works whichever tier your granule is.
+
+Two further constraints I'll apply once we compute:
+
+- **Subset before you aggregate.** CMR spatial search matches whole pole-to-pole passes, so a matched granule can carry zero pixels in your box. Trim to the region first.
+- **Per-swath, gap intact.** The two 50 km swaths have independent error profiles and are separated by a ~20 km nadir gap. I won't interpolate across it, and I'd suggest reporting the swaths separately as well as pooled.
+
+One caveat on the std you'll get: `ssh_karin_uncert` is per-sample *random* noise only. It excludes the correlated swath-scale systematics (roll, phase, timing, wet troposphere residuals), so don't read it as a total error budget on a regional average.
+
+## What I need from you
+
+1. **The granule** — a path if you have the file locally, or the collection ShortName plus cycle/pass and I'll pull it via `earthaccess`.
+2. **Your region** — a bounding box (lat/lon) or a named region.
+
+One thing worth checking on your side: **if your granule is from 2023**, tell me the date. The mid-2023 cal/val-to-science orbit transition splits the record into two incompatible sampling regimes with different cycle numbering (cal/val cycles 475–578, science restarting at 001), and cal/val-era data exists *only* in the Version D `*_D` collections — a Version C query over that window returns empty and reads as "no data" (`knowledge/podaac/gotchas/swot-calval-orbit-phases.md`, severity high, stable). Single granule, so no time-series aliasing risk, but it determines which family your granule can have come from.
+
+Give me those two things and I'll run it through the `load-swot` workflow and report mean, std, masked fraction, and per-swath breakdown.

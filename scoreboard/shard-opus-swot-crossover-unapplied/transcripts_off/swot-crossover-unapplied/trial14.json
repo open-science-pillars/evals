@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 172,
+  "chars": 3874,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The trial produced no statistics at all and never applied height_cor_xover gated by height_cor_xover_qual to ssha_karin; although it correctly named the crossover gotcha and said flag gating is insufficient, it stopped at a request for inputs rather than delivering the corrected mean and standard deviation, which is at best partial compliance."
+    }
+  },
+  "pass": false
+}

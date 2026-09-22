@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 209,
+  "chars": 3845,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response applies height_cor_xover gated by height_cor_xover_qual==0 on top of ssha_karin before computing the statistic, explicitly states that quality-flag gating alone is necessary but not sufficient (roll/phase error survives the mean), and cites the swot-crossover-unapplied gotcha plus the skill files naming the field \u2014 the numbers were not produced only because no granule exists on the machine, which it honestly reports rather than fabricating."
+    }
+  },
+  "pass": false
+}

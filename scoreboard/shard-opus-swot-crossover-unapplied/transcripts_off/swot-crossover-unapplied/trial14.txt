@@ -1,0 +1,39 @@
+I can't give you those two numbers yet. Two blockers — one logistical, one scientific. The second is the one that matters.
+
+## 1. Nothing to compute on
+
+There's no granule in scope. `/home/user/run/evals` contains only the eval-runner repo (no `.nc`/`.nc4`), and this session's search tools are confined to that directory, so I can't see a file elsewhere on disk. You also haven't given me the region. I need:
+
+- the granule path, and
+- the bounding box (or a named region I can turn into one).
+
+## 2. Quality flags alone won't make that mean trustworthy
+
+This is the real problem. The `swot` skill's working rules are explicit that flag gating is **necessary but not sufficient**, and it names the trap by name: KaRIn L2 LR SSH arrives with the **crossover calibration unapplied**. `ssha_karin` needs the correction carried in `height_cor_xover` applied, and that correction has its own quality gate that has to pass before you use it.
+
+That bears directly on what you asked for. The crossover calibration is what removes the long-wavelength, cross-track-dependent residual (roll/phase) error. Left unapplied it behaves largely as a per-pass, cross-track-structured bias — which is precisely the error that shifts a **regional mean** and inflates a **standard deviation**. A flag-clean mean off raw `ssha_karin` is a flag-clean mean of a biased field.
+
+Two more things that shape the answer:
+
+- **One granule is one pass.** A "mean over my region" from a single granule is a snapshot along one swath crossing on one cycle, not a regional average in any temporal sense. Worth saying out loud in whatever this feeds.
+- **Report per swath.** Left and right swaths have independent error profiles, and the nadir gap is a real data void — I'll give you left, right, and combined, and I won't interpolate across the gap.
+
+On the flags themselves: they're bit-packed, so they get decoded bitwise and masked, never thresholded as an integer, with the masked fraction and dominant reasons reported alongside the statistics.
+
+## 3. What I could and couldn't read — worth your attention
+
+I consulted the reachable bundles: `ocean-science` 0.9.0 and `core` 0.6.0 (the `swot`, `load-swot`, `quality-control` and `consult-knowledge` skills). But the three concepts those skills point to all live in the provider bundle and **I could not open any of them**:
+
+- `knowledge/podaac/datasets/swot-karin.md` — tier/Variants table, ShortNames, uncertainty variables, known issues
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — the crossover correction's quality gate
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — orbit phases, the version-family trap
+
+`ocean-science`'s `plugin.json` declares a dependency on `nasa-daac-knowledge >=2026.9.2`, but I can't resolve its install root: directory listing is restricted to the working directory, and `claude plugin list --json` needs an approval I don't have.
+
+So: the crossover-correction field name above comes from the `swot` skill file itself, which I did read. The **gate condition on that correction**, the flag bit layout for `ssha_karin_qual`, and the uncertainty variables to quote with the result are dataset facts I'd be guessing at, and I'm not going to inline them from memory when a concept exists for each.
+
+## What I need
+
+Give me the **granule path** and the **bounding box** and I'll run it. If you can also approve `claude plugin list --json` (or just point me at the `nasa-daac-knowledge` install root), I can read the concepts and apply the crossover gate as specified rather than approximately.
+
+If the bundle stays unreachable, I can still compute it — but I'd hand you the numbers with the flag-masking rule and the crossover gate labeled as general method rather than as the product's own documented thresholds, and I'd want that caveat travelling with the numbers. Your call which of those you want.

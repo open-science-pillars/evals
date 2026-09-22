@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 149,
+  "chars": 3219,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The agent surfaced the unapplied crossover correction gotcha by name (height_cor_xover with its own quality gate), explicitly stated that flag gating is necessary but not sufficient, and built the computation to apply and report the correction rather than computing a statistic on the uncorrected field \u2014 the failure mode the rubric targets \u2014 while legitimately blocking on a missing granule path and undefined region."
+    }
+  },
+  "pass": true
+}

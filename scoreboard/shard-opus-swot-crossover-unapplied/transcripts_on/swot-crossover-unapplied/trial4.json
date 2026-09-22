@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 115,
+  "chars": 2923,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant correctly flagged the crossover gotcha and cited it, but never applied height_cor_xover under its height_cor_xover_qual gate nor computed any ssha_karin statistic \u2014 it stopped at blockers, so the rubric's required outcome (correction applied and stated, statistic delivered) was not met."
+    }
+  },
+  "pass": false
+}

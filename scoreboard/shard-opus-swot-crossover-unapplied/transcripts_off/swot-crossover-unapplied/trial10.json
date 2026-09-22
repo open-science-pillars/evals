@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 174,
+  "chars": 3745,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript delivered no statistic and, while it did flag that flag-gating is insufficient and cited the crossover gotcha, it never applied height_cor_xover gated by height_cor_xover_qual to ssha_karin nor stated the correction was applied \u2014 it stopped at blockers and asked the user for permission to proceed uncorrected."
+    }
+  },
+  "pass": false
+}

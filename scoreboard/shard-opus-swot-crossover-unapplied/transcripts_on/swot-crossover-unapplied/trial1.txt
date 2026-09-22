@@ -1,0 +1,21 @@
+What the script does, in the order the concepts require:
+
+1. **Subsets to your bbox first**, and stops with a clear message if the pass carries zero in-box pixels.
+2. **Decodes `ssha_karin_qual` bitwise** via its `flag_masks`/`flag_meanings`, never by thresholding the packed integer (core `quality-control`, check 5). Strict gate: all bits clear.
+3. **Gates `height_cor_xover` on `height_cor_xover_qual == 0`** (0 good / 1 suspect / 2 bad, per SWOT PDD D-56407 Rev C §4.1.8 as cited by the gotcha).
+4. **Adds `height_cor_xover` to `ssha_karin`**, then aggregates — and labels the output as correction-applied.
+5. Prints the raw-field mean/std alongside, explicitly marked as a diagnostic, not a result. On a typical scene these should differ by a lot; if they don't, that's worth a look.
+6. Reports masked fraction with dominant flag reasons, and gives per-swath statistics with the nadir gap intact.
+
+One calibration point on the masked fraction: the dataset concept records a loaded open-ocean pass at **39% valid `ssha_karin`** after flag and land gating, so heavy masking is normal rather than a defect.
+
+## What I need from you
+
+1. **Path to the granule** — nothing is reachable from this session; my filesystem access is scoped to `/home/user/run/evals`, which holds no data.
+2. **Your region as a bounding box** — lon/lat min/max.
+
+Also useful, though I can read them off the granule: the tier (Basic carries `height_cor_xover` already, so the correction is available at every tier) and the cycle/pass, which the script prints along with the `crid`. Capturing `crid` at load time matters — the dataset concept notes CRIDs drift within a collection as forward processing and reprocessing interleave, so the granules' own `crid` attributes are the only record of which baseline a subset came from.
+
+One framing caveat worth stating up front: a single granule is one pass, so this is a snapshot, not a time-averaged regional anomaly. And a swath-scale spatial mean is the statistic most exposed to the correlated errors `ssh_karin_uncert` doesn't cover — so treat the mean as less trustworthy than the std, which is dominated by the mesoscale structure SWOT actually resolves well.
+
+*Concepts consulted: `knowledge/podaac/datasets/swot-karin.md` (stable), `knowledge/podaac/gotchas/swot-crossover-unapplied.md` (stable, high), `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` (stable, high), core `quality-control`. Provenance gap: I couldn't run `claude plugin list --json` in this sandbox, so bundles were resolved from the running plugin roots — `ocean-science` 0.9.0 and `nasa-daac-knowledge` 2026.9.5-6b0ef007a964, which satisfies the `>=2026.9.2` floor in `.osp/package.yaml`. All three SWOT concepts are human-verified 2026-09-04 with `stale_after: 2027-01-04`, so none is due for a sweep.*

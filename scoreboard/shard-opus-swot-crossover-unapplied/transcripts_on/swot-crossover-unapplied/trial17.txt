@@ -1,0 +1,32 @@
+I can't produce the numbers yet — there are two blockers, and one of them changes what the right answer even is.
+
+## Blockers
+
+**1. There's no granule here.** `/home/user/run/evals` is the eval-runner repo (manifests, runner, scoreboard); there's no `.nc` anywhere under it. I need the path to your granule.
+
+**2. "My region" isn't defined** anywhere in this session. I need a bounding box (lon/lat min/max). This one is genuinely blocking — any box I guessed would make the statistics meaningless, and a SWOT granule is a whole pass, so the box is what selects the data.
+
+## A caveat that matters more than the flags
+
+Your framing — "use the quality flags to keep only good data" — is necessary but **not sufficient** for an SSHA mean over a region. Per `ocean-science:swot`:
+
+> Flag gating is necessary but not sufficient; whether an ssha field is analysis-ready before its corrections are applied is a dataset question.
+
+Specifically, KaRIn's **crossover calibration arrives unapplied**. `ocean-science:load-swot` step 6 requires that ssha statistics over good pixels be "computed with the crossover correction the dataset concept's crossover known issue prescribes... stating explicitly that the correction was applied." That residual is a long-wavelength, largely cross-track systematic — exactly the error that projects onto a *regional mean*. Flag-gate only, and your mean is biased by a term you haven't removed. (Your standard deviation is the more robust of the two numbers either way.)
+
+## The knowledge gap I hit
+
+The SWOT concepts are provider-tier, in the PO.DAAC bundle — `nasa-daac-knowledge@open-science-pillars`, which `~/.claude/settings.json` confirms is enabled. **I could not read it.** This session's shell refuses to `ls`/`find` outside `/home/user/run/evals` (sandbox-blocked, and not bypassable), so I couldn't resolve the bundle root, and exact-path `Read` attempts against the marketplace's pinned `v2026.9.5` all missed.
+
+- **Searched:** `ocean-science` 0.9.0 knowledge root — its `index.md` carries no SWOT concepts, as expected; SWOT is provider-tier. Plus the `swot`, `load-swot`, and `quality-control` skills, which by design carry pointers, not facts.
+- **Needed and unreachable:** `knowledge/podaac/datasets/swot-karin.md` (tier/variant table, uncertainty variables, known issues), `gotchas/swot-crossover-unapplied.md` (the correction field and its quality gate), `gotchas/swot-calval-orbit-phases.md`, `conventions/satellite-qa-flag-decoding.md`.
+
+I'm deliberately not filling those in from memory — the skills make that a hard refusal ("never hardcode a processing baseline, version family, or uncertainty caveat"), and the crossover field name and its gate are precisely the kind of detail worth getting from the signed concept rather than my recall.
+
+## What I need from you
+
+1. **Granule path.**
+2. **Region bbox.**
+3. **Bundle access**, via any of: the output of `claude plugin list --json`, the `nasa-daac-knowledge` install path, or adding it as a working directory.
+
+If (3) is awkward, I can still proceed on (1) and (2): I'd decode the flags from the granule's own `flag_meanings`/`flag_masks` attributes rather than an assumed bit layout — which is the right approach regardless — keep the two swaths separate with the nadir gap intact, report the masked fraction and dominant flag reasons, and record the granule's actual `crid`. I'd then label the crossover step explicitly as unverified-against-concept rather than silently skipping it or guessing the field name.

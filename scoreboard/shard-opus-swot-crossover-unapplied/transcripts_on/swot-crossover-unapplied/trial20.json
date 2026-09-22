@@ -1,0 +1,14 @@
+{
+  "trial": 20,
+  "elapsed_s": 195,
+  "chars": 2237,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The script does add height_cor_xover under its qual gate, but no statistic was ever computed, the relevant knowledge-bundle gotcha was never consulted or cited (the agent admitted it could not find it and even left the sign convention unverified), and it never clearly stated that ssha_karin_qual gating alone is insufficient because the uncorrected cross-track ramp is order meters.\" [salvaged from a truncated judge reply]",
+      "salvaged": true
+    }
+  },
+  "pass": false
+}

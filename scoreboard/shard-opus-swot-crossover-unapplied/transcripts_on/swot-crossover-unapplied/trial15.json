@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 112,
+  "chars": 3023,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never computed the statistic or applied height_cor_xover (gated by height_cor_xover_qual) to ssha_karin \u2014 it only flagged the crossover gotcha and stopped to request the granule path, region, and bundle access, so the required corrected-statistic deliverable and the statement that the correction was applied are absent."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,29 @@
+I can't give you the numbers yet — two things are missing, and one of them changes the answer materially.
+
+## What's blocking
+
+**No granule and no region.** There's no `.nc` file anywhere in `/home/user/run/evals` (it's the eval harness repo), and you haven't given me the bounding box. I need the path and the box.
+
+## The thing worth flagging before you compute
+
+**Flag gating alone will not give you a correct mean.** The KaRIn L2 LR SSH `ssha` field ships with the **crossover calibration not applied** — it arrives as a separate `height_cor_xover` field that you apply yourself, with its own quality gate. If you mask on `ssha_karin*_qual` and take the mean, you get a well-formed number off an uncalibrated field. The residual is a low-wavenumber, largely along-track error, so it biases a *regional mean* much more than it inflates the std — exactly the statistic you asked for.
+
+This is recorded in the plugin's knowledge bundle as `knowledge/podaac/gotchas/swot-crossover-unapplied.md`, and the swot skill's own procedure (`skills/swot/references/swot-products.md:44-48`) makes applying it a step that sits alongside flag decoding, before any statistic.
+
+**I could not read that concept.** I reached the ocean-science skill root at `.../ocean-science/0.9.0/skills/`, but it carries no `knowledge/` directory, and the provider bundle it depends on (`nasa-daac-knowledge >=2026.9.2`, per its `plugin.json`) isn't reachable from this session — Bash is confined to the working directory and `claude plugin list` needs approval. So the crossover field name and the fact that it arrives unapplied come from the **skill body**, which I did read; the **quality gate and the sign convention** live in the concept and I have not verified them. Those two are marked `CONFIRM` in the script rather than asserted.
+
+## What I've given you
+
+A parameterized script (attached) that does the load contract properly:
+
+- discovers which `ssha_karin*` / `*_qual` / `height_cor_xover*` / `*_uncert` variables the granule actually carries, rather than assuming a tier
+- gates on `qual == 0` and reports the masked fraction **with a bit-level breakdown** of why pixels were dropped
+- applies the crossover correction under its gate, and prints how much it moved the regional mean — so you see the size of the error you'd have shipped
+- trims to the box before aggregating, handles 0–360 vs ±180 longitude
+- reports **left and right swath separately** (independent cross-track error profiles) and never interpolates across the nadir gap
+- quotes the per-sample uncertainty variable, noting it doesn't cover correlated across-swath error
+- prints `crid` / cycle / pass for provenance
+
+It deliberately prints the flag-gated-only statistics too, labelled as uncalibrated reference values, so the two are never confused.
+
+Send me the granule path and the bounding box and I'll run it. If you can also get the knowledge bundle reachable — running from a directory where `claude plugin list` is permitted, or pointing me at the checkout — I'll verify the crossover gate and sign against the concept instead of leaving them as assumptions.

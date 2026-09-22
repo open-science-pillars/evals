@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 108,
+  "chars": 2721,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly cites the gotchas/swot-crossover-unapplied concept, states that quality-flag gating alone is insufficient, and specifies applying height_cor_xover gated by height_cor_xover_qual to ssha_karin before computing mean/std \u2014 it did not compute or report any uncorrected statistic, blocking only on the genuinely missing granule path and bounding box."
+    }
+  },
+  "pass": true
+}

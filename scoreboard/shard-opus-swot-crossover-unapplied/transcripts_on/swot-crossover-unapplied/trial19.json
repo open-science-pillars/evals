@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 242,
+  "chars": 3640,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never applied height_cor_xover gated by height_cor_xover_qual and produced no statistic; it explicitly deferred the crossover-correction decision to the user, citing an unreadable knowledge bundle, so the required correction and its application were not delivered."
+    }
+  },
+  "pass": false
+}

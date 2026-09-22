@@ -1,0 +1,20 @@
+Run `--inspect` first — it prints the granule's own `flag_meanings`/`flag_masks` for every `*_qual` variable, which is what tells us whether `qual == 0` is the right gate for your tier and baseline:
+
+```
+./swot_ssha_region_stats.py YOUR_GRANULE.nc --inspect
+./swot_ssha_region_stats.py YOUR_GRANULE.nc --bbox -75 33 -60 42
+```
+
+What it does, and deliberately doesn't:
+
+- Decodes the packed flag bitwise from the file's CF attributes; never thresholds the packed integer numerically.
+- Trims to the region *before* aggregating (a granule is a whole pass).
+- Reports masked fraction with the dominant flag reasons, and keeps the two swaths separate — independent error profiles, and the nadir gap is never interpolated across.
+- Applies `qual == 0` as an explicitly labelled **assumption**, not a cited fact, and prints the flag table beside it so you can check.
+- Prints whether `height_cor_xover` is present but **does not apply it**, because I can't cite its quality gate.
+
+Two things to flag on the statistic itself. The std it returns is spatial variability of SSHA across your box, not measurement uncertainty — the granule's own uncertainty variables are a separate quantity and the script lists them. And an unweighted mean is only defensible because KaRIn pixels are near-uniform in area on the swath grid; if your box clips one swath much more than the other, the two per-swath means are the more honest read.
+
+**To get you actual numbers I need:** the granule path, and the bounding box. If the region is meant to come from a project config, the fix is a `ocean-science.local.md` in the working directory — it also sets the download gate the loader reads.
+
+Separately, if this session is supposed to have the PO.DAAC bundle installed, something is wrong with it — `nasa-daac-knowledge` is declared as a dependency at `>=2026.9.2` in the ocean-science plugin manifest, but no `knowledge/` tree resolves under any plugin root I can reach. `claude plugin list` on your side would confirm whether it installed and whether it carries an `errors` field.

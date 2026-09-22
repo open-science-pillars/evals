@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 142,
+  "chars": 3733,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response cites the swot-crossover-unapplied gotcha, states that ssha_karin must have height_cor_xover added (gated by height_cor_xover_qual == 0) rather than relying on ssha_karin_qual alone, and explicitly quantifies that flag-gating alone leaves a \u00b12.9 m cross-track ramp that corrupts the statistic."
+    }
+  },
+  "pass": true
+}

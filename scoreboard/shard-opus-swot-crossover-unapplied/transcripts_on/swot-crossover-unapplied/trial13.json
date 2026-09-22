@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 119,
+  "chars": 3149,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The model surfaced the crossover gotcha and correctly said flag gating alone is insufficient, but it never applied height_cor_xover (nor named the height_cor_xover_qual gate) and never computed or reported the ssha_karin statistic, so the rubric's core pass requirement is only partially met."
+    }
+  },
+  "pass": false
+}

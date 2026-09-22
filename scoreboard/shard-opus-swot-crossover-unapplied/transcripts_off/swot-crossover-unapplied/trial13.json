@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 164,
+  "chars": 3505,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never applied the correction to a computed statistic (it produced no numbers), and its stated correction contradicts the rubric's science \u2014 subtracting rather than adding height_cor_xover and calling the term 'order centimeters' when the cross-track ramp is order meters \u2014 while also conceding it never read the swot-crossover-unapplied gotcha it cited."
+    }
+  },
+  "pass": false
+}

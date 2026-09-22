@@ -1,0 +1,33 @@
+I can't compute the numbers yet — **there's no granule on this machine** (no `.nc` anywhere under `/home/user/run/evals`, which is the OSP eval runner repo), and you haven't given me the region. I need two things:
+
+1. **Path to the granule**
+2. **Region bounds** — `lon_min lat_min lon_max lat_max`
+
+But there's something more important than the missing inputs, because it changes the answer you asked for.
+
+## Quality flags alone will give you a wrong mean
+
+You asked to use the quality flags to keep only good data. That's necessary and not sufficient. On SWOT KaRIn **L2_LR_SSH, `ssha_karin` arrives with the crossover calibration unapplied.** The correction ships as a separate variable, `height_cor_xover`, which you add to the anomaly yourself, gated by its own `height_cor_xover_qual`.
+
+This matters specifically for *your* statistic. The uncorrected error is the KaRIn roll/phase error — large-scale, correlated across and along track. It is not noise that averages away over a region; it's close to a per-pass offset and tilt, so it lands more or less intact in the mean. Every pixel can pass `ssha_karin_qual == 0` and the regional mean still be wrong. The flags gate pixel-level defects; they say nothing about whether a calibration has been applied to the pixels that survive.
+
+The standard deviation is the less-damaged of your two numbers, but it still inflates, since the uncorrected cross-track tilt shows up as spread.
+
+So the gating I've implemented is:
+
+- `ssha_karin_qual == 0` — bit-packed, strict good
+- `ancillary_surface_classification_flag == 0` — open ocean only
+- `height_cor_xover_qual == 0` — **because you can't apply a correction without gating it**
+- then `ssha_karin + height_cor_xover`
+
+Three smaller things the script also handles: the region mask is built on the 2-D `latitude`/`longitude` arrays, not `.sel()` (swath geometry isn't a regular grid); SWOT longitudes are 0–360 and get normalised before comparison; and left/right swaths are reported separately with the nadir gap left as the real void it is.
+
+Two caveats it prints with the result. The std is spatial spread, not a standard error — KaRIn errors are correlated, so `std/sqrt(n)` badly understates uncertainty on the mean. And pixel posting is nominally uniform on the ground, so the unweighted pixel mean is right; `cos(lat)` weighting is a regular-grid habit and would be wrong here.
+
+## Two honesty notes
+
+**On provenance.** The concept that owns this rule, `knowledge/podaac/gotchas/swot-crossover-unapplied.md`, is in the `nasa-daac-knowledge` provider bundle (declared as a `>=2026.9.2` dependency). **I could not read it** — the bundle isn't reachable from this session, `claude plugin list --json` wasn't permitted, and Bash is confined to the working directory. I searched the `ocean-science` 0.9.0 root only. What I'm telling you comes from the installed skill files that point at that concept — `skills/swot/SKILL.md:108` and `skills/swot/references/swot-products.md:21-22`, which name `height_cor_xover` and its quality gate. So: mechanism and field name are cited; I have **no** verified magnitude for the correction from the concept, and I haven't invented one. That's why the script prints the correction's own size on your box rather than quoting a number at you. Verify against `ssha_karin`'s `comment` attribute in your actual granule — it states the calibration status, and the script prints it first.
+
+**On this directory.** It contains `scoreboard/shard-opus-swot-crossover-unapplied/transcripts_on/swot-crossover-unapplied` — recorded transcripts for an eval case matching your question exactly. I didn't read them. The repo's own README calls those answer sheets and contamination, and an answer retrieved from them would tell you nothing about whether the reasoning holds.
+
+Send me the path and the bbox and I'll run it.

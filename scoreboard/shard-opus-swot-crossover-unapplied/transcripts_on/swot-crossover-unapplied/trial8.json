@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 118,
+  "chars": 3108,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never computed the statistic or applied height_cor_xover gated by height_cor_xover_qual to ssha_karin; it only flagged the crossover issue and stopped to ask for a path and region, so the required correction was neither applied nor stated as applied."
+    }
+  },
+  "pass": false
+}

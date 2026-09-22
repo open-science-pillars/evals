@@ -1,0 +1,20 @@
+I can't compute this yet — two required inputs are missing, and there's a third issue that would make the number wrong even if I had them.
+
+**No granule, no region.** `/home/user/run/evals` is the Open Science Pillars eval-harness repo (manifests, runner, scoreboard) — there are no `.nc` files anywhere I can reach, and nothing defines "my region." I need:
+
+1. The path to the granule (or the cycle/pass + tier so I can search PO.DAAC).
+2. The region as a bounding box — W/S/E/N.
+
+**The bigger issue: flag gating alone won't give you a trustworthy mean.** Both plugin skills I loaded are explicit that the crossover calibration arrives *unapplied* in SWOT KaRIn L2 LR SSH, and that it must be applied — with its own quality gate — before SSHA statistics are quoted. `skills/swot/references/swot-products.md:22` and the swot skill body name `height_cor_xover` as the fix and point at `knowledge/podaac/gotchas/swot-crossover-unapplied.md` for the gate condition. A regional mean from flag-gated-but-uncorrected `ssha_karin` carries a cross-track bias that does not average out over a small box — it's exactly the quantity a regional mean is most sensitive to. So "keep only good data" needs to mean flag gate **and** crossover correction, not the flag gate alone.
+
+**Knowledge gap you should know about.** I could not read the concepts that own the specifics. The `ocean-science` skills resolve them under `knowledge/podaac/`, but that provider bundle isn't reachable in this session — there's no `knowledge/` tree under the running `ocean-science` plugin root, and the plugin record (`claude plugin list`) is outside the sandbox. So I can't give you the authoritative flag-bit semantics, the crossover gate condition, the tier variable inventory, or the current baseline. I won't supply those from memory; that's precisely what the skills forbid. If you can install/point me at the `nasa-daac-knowledge` bundle, I'll read it and pin these down.
+
+**What I did build**, so it's ready the moment you give me the file and box: `swot_ssha_region_stats.py` in the scratchpad. It hardcodes no flag values — it reads the granule's own `flag_masks`/`flag_meanings` and reports them, then applies the gate you name. It keeps the two swaths separate (independent error profiles), never interpolates the nadir gap, reports the masked fraction, and refuses to stay quiet about the crossover: without `--xover-var` it prints a warning on every swath.
+
+```
+python swot_ssha_region_stats.py GRANULE.nc --bbox W S E N --inspect
+```
+
+That inspect pass prints the variable list, the flag metadata, and the `crid` baseline — which is what I'd want to see before choosing the gate anyway.
+
+Send me the granule path and the bounding box and I'll run it.

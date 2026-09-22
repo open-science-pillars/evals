@@ -1,0 +1,34 @@
+I can't produce those numbers yet, and one of the reasons is scientific rather than logistical. Here's where things stand.
+
+## Two things I need from you
+
+1. **The granule path.** This session can only read `/home/user/run/evals`, and there's no NetCDF there. `ls`/`find` outside that directory are blocked. Give me a path I can reach (or copy the granule into the working directory).
+2. **The region.** "My region" isn't defined anywhere in this session — I need a bounding box (lon/lat), or a named region I can turn into one.
+
+## The bigger issue: flags alone won't make that mean trustworthy
+
+Your plan is "mask on quality flags, then take mean and std." Flag gating is necessary but **not sufficient** for L2 LR SSH, and the failure mode lands squarely on the two statistics you asked for.
+
+The plugin's SWOT knowledge records that the **KaRIn crossover calibration arrives unapplied** in the L2 LR SSH product — `ssha_karin` as distributed still carries the uncorrected cross-track/along-track systematic error. The correction is carried in a separate field, which the skill files name as `height_cor_xover`, and it has its own quality gate that must be checked before the correction is trusted.
+
+That matters here specifically because:
+- A **regional mean** of SSHA is exactly the quantity a residual cross-track tilt biases — it's a near-constant offset over a swath segment, so it doesn't average out over your box.
+- A **standard deviation** is inflated by the same systematic structure, so you'd be reporting instrument error as ocean variability.
+
+The `load-swot` workflow flags this explicitly: the crossover concept is a mandatory consult "whenever statistics are the goal." That's your case.
+
+## What I could not read
+
+Per the consult convention, I searched the bundle roots reachable from the running skills. I read:
+- `ocean-science/0.9.0/skills/swot/` and `skills/load-swot/`, and `skills/swot/references/swot-products.md`
+- `ocean-science/0.9.0/knowledge/index.md`
+
+I could **not** read the PO.DAAC provider bundle (`nasa-daac-knowledge`), which is where the actual SWOT concepts live — `knowledge/podaac/datasets/swot-karin.md` and `knowledge/podaac/gotchas/swot-crossover-unapplied.md`. `claude plugin list --json` (the installer record that names the install path) is not approved in this session, and directory listing outside the working directory is blocked, so I couldn't resolve its path.
+
+So I have the *existence and mechanism* of the crossover issue from the skill bodies, but **not** the quality gate condition on the correction, the exact flag-decoding rules, or the uncertainty variables the dataset concept says to quote alongside a result. I won't guess at those from memory — the skill's hard rule is that remembered SWOT dataset rules don't substitute for the concept, and a wrong gate would silently corrupt the mean.
+
+## To unblock
+
+Either approve `claude plugin list --json` (or tell me the `nasa-daac-knowledge` install path) so I can read the two concepts, **or** confirm you want me to proceed on general method with the crossover correction explicitly unapplied — in which case the mean and std would be reported as uncalibrated and not suitable for quantitative use.
+
+Once I have the granule, the region, and the concepts, the run itself is straightforward: trim to your box before aggregating, decode the flags and report the masked fraction with dominant reasons, apply the crossover correction under its gate, keep the two swaths separate (independent error profiles) with the nadir gap intact, and record the processing baseline (`crid`) the granule actually carries.

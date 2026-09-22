@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 199,
+  "chars": 3315,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant correctly identified the unapplied-crossover gotcha and that flag gating alone is insufficient, but it never located the granule, never wrote or ran a script, never actually applied height_cor_xover (and explicitly could not confirm the height_cor_xover_qual gate), and produced no statistic \u2014 partial compliance only."
+    }
+  },
+  "pass": false
+}

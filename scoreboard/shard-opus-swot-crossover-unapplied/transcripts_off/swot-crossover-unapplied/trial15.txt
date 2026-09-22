@@ -1,0 +1,25 @@
+I can't produce the numbers yet — two things are missing, and there's a third issue with the method as you framed it.
+
+## Blockers
+
+**No granule.** `/home/user/run/evals` is the Open Science Pillars eval-harness repo (manifests, runner, scoreboard) — there's no `.nc` file in it, and directory search outside the working directory is sandboxed off, so I can't go looking. Give me the path.
+
+**No region.** "My region" isn't defined anywhere in this session. I need a bounding box. This matters more than usual for SWOT: granules are whole passes, so the trim to your box has to happen before any aggregation, and a pass may not cross your box at all.
+
+## The method issue
+
+Quality flags alone won't get you a defensible mean. The SWOT skill's reference procedure (`skills/swot/references/swot-products.md`, step 6) requires the crossover correction be applied — with its own quality gate — *before* any statistic, and the skill body states flatly that flag gating is "necessary but not sufficient." The correction arrives unapplied in these granules; `height_cor_xover` is the field that carries it. A mean of flag-gated-but-uncorrected `ssha_karin` is a cross-track-tilted number, and over a small region the tilt won't average out.
+
+Two more constraints that shape the answer: the two swaths have independent error profiles and get reported separately, and the nadir gap is a real data void — nothing gets interpolated across it.
+
+## Knowledge consult — incomplete, and you should know that
+
+The procedure says to read three PO.DAAC concepts before computing: `datasets/swot-karin.md`, `gotchas/swot-calval-orbit-phases.md`, `gotchas/swot-crossover-unapplied.md`. **I could not read any of them.** `ocean-science` 0.9.0 declares a dependency on `nasa-daac-knowledge >=2026.9.2`, but that bundle isn't at the path the running plugin's own root implies, and `claude plugin list`, directory listing and `find` are all blocked outside the working directory. I searched the `ocean-science` 0.9.0 root and the local `.osp` config; that's all I could reach.
+
+So I'm missing, and will not guess at: the exact flag bit semantics, the crossover gate's threshold, the uncertainty variables and their caveats, and the tier/baseline facts. If you can point me at the `nasa-daac-knowledge` install path, I'll read them properly.
+
+## What's ready
+
+The script attached takes the granule and a bbox and does the whole thing — but it reads every variable name and every flag bit from the granule's own `flag_masks`/`flag_meanings` attributes rather than from anything I remember, which is the honest way to work without those concepts in hand. Run `--inspect` first and it reports the layout, the candidate SSHA/qual/correction/uncertainty fields with their `long_name`s, and the bit definitions as the file declares them. Then re-run with `--bbox` and it reports mean, std, kept/masked fraction, and the dominant flag reasons for what got dropped.
+
+Send me the granule path and your bounding box and I'll run it.

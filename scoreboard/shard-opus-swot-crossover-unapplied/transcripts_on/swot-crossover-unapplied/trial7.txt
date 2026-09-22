@@ -1,0 +1,32 @@
+I can't give you numbers yet — two things are missing, and one of them would have changed the answer even if I'd had the file.
+
+## Blockers
+
+**1. No granule, no region.** There's no SWOT file under `/home/user/run/evals` (it's the eval-runner repo), and you haven't said where your region is. I need the granule path and a bounding box (W/S/E/N).
+
+**2. Flag masking alone would give you a wrong number.** This is the part worth pausing on. The `swot` skill is explicit that flag gating is *necessary but not sufficient*, and `load-swot` requires that any ssha statistic be computed with the crossover correction applied and that the application be stated. The KaRIn crossover calibration arrives **unapplied** in L2 LR SSH — it's a residual cross-track/along-track tilt, so it biases exactly what you asked for: a swath mean and its spread over a region. Masking on `ssha_karin_qual` and calling `.mean()` is the standard way to get a confidently wrong SSHA mean here.
+
+## What I could and couldn't consult
+
+Per `consult-knowledge`, I searched the bundles reachable from the running plugin's root:
+
+- **ocean-science** (`0.9.0`) — searched. Its index states plainly that nothing from the PO.DAAC bundle is copied there.
+- **core** (`0.6.0`) — searched. `conventions/satellite-qa-flag-decoding.md` carries MODIS, Landsat C2 and Sentinel-2 layouts only; no SWOT.
+- **nasa-daac-knowledge** (the PO.DAAC provider bundle, dependency `>=2026.9.2`) — **not reachable in this session.** `claude plugin list --json` wasn't approved and the cache directory is outside the allowed working directory, so I couldn't resolve its install path.
+
+That bundle owns the three concepts this task actually rests on: `knowledge/podaac/datasets/swot-karin.md` (the `ssha_karin_qual` bit layout, the tier Variants table, the uncertainty variables), `gotchas/swot-crossover-unapplied.md` (the correction field and, critically, **its quality gate**), and `gotchas/swot-calval-orbit-phases.md`. I'm not going to invent a bit layout or a gate threshold to fill those in.
+
+## What I've prepared
+
+A script at `swot_ssha_stats.py` (scratchpad) with two modes. It decodes flags from the granule's **own** `flag_meanings`/`flag_masks` attributes rather than a remembered layout, keeps the two swaths separate with the nadir gap intact, subsets before aggregating, and applies `height_cor_xover` before any statistic:
+
+```
+python swot_ssha_stats.py inspect YOUR_GRANULE.nc
+python swot_ssha_stats.py stats YOUR_GRANULE.nc --bbox W S E N
+```
+
+Run `inspect` first — it dumps the flag definitions, which correction and uncertainty variables are present, and the `crid` baseline. Two things in it are marked and still unresolved: the **masking policy** (the file tells you what each bit means; which of "suspect" vs "degraded" you keep is the dataset concept's call, and I've defaulted to the strict `qual == 0`), and the **crossover quality gate** (`--xover-qual-max`, defaulted to 0 as a placeholder, not as a recommendation).
+
+## To unblock
+
+Give me the **granule path** and the **bbox**, plus either approval for `claude plugin list --json` or the install path of `nasa-daac-knowledge` — then I'll read the three concepts, run it, and report mean/std per swath with the masked fraction, the dominant flag reasons, the baseline, and the uncertainty variables alongside. If the provider bundle genuinely isn't installed, I can still produce numbers from the file's self-described flags, but I'd label the masking policy and the crossover gate as unverified rather than concept-backed.

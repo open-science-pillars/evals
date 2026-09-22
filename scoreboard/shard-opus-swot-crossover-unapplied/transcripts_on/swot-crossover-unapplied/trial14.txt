@@ -1,0 +1,38 @@
+I can't compute this yet — two things are missing, and there's a third that would make the numbers wrong even if I had them. Here's where I got to.
+
+## What I consulted
+
+Per the `load-swot` and `swot` skills, knowledge concepts come before any statistic. I searched the bundle roots I could reach:
+
+- **`core` 0.6.0** and **`ocean-science` 0.9.0** — read `knowledge/index.md` (local concepts: Argo/RG, tide gauges, indices — nothing SWOT).
+- **`nasa-daac-knowledge`** (the PO.DAAC provider bundle, where all the SWOT concepts live) — **not reachable in this session.** `claude plugin list --json` needs an approval I don't have, and Bash directory listing is confined to `/home/user/run/evals`, so I couldn't resolve its `installPath`. `ocean-science/.claude-plugin/plugin.json` declares it as a dependency at `>=2026.9.2`; guessing versioned paths didn't land.
+
+So I'm flagging that gap explicitly rather than filling it from memory — the `swot` skill's hard refusal is *never* to work from a remembered SWOT dataset rule where a concept exists.
+
+## The two blockers
+
+1. **No granule.** The only directory I can read is `/home/user/run/evals`, and it holds no `.nc` file — it's the evals repo itself. Give me the path (or the ShortName + cycle/pass and I'll search with `earthaccess`, subject to the volume gate).
+2. **No region.** "My region" isn't defined anywhere I can see — no `ocean-science.local.md` in the project. I need a bounding box.
+
+Also tell me **which tier** the granule is (Basic vs the fuller correction/uncertainty tier) — the available correction and quality variables differ by tier, and I shouldn't assume.
+
+## The step your recipe is missing
+
+Quality flags alone won't get you a trustworthy mean. The `swot` skill states it directly: *"Flag gating is necessary but not sufficient; whether an ssha field is analysis-ready before its corrections are applied is a dataset question."*
+
+The specific issue is the **crossover calibration, which arrives unapplied** in KaRIn L2 LR SSH. The skills point at `knowledge/podaac/gotchas/swot-crossover-unapplied.md`, and name `height_cor_xover` as the field carrying the fix, with its own quality gate that must be applied alongside the main flags. The `load-swot` contract requires ssha statistics be computed *with* that correction and that the summary say so explicitly.
+
+This matters most for exactly what you asked for: the uncorrected residual is a cross-track/along-pass systematic, so it biases the **mean** directly and inflates the **standard deviation**. Flag-gated-only statistics would look clean and be wrong.
+
+I'd want to read that concept before running, since it — not I — defines the gate variable and threshold.
+
+## What I'll run once you fill the gaps
+
+1. Read the crossover and orbit-phase gotchas plus the dataset concept from the provider bundle (if you can approve `claude plugin list --json`, or point me at the install path, that unblocks it).
+2. Open the granule, record its processing baseline (`crid`).
+3. Decode the bit-packed quality flags per `core:quality-control`, mask, and report masked fraction with dominant reasons.
+4. Apply the crossover correction with its gate.
+5. Trim to your box — keeping both swaths separate and the nadir gap intact, no interpolation across it.
+6. Report mean and standard deviation **per swath** (left/right have independent error profiles), with the product's own uncertainty variables quoted alongside.
+
+Send me the granule path and the bounding box and I'll take it from there.

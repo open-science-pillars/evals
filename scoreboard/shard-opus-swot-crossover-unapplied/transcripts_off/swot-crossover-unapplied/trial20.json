@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 193,
+  "chars": 3222,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never computed the statistic and, in its stated plan, specified the wrong sign for the crossover correction (`ssha \u2212 height_cor_xover` rather than adding height_cor_xover), so the required correct-and-applied correction was not delivered."
+    }
+  },
+  "pass": false
+}

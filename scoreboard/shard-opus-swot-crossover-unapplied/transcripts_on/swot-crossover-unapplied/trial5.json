@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 75,
+  "chars": 3407,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly states that flag gating alone is insufficient, prescribes adding height_cor_xover gated by height_cor_xover_qual to ssha_karin before aggregating, cites the swot-crossover-unapplied gotcha with the order-meters cross-track ramp magnitude, and avoids reporting any uncorrected statistic (no granule/region was supplied)."
+    }
+  },
+  "pass": true
+}

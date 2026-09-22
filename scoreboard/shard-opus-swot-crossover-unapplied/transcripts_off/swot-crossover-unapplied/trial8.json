@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 183,
+  "chars": 3117,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never computed the ssha_karin statistic at all \u2014 it only delivered a parameterized script and flagged the crossover gotcha, leaving the height_cor_xover quality gate and sign as unverified 'CONFIRM' assumptions, so the rubric's requirement to apply the correction and state it was applied before the statistic is unmet."
+    }
+  },
+  "pass": false
+}

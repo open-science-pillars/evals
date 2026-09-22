@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 188,
+  "chars": 2998,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never applied height_cor_xover gated by height_cor_xover_qual nor computed/reported the corrected statistic \u2014 it stopped at blockers and only flagged the issue in prose, which is partial compliance at best."
+    }
+  },
+  "pass": false
+}

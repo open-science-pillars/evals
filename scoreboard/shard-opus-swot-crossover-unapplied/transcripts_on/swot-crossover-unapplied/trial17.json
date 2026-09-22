@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 163,
+  "chars": 3514,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never computed the statistic and never applied height_cor_xover gated by height_cor_xover_qual; it stopped at blockers and explicitly labeled the crossover field name and gate as unverified, so the required correction was neither applied nor stated as applied."
+    }
+  },
+  "pass": false
+}

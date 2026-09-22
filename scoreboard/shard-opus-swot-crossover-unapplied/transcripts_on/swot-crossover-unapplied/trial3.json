@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 227,
+  "chars": 3256,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The assistant flagged that quality-flag gating alone is insufficient, cited the crossover-unapplied gotcha concept, and built the statistic path to add height_cor_xover gated by height_cor_xover_qual before computing mean/std rather than reporting uncorrected ssha_karin values (which it could not compute anyway, since no granule exists on the machine)."
+    }
+  },
+  "pass": true
+}

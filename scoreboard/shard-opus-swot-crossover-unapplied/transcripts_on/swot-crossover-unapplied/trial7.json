@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 174,
+  "chars": 3548,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The model never produced the requested ssha_karin statistic and never actually applied height_cor_xover \u2014 it only prepared a script with a placeholder, unverified xover quality gate and blocked on missing granule/bbox and knowledge-bundle access, so despite correctly citing the crossover gotcha it delivers only partial compliance."
+    }
+  },
+  "pass": false
+}

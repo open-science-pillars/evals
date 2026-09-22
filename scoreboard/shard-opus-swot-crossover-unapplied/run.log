@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-crossover-unapplied/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  swot-crossover-unapplied trial 4: FAIL (115s, 2923 chars)
+  swot-crossover-unapplied trial 1: PASS (162s, 2809 chars)
+  swot-crossover-unapplied trial 5: PASS (75s, 3407 chars)
+  swot-crossover-unapplied trial 3: PASS (227s, 3256 chars)
+  swot-crossover-unapplied trial 2: FAIL (249s, 1705 chars)
+  swot-crossover-unapplied trial 8: FAIL (118s, 3108 chars)
+  swot-crossover-unapplied trial 6: PASS (191s, 3083 chars)
+  swot-crossover-unapplied trial 9: empty or limit message (130s, 29 chars)
+  swot-crossover-unapplied trial 7: FAIL (174s, 3548 chars)
+  swot-crossover-unapplied trial 11: PASS (142s, 3733 chars)
+  swot-crossover-unapplied trial 12: FAIL (135s, 3617 chars)
+  swot-crossover-unapplied trial 13: FAIL (119s, 3149 chars)
+  swot-crossover-unapplied trial 10: FAIL (209s, 3845 chars)
+  swot-crossover-unapplied trial 15: FAIL (112s, 3023 chars)
+  swot-crossover-unapplied trial 14: FAIL (143s, 3508 chars)
+  swot-crossover-unapplied trial 17: FAIL (163s, 3514 chars)
+  swot-crossover-unapplied trial 16: PASS (265s, 1534 chars)
+  swot-crossover-unapplied trial 18: FAIL (186s, 3620 chars)
+  swot-crossover-unapplied trial 19: FAIL (242s, 3640 chars)
+  swot-crossover-unapplied trial 20: FAIL (195s, 2237 chars)
+swot-crossover-unapplied: 6/19 valid (rate 0.316, 1 errors) CI [0.154, 0.54] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-crossover-unapplied/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-swot-crossover-unapplied/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  swot-crossover-unapplied trial 4: FAIL (146s, 3282 chars)
+  swot-crossover-unapplied trial 1: FAIL (151s, 2733 chars)
+  swot-crossover-unapplied trial 3: FAIL (169s, 3103 chars)
+  swot-crossover-unapplied trial 2: FAIL (199s, 3315 chars)
+  swot-crossover-unapplied trial 6: PASS (149s, 3219 chars)
+  swot-crossover-unapplied trial 5: FAIL (209s, 2057 chars)
+  swot-crossover-unapplied trial 8: FAIL (183s, 3117 chars)
+  swot-crossover-unapplied trial 9: empty or limit message (119s, 29 chars)
+  swot-crossover-unapplied trial 7: FAIL (324s, 3558 chars)
+  swot-crossover-unapplied trial 10: FAIL (174s, 3745 chars)
+  swot-crossover-unapplied trial 12: PASS (108s, 2721 chars)
+  swot-crossover-unapplied trial 11: empty or limit message (191s, 29 chars)
+  swot-crossover-unapplied trial 13: FAIL (164s, 3505 chars)
+  swot-crossover-unapplied trial 14: FAIL (172s, 3874 chars)
+  swot-crossover-unapplied trial 15: FAIL (188s, 2998 chars)
+  swot-crossover-unapplied trial 16: FAIL (171s, 2996 chars)
+  swot-crossover-unapplied trial 18: FAIL (76s, 2627 chars)
+  swot-crossover-unapplied trial 17: FAIL (128s, 3223 chars)
+  swot-crossover-unapplied trial 19: empty or limit message (149s, 29 chars)
+  swot-crossover-unapplied trial 20: FAIL (193s, 3222 chars)
+swot-crossover-unapplied: 2/17 valid (rate 0.118, 3 errors) CI [0.033, 0.343] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-crossover-unapplied/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-swot-crossover-unapplied/ablation.html
+ABLATION_DONE

@@ -1,0 +1,25 @@
+I searched for the granule and consulted what I could reach. Two things block the computation, and one substantive issue is worth flagging before you answer them.
+
+## Blockers
+
+**1. I can't find the granule.** The working directory `/home/user/run/evals` is the Open Science Pillars *evals tooling* repo — `manifests/`, `runner/`, `scoreboard/`, `.osp/` — with no NetCDF files in it. This session's sandbox restricts file search to that directory, so if your granule is anywhere else I need the explicit path. Alternatively, give me the collection ShortName plus cycle/pass and I can fetch it.
+
+**2. "My region" has no bounds attached.** Nothing in this session defines it. I need lat/lon bounds (or a named box I can resolve).
+
+## The issue worth raising now
+
+Quality flags alone will not make `ssha` analysis-ready. The `ocean-science:swot` skill's working rules are explicit that flag gating is *necessary but not sufficient*, and they point to a gotcha concept on a crossover calibration that arrives **unapplied** in the product, carried in a `height_cor_xover` field with its own quality gate. If you mask on flags and take the mean without addressing that, the number absorbs an uncorrected cross-swath error — which is exactly the kind of bias a regional mean SSHA is sensitive to.
+
+I could not read that concept directly to give you its specifics: the knowledge bundle lives outside this session's permitted directory (`claude plugin list` and reads under the plugin cache are both blocked), so I have the skill's pointer to it but not its text. Flagging that as a gap rather than filling it from memory — the skill's own rule is to never hardcode a baseline or correction caveat.
+
+I also won't assume which flag and SSHA variables your granule carries. L2 LR SSH ships in several tiers whose variable sets differ; I'll read the actual variables off the file rather than guess at names.
+
+## What I'll do once you answer
+
+1. Open the granule, report its tier, version family, and cycle/pass, and list the actual flag and SSHA variables present.
+2. Re-attempt the concept consult with the bundle path, so the crossover handling comes from the concept, not from me.
+3. Decode the bit-packed quality flags, subset to your region, and report **the fraction of pixels masked and why** alongside the statistics.
+4. Report mean and standard deviation **per swath**, with the nadir gap intact — the two swaths have independent error profiles, and nothing gets interpolated across the gap.
+5. Quote the product's own SSHA uncertainty variables beside the result.
+
+Send me the granule path and the region bounds and I'll run it.

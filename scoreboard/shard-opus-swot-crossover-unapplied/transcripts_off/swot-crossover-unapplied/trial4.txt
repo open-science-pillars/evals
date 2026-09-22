@@ -1,0 +1,33 @@
+I can't run this yet — two things are missing, and one of them would have made the numbers wrong even if I had them.
+
+## Blockers
+
+**No granule.** There's no NetCDF anywhere in `/home/user/run/evals` (only the eval scaffolding). Give me the path.
+
+**No region.** "My region" isn't defined anywhere in this session. I need a bounding box (lon/lat), or a named region I can turn into one.
+
+## The bigger issue: quality flags alone won't get you a trustworthy mean
+
+This is the part worth reading before you hand me the file. Gating on the bit-packed quality flags is **necessary but not sufficient** for SWOT KaRIn L2 LR SSH statistics.
+
+The KaRIn L2 SSH products ship with the **crossover calibration unapplied**. `ssha_karin` as it sits in the granule still carries the residual cross-track/roll error that the crossover calibration is there to remove. If you flag-mask and then take `mean()` and `std()` directly off that field, you get a regional mean biased by an uncorrected swath-scale tilt and an inflated standard deviation — and neither error announces itself, because every pixel you used passed its quality flag.
+
+The `ocean-science:swot` skill names `height_cor_xover` as the correction field, and the correction has its own quality gate that must be applied alongside it (`skills/swot/SKILL.md:108`, and the procedure at `skills/swot/references/swot-products.md:46`).
+
+**Caveat on my sourcing:** the authoritative facts here live in the knowledge concept `knowledge/podaac/gotchas/swot-crossover-unapplied.md`, plus `knowledge/podaac/datasets/swot-karin.md`. I could not read them — the `nasa-daac-knowledge` bundle resolves outside this session's allowed directories, and the shell command to locate it wasn't approved. So I'm relaying the rule as the ocean-science skill files state it, not the concept's own text. I don't have from the concept: the exact name of the crossover quality-gate variable, or whether your granule's tier also carries a pre-corrected SSHA variant you could use instead. Both need to be read off the concept and confirmed against the granule's actual variables rather than assumed.
+
+## Also folded into the计算 when we run it
+
+- **Per-swath, gap intact.** Left and right swaths have independent error profiles; statistics get reported per swath, and nothing gets interpolated across the nadir gap.
+- **Masked fraction reported**, with the dominant flag reasons — not just the surviving mean.
+- **Processing baseline (`crid`) recorded** for the granule, since consistency claims depend on it.
+- **Uncertainty variables quoted** alongside the mean, per the dataset concept's uncertainty section.
+- If your granule is from **2023**, the cal/val→science orbit transition gets checked first; it's a silent-failure trap.
+
+## What I need from you
+
+1. Path to the granule.
+2. Region bounding box.
+3. If you can make the `nasa-daac-knowledge` bundle readable (its install path, or approval to glob `/root/.claude/plugins/cache/`), I'll read the crossover and dataset concepts directly and apply the correction exactly as specified rather than approximately.
+
+With 1 and 2 I can give you flag-gated numbers immediately — but I'd label them provisional and clearly not crossover-corrected, which for a regional mean SSHA is a real caveat, not a footnote.

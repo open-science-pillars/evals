@@ -1,0 +1,20 @@
+## I can't run this yet — and one thing in the premise needs correcting first
+
+**Correcting the premise:** flag gating alone will not give you a trustworthy mean and standard deviation of SSHA. For SWOT KaRIn L2 LR SSH, the crossover calibration arrives **unapplied** in the distributed `ssha` field; `height_cor_xover` carries it and has its own quality gate. A regional mean over flag-good pixels without that correction absorbs the residual cross-track / pass-dependent bias the correction exists to remove — which is exactly the quantity your mean is measuring. The load procedure I'm bound by (`skills/swot/references/swot-products.md`, step 6) requires applying it with its gate and stating explicitly that it was applied. So the recipe is: decode flags → mask → apply crossover correction under its gate → then compute statistics.
+
+**Blocker 1 — there's no granule in this session.** Nothing under `/home/user/run/evals` is a SWOT file (the only match is an evals scoreboard directory). Give me either:
+- a path to the `.nc` granule, or
+- the collection ShortName plus cycle/pass, and I'll run the `load-swot` search and volume gate.
+
+**Blocker 2 — "my region" isn't defined.** I need a bounding box (lon/lat). Granules are whole passes, so the search returns every pass touching the box and I trim to the box before aggregating — the box changes both the download and the answer.
+
+**Blocker 3 — I could not read the PO.DAAC knowledge bundle.** The concepts that own the facts I'd need all live under `knowledge/podaac/`:
+- `datasets/swot-karin.md` — tier Variants table, granule anatomy, uncertainty variables, baseline drift
+- `gotchas/swot-crossover-unapplied.md` — the correction field and its quality gate
+- `gotchas/swot-calval-orbit-phases.md` — orbit phase / version-family trap (fires first if your dates touch 2023)
+
+I searched the `ocean-science` bundle root (v0.9.0) and read its index, the `swot` skill and its products reference. I could **not** reach the provider bundle: `claude plugin list --json` needs approval that wasn't granted, and directory listing outside `/home/user/run/evals` is blocked. So I don't have the flag bit definitions, the crossover gate threshold, the tier table, or the uncertainty variable names — and I'm not going to supply them from memory, because those are precisely the values a wrong answer hides in.
+
+**To unblock, either** approve `claude plugin list --json` (or tell me the nasa-daac-knowledge install path), **or** confirm you want me to proceed on general method with the provider concepts explicitly uncited.
+
+Once I have the granule, the box, and the bundle, you'll get: mean and std of SSHA over good pixels with the crossover correction applied and said so, computed per-swath with the nadir gap intact, plus flagged fraction with dominant flag reasons, the `crid` baseline of each granule loaded, and the native uncertainty variables alongside the numbers.

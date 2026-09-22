@@ -1,0 +1,44 @@
+I can't give you the numbers yet — and there's a substantive reason beyond the missing inputs.
+
+## Blockers
+
+**1. No granule.** There's no `.nc` anywhere under `/home/user/run/evals` (the only directory this session can search). You said you have one — I need the path.
+
+**2. No region.** "My region" isn't defined anywhere in this session. I need a bounding box.
+
+**3. The quality flags alone won't get you a trustworthy mean.** This is the part worth reading.
+
+## Flag-gating is necessary but not sufficient
+
+The `ocean-science` SWOT skill is explicit that flag gating "is necessary but not sufficient" (`skills/swot/SKILL.md:72`), and names the reason: the **crossover calibration arrives unapplied** in the product, with `height_cor_xover` as the fix (`SKILL.md:106-108`). The `load-swot` workflow makes it a step, not an option — ssha statistics over good pixels are to be computed *with* the crossover correction applied, "stating explicitly that the correction was applied" (`skills/load-swot/SKILL.md`, step 6).
+
+This bites exactly your use case. A regional mean SSHA is a low-order statistic over a swath, which is precisely where an uncorrected cross-track/inter-pass bias lands. Flag-gating removes bad pixels; it does nothing about a systematic offset in the good ones. Your standard deviation is less exposed, your mean is very exposed.
+
+## The knowledge bundle I needed isn't reachable
+
+Per `core:consult-knowledge` I searched the roots available to this session and am telling you which:
+
+- `ocean-science` 0.9.0 — skills readable, **`knowledge/` tree absent from disk**
+- `core` 0.6.0 — same
+- local config `.osp/` — no bundle paths
+- `claude plugin list --json` — blocked (Bash is sandboxed to the working directory)
+
+The three concepts the skills point at all live under `knowledge/podaac/` in the **`nasa-daac-knowledge`** plugin (`ocean-science` declares it as a dependency at `>=2026.9.2`), and none resolve:
+
+- `datasets/swot-karin.md` — tier inventory, uncertainty variables, known issues
+- `gotchas/swot-crossover-unapplied.md` — **the correction field and its quality gate**
+- `gotchas/swot-calval-orbit-phases.md` — orbit phase / version family
+
+I can see from `runner/concept-fingerprints.json` that these concepts are expected to exist; only their hashes are in this repo. So I know the crossover gate exists and matters, but I can't read what it prescribes — and I'm not going to invent the sign convention or the gating threshold for you.
+
+## What I've prepared
+
+`swot_ssha_region_stats.py` in the scratchpad. It deliberately **derives the flag layout from the granule's own `flag_masks`/`flag_meanings` attributes** rather than hardcoding a bit layout, decodes bitwise rather than thresholding the packed integer, reports the masked fraction with dominant flag reasons, and keeps the two swaths separate with the nadir gap intact. It stops hard at the crossover step with a message explaining what to fill in. I have not been able to run it — Python execution needs your approval here, so treat it as unverified.
+
+## What I need from you
+
+1. **Path to the granule**, and ideally confirmation of the tier (Basic / Expert / WindWave / Unsmoothed) — Basic may not carry `height_cor_xover`.
+2. **Bounding box** — `lon_min lon_max lat_min lat_max`.
+3. **Either** repair the `nasa-daac-knowledge` install so I can read the crossover gate, **or** tell me explicitly to proceed with flag-gating only — in which case I'll give you the numbers clearly labelled as uncorrected for crossover, which makes the mean an unreliable figure to quote.
+
+One smaller thing once I see the box: KaRIn pixels aren't equal-area across the swath, so if your region is large I'd area-weight the mean rather than taking a flat pixel average.

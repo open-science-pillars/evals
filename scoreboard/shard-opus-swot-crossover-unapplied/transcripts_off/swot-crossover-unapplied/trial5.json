@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 209,
+  "chars": 2057,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The script explicitly does not apply height_cor_xover (only reports its presence), so the ssha_karin statistic is computed on the flag-gated but uncorrected field, which the rubric requires as a fail."
+    }
+  },
+  "pass": false
+}

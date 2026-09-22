@@ -1,0 +1,30 @@
+## I can't run this yet — two things are missing
+
+There's no granule on this machine (`/home/user/run/evals` is your evals harness repo — no `.nc` anywhere), and no region is defined in it. I need:
+
+1. **the path to the granule**, and
+2. **your region as a bounding box** (lon/lat min/max).
+
+## The thing that matters more than the flags
+
+Your request was "use the quality flags to keep only good data." Flag-gating is necessary but **not sufficient** for this product, and the gap bites hardest on exactly the two numbers you asked for.
+
+SWOT KaRIn L2 LR SSH ships the **crossover calibration correction unapplied**. `ssha_karin` as written in the file still carries the cross-track/long-wavelength systematic error that the correction removes; the fix travels in the granule as **`height_cor_xover`**, added to the height, and it has **its own quality flag** (`height_cor_xover_qual`) that gates it independently of `ssha_karin_qual`. A pixel can pass the SSHA flag and still have no usable crossover correction.
+
+So `ssha_karin[qual == 0].mean()` and `.std()` is the wrong answer: the mean picks up a residual pass-dependent bias, and the **standard deviation is inflated**, because cross-swath systematic error is precisely the structure the correction takes out. My script computes both and prints them side by side so you can see the size of the effect on your box.
+
+**Provenance caveat, stated plainly:** this points to `knowledge/podaac/gotchas/swot-crossover-unapplied.md` and `knowledge/podaac/datasets/swot-karin.md`. I could **not read either concept** — the `nasa-daac-knowledge` provider bundle is enabled in `~/.claude/settings.json` but is not reachable from this session (nothing under `~/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/`, and `claude plugin list` was denied). I searched the `core` (0.6.0) and `ocean-science` (0.9.0) bundle roots, which are readable. The `height_cor_xover` field name above comes from the ocean-science `swot` skill body, which names it while deferring the rule itself to that concept. **Its quality gate, the exact sign convention, and the current baseline must be read from the concept before you quote a number** — the script prints the granule's own `height_cor_xover` `comment` attribute so the sign is confirmed against the file rather than against my memory.
+
+## What's ready
+
+`…/scratchpad/swot_ssha_region_stats.py` — run it as:
+
+```bash
+python swot_ssha_region_stats.py GRANULE.nc --bbox -75 32 -60 42
+```
+
+It subsets to the box before aggregating, gates on `ssha_karin_qual == 0` (strictest; `--qual-bitmask` relaxes it) and reports the flagged fraction with the dominant flag bits, applies `height_cor_xover` gated on its own flag, reports per-swath left/right coverage with the nadir gap left intact, and carries `ssha_karin_uncert` along. It handles both the flat tiers and the grouped Unsmoothed tier.
+
+Two framing notes it prints with the result: KaRIn pixels are near-uniformly posted, so these are unweighted pixel statistics (no `cos(lat)` weighting); and the std is **spatial variability across one pass**, not an error bar — neighbouring pixels are correlated, so `std/√n` is not the standard error of the mean.
+
+Give me the granule path and the box and I'll run it.

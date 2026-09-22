@@ -1,0 +1,29 @@
+I can't compute the numbers yet, and there's a substantive reason beyond the missing inputs. Taking the substantive one first, since it changes what the answer should be.
+
+## Quality flags alone won't make those statistics valid
+
+The `load-swot` workflow's own procedure flags the crossover-calibration issue specifically *when statistics are the goal* — which is exactly your case. From the skill files I read:
+
+- `ocean-science/0.9.0/skills/swot/SKILL.md:36-38` names a concept for "the crossover correction that arrives unapplied, the field that carries it, and its quality gate", and at `:106-111` refers to "the unapplied crossover calibration with its `height_cor_xover` fix."
+- `skills/swot/references/swot-products.md:46-48` puts it in the procedure: decode flags, **then** "apply the crossover correction the gotcha prescribes with its gate."
+- `skills/load-swot` step 6 requires ssha statistics over good pixels to be "computed with the crossover correction ... stating explicitly that the correction was applied."
+
+So flag gating is necessary but not sufficient here. A mean and standard deviation of `ssha_karin` over a region, computed from flag-gated pixels alone, would carry uncorrected cross-swath systematic error — and a regional mean is precisely the statistic that error biases. The standard deviation is affected too, since the error varies across track.
+
+## What I could not read
+
+I could not open the provider concepts themselves, so I don't have the correction's mechanism, its quality gate, the flag bit definitions, or the tier inventory:
+
+- `knowledge/podaac/datasets/swot-karin.md`
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md`
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md`
+
+These live in the `nasa-daac-knowledge` plugin (`ocean-science` declares it as a dependency at `>=2026.9.2`). Filesystem access in this session is restricted to `/home/user/run/evals`, and `claude plugin list --json` — the installer record that would give me the install path — needs an approval I didn't get. I searched only what I could reach: the `ocean-science` 0.9.0 and `core` 0.6.0 skill trees. I'm not going to fill those gaps from memory; the flag bit meanings and the crossover gate are exactly the things the skills forbid guessing at, and a wrong bit mask would silently produce a plausible-looking number.
+
+## What I need from you
+
+1. **The granule path.** There's no `.nc` file in the working directory, which holds the eval-runner repo, not data. I couldn't search outside it.
+2. **The region** — a bounding box. "My region" hasn't been specified in this session.
+3. **Which tier** the granule is (Basic vs. Expert, etc.). This likely decides whether `height_cor_xover` is even present in your file; the Variants table in the dataset concept settles it.
+
+If you also approve `claude plugin list --json`, or just tell me the install path for `nasa-daac-knowledge`, I'll read the three concepts, decode the flags per their actual definitions, apply the crossover correction under its gate, and report the mean and standard deviation per swath with the flagged fraction and dominant flag reasons — plus the uncertainty variables the dataset concept says should travel with the result.

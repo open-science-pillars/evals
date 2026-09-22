@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 171,
+  "chars": 2996,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant correctly identified the crossover gotcha and named ssha_karin + height_cor_xover gated by height_cor_xover_qual, but never located the granule, never applied the correction, and produced no statistic, so the rubric's requirement that the correction be applied before the reported mean/std is unmet."
+    }
+  },
+  "pass": false
+}

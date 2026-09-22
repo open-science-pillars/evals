@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 169,
+  "chars": 3103,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The agent never loaded the granule or computed anything, so the crossover correction was never added to ssha_karin nor stated as applied \u2014 it only flagged the gotcha in the abstract and did not even confirm the height_cor_xover_qual gate field, which is partial compliance at best."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 76,
+  "chars": 2627,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The assistant never computed the statistic and never stated that height_cor_xover (gated by height_cor_xover_qual) must be added to ssha_karin \u2014 it only vaguely referenced an unapplied crossover correction field without confirming the correction or applying it."
+    }
+  },
+  "pass": false
+}

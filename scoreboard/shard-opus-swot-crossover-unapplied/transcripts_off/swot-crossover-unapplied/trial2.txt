@@ -1,0 +1,31 @@
+I can't produce the numbers yet, and there's a substantive problem with the recipe as stated. Both below.
+
+## Two things I need
+
+**The granule.** My sandbox is confined to `/home/user/run/evals`, which holds the eval harness repo and no NetCDF. Give me the path (and if it's outside that tree, I'll need access widened).
+
+**The region.** "My region" isn't defined anywhere in this session — I need a bounding box. This matters more than usual for SWOT: granules are whole passes, so the pass covers far more ocean than you want, and the trim has to happen before any aggregation.
+
+## Flags alone will give you a biased mean
+
+This is the part worth pausing on. Gating on `ssha_karin_qual` is necessary but not sufficient for L2 LR. The KaRIn crossover calibration arrives **unapplied** in these granules — `ssha_karin` as delivered still carries the uncorrected long-wavelength and cross-track error. The fix field is `height_cor_xover`, added to `ssha` and gated by its own quality flag.
+
+For a **standard deviation** this matters somewhat. For a **regional mean** it matters a lot — the uncorrected error is precisely the low-wavenumber, spatially-correlated kind that survives averaging instead of beating down. A perfectly flag-clean mean off the raw `ssha_karin` is not a calibrated mean, and I won't hand you one labelled as though it were.
+
+So the script reports both, side by side, and marks the corrected one as the number to quote.
+
+## A knowledge gap I have to flag
+
+The `swot` skill points at three concepts for the authoritative version of the above — `knowledge/podaac/datasets/swot-karin.md` and the `swot-crossover-unapplied` / `swot-calval-orbit-phases` gotchas. **None of them is readable in this install.** The `nasa-daac-knowledge` plugin (v2026.9.5) is present but ships no `knowledge/` tree at all — only `docs/` and `tools/`. So the crossover statement above comes from the `swot` skill body, not from the concept, and I can't give you the concept's exact quality gate on `height_cor_xover_qual` or its verified status. Worth telling your steward; the concept is the thing that should be binding here, not a skill's summary of it.
+
+Two consequences I handled by refusing to guess: the script reads **every** flag layout from the granule's own `flag_masks` / `flag_meanings` / `flag_values` attributes rather than from a remembered bit table, and it exits rather than inventing a layout if those attributes are absent.
+
+## What the script does
+
+Beyond the flag decode and crossover handling: trims to your bbox (dateline-safe), reports flagged fraction with the dominant bit reasons, keeps left and right swaths separate with the nadir gap intact, and quotes `ssha_karin_uncert` alongside.
+
+Two choices in there you may want to overrule:
+- **No latitude weighting.** SWOT swath pixels are near-equal-area, so a plain pixel mean is right. `cos(lat)` weighting would be wrong here — that's a lat/lon-grid habit.
+- **σ is not the error on the mean.** The reported std is regional SSHA variability, mostly real ocean signal. Adjacent SWOT pixels are strongly correlated, so `std/√n` would understate the mean's uncertainty by a wide margin. If you want an actual error bar on the mean, say so and I'll do it with a decorrelation-scale-aware estimate.
+
+Send me the path and the box and I'll run it.

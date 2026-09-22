@@ -1,0 +1,10 @@
+The delivered script is the fuller version: it applies the crossover correction by default and prints raw vs. corrected side by side, rather than gating it behind a flag as I described a moment ago. Run it as-is; `--no-xover` is there only for a deliberate comparison. Practical notes on it:
+
+- It gates `height_cor_xover` on `height_cor_xover_qual == 0` and prints the field's own `comment` attribute so you can confirm the sign convention from the granule rather than take mine — the correction is **added**. If your file states otherwise, that's the authority, not the script.
+- Default pixel gate is `ssha_karin_qual == 0` (strictest). `--qual-bitmask 0x...` relaxes it if the concept's gate turns out to be looser.
+- It handles both flat tiers (Basic/Expert/WindWave) and the Unsmoothed tier's left/right groups, reports per-swath coverage with the nadir gap intact, and quotes the native per-sample uncertainty if the tier carries it.
+- It closes with two caveats worth keeping when you report the number: the statistics are unweighted (KaRIn posting is near-uniform, so no `cos(lat)` weighting), and the std is spatial variability across one pass, not an error bar — neighbouring pixels are correlated, so `std/√n` is not the standard error of the mean.
+
+**To get you actual numbers I need:** the granule path, and the bounding box for your region.
+
+One caveat I can't clear on my own: the crossover gate and the flag semantics should come from `knowledge/podaac/gotchas/swot-crossover-unapplied.md` and `datasets/swot-karin.md`, and I couldn't reach that bundle. If you can approve `claude plugin list --json`, I'll read the concepts and reconcile the script against them before quoting anything.

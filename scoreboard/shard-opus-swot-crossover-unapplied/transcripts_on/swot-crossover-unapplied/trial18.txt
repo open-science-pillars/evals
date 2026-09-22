@@ -1,0 +1,30 @@
+I consulted the installed knowledge bundles before touching this, and there's a problem with the request as stated that changes the answer, so I'll lead with it.
+
+## Quality flags alone will give you a wrong number
+
+`knowledge/podaac/gotchas/swot-crossover-unapplied.md` (severity **high**, status stable, human-verified by PaulMRamirez 2026-09-04):
+
+In the KaRIn L2 LR SSH products **the crossover calibration is not pre-applied** to `ssha_karin` / `ssha_karin_2`. The granule metadata itself, and the Product Description (JPL D-56407 Rev C, §4.1.8), instruct the user to add `height_cor_xover`, gated by `height_cor_xover_qual` (0 good, 1 suspect, 2 bad).
+
+The observed failure mode is not subtle. On a PGD0 Expert-tier granule (cycle 011, pass 424), **flag-gated** statistics on the uncorrected field carried a spurious linear cross-track ramp spanning about ±2.9 m — a roll/phase systematic. The same scene with the correction applied showed sensible mesoscale structure, std 0.17 m. So: flag gating is necessary but not sufficient, and because `ssha_karin` is a plausible, fully populated variable, averaging it "as is" returns a confident wrong answer rather than an obvious error.
+
+Your region's mean would absorb whatever part of that ramp falls in your box, and your standard deviation would be dominated by it.
+
+## What I need from you
+
+I can't find a granule or a region in this session — the working directory is the evals repo, and I have no path and no bounding box:
+
+1. **Path to the .nc granule** (and which tier it is — Basic carries `ssha_karin`, `height_cor_xover` and its qual flag, which is all this needs).
+2. **Your region** as `lon_min lat_min lon_max lat_max`. Granule longitude is 0–360; I convert. Note that CMR matches whole pole-to-pole passes, so a granule can legitimately hold zero pixels in your box — the script checks that first and refuses rather than reporting a statistic over nothing.
+
+## The script is written and waiting
+
+`scratchpad/swot_ssha_region_stats.py` does, in order: records the granule's actual `crid`/cycle/pass (baseline drift within collections means the loaded granules are the only record of which baseline you got); subsets to the box **before** aggregating; decodes the bit-packed flags bitwise from the file's own `flag_masks`/`flag_meanings` rather than thresholding the packed integer, and reports the masked fraction with dominant reasons; gates on `ssha_karin_qual == 0` **and** `height_cor_xover_qual == 0`; adds `height_cor_xover`; then reports mean, std and n — both corrected and uncorrected, so you can see the correction's size — per swath side as well as combined, with the nadir gap left intact.
+
+Expect a large masked fraction. A loaded open-ocean pass in the dataset concept had 39% valid after flag and land gating; that's normal, not a defect.
+
+Two things I'll state with the result rather than bury: `ssh_karin_uncert` is per-sample **random** noise and excludes the correlated swath-scale systematics that dominate the error on a regional mean, so it is not the error bar on your mean; and if this granule is from 2023, the orbit-phase gotcha applies (cal/val 1-day orbit through 2023-07-10, science 21-day from 2023-07-21, cal/val data only in the `*_D` family) — tell me the date and I'll check it.
+
+One gap worth naming for the steward: no installed concept carries the SWOT `ssha_karin_qual` bit layout — `conventions/satellite-qa-flag-decoding.md` covers MODIS, Landsat C2 and Sentinel-2 only. The script therefore reads the layout from the granule's own attributes instead of from memory.
+
+Give me the path and the box and I'll run it.

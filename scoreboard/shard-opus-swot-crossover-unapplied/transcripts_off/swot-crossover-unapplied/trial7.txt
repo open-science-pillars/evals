@@ -1,0 +1,31 @@
+I can't give you the numbers yet — two things are missing — but here's where it stands, plus one substantive warning that would have changed the answer even if I could compute it.
+
+## What's blocking
+
+**1. I can't find the granule.** The working directory is `/home/user/run/evals`, an eval-harness repo. There is no `.nc` file anywhere in it, and Bash here is sandboxed to that directory, so I can't see the rest of the filesystem. I need the absolute path.
+
+**2. You said "my region" but haven't told me where it is.** I need a bounding box (lon/lat). A SWOT granule is a whole pass, so the trim to your box has to happen before any aggregation, and a box that clips one swath and not the other will change the mean.
+
+## The warning: quality flags alone are not enough
+
+Flag gating gets you *valid* pixels. It does not get you *calibrated* ones. In SWOT KaRIn L2 LR SSH, `ssha_karin` arrives with the crossover calibration **not applied** — that correction lives in a separate field (`height_cor_xover`) with its own quality gate. A mean taken over flag-clean `ssha_karin` pixels absorbs the uncorrected cross-swath error directly into the answer, and the effect is largest on exactly the quantity you asked for.
+
+So the script prefers `ssha_karin_2` (calibration already applied by the producer) and falls back to `ssha_karin + height_cor_xover` with both quality flags required good — and refuses to report a number if neither path is available, rather than quietly handing you an uncalibrated mean.
+
+**Caveat on that warning, and it matters:** the installed `ocean-science` plugin names this issue and points at `knowledge/podaac/gotchas/swot-crossover-unapplied.md` for the specifics — the exact field and its quality gate. **That knowledge bundle is not actually installed on this machine.** `nasa-daac-knowledge@open-science-pillars` is enabled in settings and its install root exists at `.../nasa-daac-knowledge/2026.9.5-6b0ef007a964/`, but the entire `knowledge/` tree is absent from it. So the crossover handling above is my own general knowledge of the product, **not** the signed concept, and I have not verified the gate against it. Treat it as unverified.
+
+(For what it's worth: `manifests/ablation.yaml` in your working directory defines a bundle-ON vs bundle-OFF ablation with a case id `swot-crossover-unapplied`. A stripped `knowledge/` tree is what the OFF arm looks like. If you meant to be running the ON arm, the install needs repairing first.)
+
+## What I've built
+
+The attached script is parameterized on path and bbox and does the rest:
+
+- opens root-group (Basic/Expert/WindWave) or `left`/`right`-group (Unsmoothed) granules
+- reads `flag_masks`/`flag_meanings` **from the file** rather than assuming bit semantics, applies `qual == 0`, and reports which bits drove the rejections
+- keeps both swaths and the nadir gap intact — splits per-swath on the sign of `cross_track_distance`, no gridding, no interpolation across the gap
+- reports mean, std, median, range, and the flagged fraction, per swath and combined
+- flags that the std is spatial variability, not an uncertainty on the mean — SSHA is strongly spatially correlated, so `std/sqrt(n)` would badly understate the standard error
+
+It is **unrun**: Python execution needed approval I didn't get, so it hasn't been syntax-checked or exercised against real data.
+
+Send me the granule path and the bounding box and I'll run it and give you the numbers. If `--inspect` runs clean first, that'll also tell us which SSHA fields your particular tier and baseline actually carry.

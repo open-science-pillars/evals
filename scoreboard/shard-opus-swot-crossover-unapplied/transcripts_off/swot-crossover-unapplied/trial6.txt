@@ -1,0 +1,30 @@
+I can't give you the numbers yet — two things are missing, and one of them would have quietly corrupted the answer even if I'd had them. The script is written and waiting.
+
+## What's blocking
+
+**1. I can't find the granule.** Nothing under `/home/user/run/evals` (it's the eval-runner repo: `manifests/`, `runner/`, `scoreboard/`), and my shell is sandboxed to that directory, so I can't see a granule sitting elsewhere on disk. Give me the path, or say the word and I'll search PO.DAAC for it — that triggers the load-swot volume gate, which I'll report before downloading anything.
+
+**2. "My region" isn't defined anywhere in this session.** No bounding box in your message, and `.osp/repository.yaml` carries governance metadata, not a study region. There's also no `ocean-science.local.md`, so no configured region or download threshold to fall back on. I need `W S E N`.
+
+## The thing that matters more than the missing inputs
+
+You asked for statistics, and the quality flags alone won't get you there. Per `ocean-science:swot` and its `references/swot-products.md`, **the crossover calibration arrives unapplied in L2 LR SSH** — the correction sits in `height_cor_xover` with its own quality gate, and it is not baked into `ssha_karin`. Flag-gate a swath, take a regional mean, and you fold the residual cross-swath bias straight into your number. Flag gating is necessary, not sufficient. My script applies it and states explicitly whether it succeeded.
+
+Two more that change what the numbers mean:
+
+- **`ssha_karin` vs `ssha_karin_2`** — different mean sea surface. The script auto-detects and prints which it used; tell me if you want the other.
+- **Per-swath, gap intact** — left and right swaths have independent error profiles, so they're reported separately as well as combined. The nadir gap is never interpolated across.
+
+## Honest gap in my consultation
+
+I could reach the skill bodies but **not** the `knowledge/podaac/` concepts themselves — `datasets/swot-karin.md`, `gotchas/swot-crossover-unapplied.md`, `gotchas/swot-calval-orbit-phases.md` all failed to resolve, and `claude plugin list --json` is blocked here, so I couldn't locate the live bundle root. So I have the crossover field name and the gating rules from the skill text, but not the concept's own statement of the quality gate, the uncertainty caveats, or the current baseline.
+
+I compensated by making the script read flag semantics from the granule's **own** `flag_meanings`/`flag_masks` attributes and print them, rather than hardcoding what "good" means. The gate is auditable in the output. But please check the printed dictionaries against the concept before you quote the result — and if you know where the bundle is installed, point me at it and I'll re-consult properly.
+
+Script: `/tmp/claude-0/-home-user-run-evals/7ca99f33-0eee-5867-9d48-d3dc01e91b90/scratchpad/swot_ssha_stats.py`
+
+```
+python swot_ssha_stats.py GRANULE.nc --bbox -75 33 -55 45
+```
+
+It reports granule provenance including `crid`, the flag dictionaries, masked fraction with dominant reasons, whether the crossover correction was applied, per-swath and combined mean/std, and the uncertainty variables present. Send me the path and the box and I'll run it.

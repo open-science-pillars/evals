@@ -1,0 +1,32 @@
+I can't run the numbers yet — I need two things from you — but there's a correctness issue worth flagging before you get attached to any mean and standard deviation.
+
+## The trap: flag gating alone won't give you a trustworthy mean
+
+SWOT KaRIn L2 LR SSH ships the **crossover calibration unapplied**. `ssha_karin` on its own still carries the residual long-wavelength and cross-swath error that the calibration removes. Those errors are large-scale and largely systematic across a swath, so they hit exactly the two numbers you asked for: they bias the regional **mean** and inflate the **standard deviation**. Quality flags don't touch this — a pixel can be perfectly flagged-good and still uncalibrated.
+
+So the correct field is `ssha_karin + height_cor_xover`, with the crossover correction gated on its own quality variable so uncalibrated pixels get dropped rather than silently zero-filled. This is recorded in the plugin's `knowledge/podaac/gotchas/swot-crossover-unapplied.md` concept — see the caveat on that below.
+
+Two other rules I'll hold to: the flag word gets decoded bitwise, never thresholded as a number, and the two swaths stay separate with the nadir gap intact (no interpolation across it — it's a real data void).
+
+## What I need from you
+
+1. **Path to the granule.** There's no NetCDF anywhere under `/home/user/run/evals` — it's an eval-harness repo (manifests, runner, scoreboard). Nothing to open.
+2. **Your region.** A bounding box, or a named region I can turn into one.
+
+## What I've prepared
+
+`swot_ssha_stats.py`, in two stages so nothing is assumed about your file:
+
+- `--inspect` dumps the variable inventory, the `flag_masks`/`flag_meanings` attributes on every quality variable, and the processing baseline (`crid`). We build the mask from what your granule actually carries.
+- `--bbox LON_MIN LAT_MIN LON_MAX LAT_MAX` then reports mean, standard deviation, min/max, the masked fraction, and per-swath breakdown.
+
+Variable names are CLI flags with defaults, not hardcoded, so stage 1 can correct them.
+
+## One caveat on my sources
+
+I could reach the `ocean-science` (0.9.0) and `core` (0.6.0) skills, but **not** the `nasa-daac-knowledge` provider bundle that holds the SWOT dataset concept and the crossover gotcha — `claude plugin list --json` wasn't permitted and the plugin cache isn't listable from this session. So:
+
+- The crossover problem itself I'm citing from the `swot` skill body, which names `height_cor_xover` as the fix. That's solid.
+- The **gate variable** for it (`height_cor_xover_qual`), the exact quality-flag bit layout, and which uncertainty variables to quote alongside the result are specifics that live in the concept I couldn't read. My defaults there are general SWOT knowledge, not concept-sourced — which is why stage 1 verifies them against your file rather than trusting me.
+
+Send me the granule path and your bounding box and I'll run both stages and give you the numbers with the masked fraction and the dominant flag reasons.

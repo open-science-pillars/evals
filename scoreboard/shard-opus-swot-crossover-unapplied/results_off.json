@@ -1,0 +1,290 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "off",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 2,
+      "trials": 17,
+      "rate": 0.118,
+      "ci95": [
+        0.033,
+        0.343
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "swot-crossover-unapplied",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 3,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 151,
+          "chars": 2733,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent cited the crossover gotcha but never actually applied height_cor_xover (gated by height_cor_xover_qual) to ssha_karin nor computed/stated any corrected statistic \u2014 it stopped at a warning-only script and a request for inputs, which is partial compliance at best."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 199,
+          "chars": 3315,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant correctly identified the unapplied-crossover gotcha and that flag gating alone is insufficient, but it never located the granule, never wrote or ran a script, never actually applied height_cor_xover (and explicitly could not confirm the height_cor_xover_qual gate), and produced no statistic \u2014 partial compliance only."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 169,
+          "chars": 3103,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent never loaded the granule or computed anything, so the crossover correction was never added to ssha_karin nor stated as applied \u2014 it only flagged the gotcha in the abstract and did not even confirm the height_cor_xover_qual gate field, which is partial compliance at best."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 146,
+          "chars": 3282,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never applied height_cor_xover or produced any statistic \u2014 it stopped at blockers and only described the correction as future work, so the required \"correction was applied\" outcome is absent despite correctly citing the crossover gotcha. [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 209,
+          "chars": 2057,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The script explicitly does not apply height_cor_xover (only reports its presence), so the ssha_karin statistic is computed on the flag-gated but uncorrected field, which the rubric requires as a fail."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 149,
+          "chars": 3219,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The agent surfaced the unapplied crossover correction gotcha by name (height_cor_xover with its own quality gate), explicitly stated that flag gating is necessary but not sufficient, and built the computation to apply and report the correction rather than computing a statistic on the uncorrected field \u2014 the failure mode the rubric targets \u2014 while legitimately blocking on a missing granule path and undefined region."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 324,
+          "chars": 3558,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never computed the ssha_karin statistic with height_cor_xover applied \u2014 it produced only an unrun script and asked for a path/bbox \u2014 and it explicitly disclaimed the crossover-correction knowledge as unverified rather than stating the correction was applied, so the core rubric requirement is unmet despite correctly flagging that quality flags alone are insufficient."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 183,
+          "chars": 3117,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never computed the ssha_karin statistic at all \u2014 it only delivered a parameterized script and flagged the crossover gotcha, leaving the height_cor_xover quality gate and sign as unverified 'CONFIRM' assumptions, so the rubric's requirement to apply the correction and state it was applied before the statistic is unmet."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 119,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 174,
+          "chars": 3745,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript delivered no statistic and, while it did flag that flag-gating is insufficient and cited the crossover gotcha, it never applied height_cor_xover gated by height_cor_xover_qual to ssha_karin nor stated the correction was applied \u2014 it stopped at blockers and asked the user for permission to proceed uncorrected."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 191,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 108,
+          "chars": 2721,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly cites the gotchas/swot-crossover-unapplied concept, states that quality-flag gating alone is insufficient, and specifies applying height_cor_xover gated by height_cor_xover_qual to ssha_karin before computing mean/std \u2014 it did not compute or report any uncorrected statistic, blocking only on the genuinely missing granule path and bounding box."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 164,
+          "chars": 3505,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never applied the correction to a computed statistic (it produced no numbers), and its stated correction contradicts the rubric's science \u2014 subtracting rather than adding height_cor_xover and calling the term 'order centimeters' when the cross-track ramp is order meters \u2014 while also conceding it never read the swot-crossover-unapplied gotcha it cited."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 172,
+          "chars": 3874,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial produced no statistics at all and never applied height_cor_xover gated by height_cor_xover_qual to ssha_karin; although it correctly named the crossover gotcha and said flag gating is insufficient, it stopped at a request for inputs rather than delivering the corrected mean and standard deviation, which is at best partial compliance."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 188,
+          "chars": 2998,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent never applied height_cor_xover gated by height_cor_xover_qual nor computed/reported the corrected statistic \u2014 it stopped at blockers and only flagged the issue in prose, which is partial compliance at best."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 171,
+          "chars": 2996,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant correctly identified the crossover gotcha and named ssha_karin + height_cor_xover gated by height_cor_xover_qual, but never located the granule, never applied the correction, and produced no statistic, so the rubric's requirement that the correction be applied before the reported mean/std is unmet."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 128,
+          "chars": 3223,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent never applied height_cor_xover or computed any ssha_karin statistic \u2014 it stopped to request the granule path, region, and plugin access \u2014 so despite correctly citing the gotcha and noting flag gating is insufficient, it did not meet the rubric's requirement of applying the gated correction and reporting the corrected statistic."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 76,
+          "chars": 2627,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never computed the statistic and never stated that height_cor_xover (gated by height_cor_xover_qual) must be added to ssha_karin \u2014 it only vaguely referenced an unapplied crossover correction field without confirming the correction or applying it."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 149,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 193,
+          "chars": 3222,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The agent never computed the statistic and, in its stated plan, specified the wrong sign for the crossover correction (`ssha \u2212 height_cor_xover` rather than adding height_cor_xover), so the required correct-and-applied correction was not delivered."
+            }
+          },
+          "pass": false
+        }
+      ]
+    }
+  ]
+}

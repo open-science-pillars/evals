@@ -1,0 +1,14 @@
+```
+python swot_ssha_region_stats.py GRANULE.nc --bbox LON_MIN LAT_MIN LON_MAX LAT_MAX
+```
+
+What it does, in order: reads the flags' own `flag_meanings`/`flag_masks` out of the granule rather than assuming them; trims to your region *before* aggregating; gates on `ssha_karin_qual == 0`, `height_cor_xover_qual <= 0`, and the open-ocean surface classification; adds `height_cor_xover`; then reports mean and std per swath and pooled — printing the uncorrected numbers alongside, labelled "do not quote," so you can see the ramp for yourself. It also prints the pixel attrition at each gate, the granule's `crid`, and the uncertainty caveat.
+
+A couple of defaults you may want to change: I gate `height_cor_xover_qual` at 0 (good only) — `--xover-qual-max 1` admits "suspect" if you're short on coverage. And the land gate is on by default; `--no-land-mask` turns it off.
+
+## What I need from you
+
+1. **Path to the granule.** Nothing is on disk here — the working directory is the `open-science-pillars` evals repo, no `.nc` files anywhere in it.
+2. **Region bounds** — lon/lat box, or a named region I can turn into one.
+
+Two things I'd flag while you're getting those. The script errors out rather than guessing if the granule lacks `height_cor_xover`, since without it there's no defensible regional statistic to quote. And if the region returns zero in-box pixels, that's expected behaviour rather than a bug: CMR spatial search matches whole pole-to-pole passes, so a granule can match your box and still carry nothing inside it.

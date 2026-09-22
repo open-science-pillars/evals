@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 265,
+  "chars": 1534,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The agent's script gates on ssha_karin_qual and height_cor_xover_qual and explicitly adds height_cor_xover to ssha_karin before computing statistics, states the correction was applied, labels the uncorrected (flag-gated-only) numbers as 'do not quote' because of the cross-track ramp, and errors out rather than quoting a statistic if the correction variable is absent \u2014 satisfying the core requirement even though it must wait on a granule path from the user."
+    }
+  },
+  "pass": true
+}

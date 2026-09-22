@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 191,
+  "chars": 3083,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response explicitly requires adding height_cor_xover gated by height_cor_xover_qual before computing ssha_karin statistics, states that ssha_karin_qual gating alone is necessary but not sufficient, cites the SWOT KaRIn dataset/gotcha knowledge and PDD qual semantics, and avoids reporting any statistic computed on the uncorrected field (declining to fabricate numbers absent a granule and region)."
+    }
+  },
+  "pass": true
+}

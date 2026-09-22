@@ -1,0 +1,36 @@
+I can't give you the numbers yet — two things are missing, and neither is safe to guess:
+
+1. **The granule.** There's no SWOT file anywhere under `/home/user/run/evals` (that directory is the eval-harness repo). I need the path, or the cycle/pass if you want me to fetch it.
+2. **The region.** "My region" isn't defined anywhere in this session. I need a bounding box (lon/lat) or a named area.
+
+Give me those two and I'll run it and report the numbers.
+
+## A knowledge gap you should know about
+
+The `swot` skill routes every dataset fact to the PO.DAAC provider bundle, and **that bundle is not readable in this session**. `~/.claude/settings.json` lists `nasa-daac-knowledge@open-science-pillars` as enabled, and the marketplace pins it at `v2026.9.5`, but nothing exists at its install path — I could read the `core@0.6.0` and `ocean-science@0.9.0` bundles fine, so this is specific to the provider bundle. Three concepts I would normally have to read are therefore unavailable:
+
+- `knowledge/podaac/datasets/swot-karin.md` — which SSHA variable carries which corrections, the uncertainty variables, known baseline issues
+- `knowledge/podaac/gotchas/swot-crossover-unapplied.md` — the crossover correction and its quality gate
+- `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` — orbit phases and the version-family trap
+
+The skill's hard rule is *never hardcode a baseline, variant, or flag layout from memory*, so I haven't. I wrote the script to read those facts out of **your granule's own CF attributes** instead — `flag_masks`/`flag_meanings` for the bit table, `comment` for what each SSHA variant carries. That's robust and self-documenting, but it is not a substitute for the concepts on one point below.
+
+## What the script does
+
+- **Decodes the flags bitwise** from the granule's own attributes rather than thresholding the packed integer. Default gate is strict (`qual == 0`, every bit clear); `--allow-bits` widens it deliberately if you want to keep suspect-but-usable pixels.
+- **Refuses to guess the variable.** If the granule carries more than one `ssha*` field, it prints each one's `comment` and stops, because they differ in which corrections are applied and averaging the wrong one is a silent error.
+- **Fill audit before bounds**, per the QC ordering rule; reports masked fraction split into fill vs. flag, with the reason breakdown.
+- **Keeps the two swaths separate** and never interpolates across the nadir gap. Per-swath stats plus a pooled number, since the swaths have independent cross-track error profiles.
+- **Trims by boolean mask on the 2D lat/lon**, not `.sel()` — KaRIn coordinates are 2D fields over `(num_lines, num_pixels)`, so index selection doesn't apply. Antimeridian-safe.
+- **Records the granule's `crid`/baseline** rather than assuming one.
+
+Start with `--inspect` to see what your granule actually holds:
+
+```
+python swot_ssha_region_stats.py GRANULE.nc --inspect
+python swot_ssha_region_stats.py GRANULE.nc --bbox -70 30 -50 45
+```
+
+## The one thing you'll have to decide yourself
+
+If the granule carries a `height_cor_xover` field, **SWOT ships the crossover calibration unapplied**. The script detects and reports it but deliberately neither applies nor ignores it, because the rule for applying it and its quality gate live in the concept I couldn't read. Whether your mean needs that correction added materially affects the answer — a regional mean SSHA is exactly the quantity an uncorrected cross-track bias contaminates. Reinstalling the bundle (`claude plugin install nasa-daac-knowledge@open-science-pillars`) would let me settle it properly rather than leaving it to you.

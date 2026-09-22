@@ -1,0 +1,31 @@
+## The main thing: quality flags alone will not make this right
+
+The correction you'd be missing is bigger than the signal you're measuring.
+
+**`knowledge/podaac/gotchas/swot-crossover-unapplied.md`** (stable, severity high, human-verified 2026-09-04): in the KaRIn L2 LR SSH products the crossover calibration is **not pre-applied** to `ssha_karin` / `ssh_karin`. The granule metadata itself instructs adding `height_cor_xover`, and the Product Description (JPL D-56407 Rev C, §4.1.8) says the correction "is not applied in forming `ssh_karin`, `ssh_karin_2`, `ssha_karin`, or `ssha_karin_2`" and "should be added by the user."
+
+What that does to exactly the statistic you asked for, observed on a PGD0 Expert-tier granule (cycle 011, pass 424): the flag-gated but uncorrected field carries a spurious linear cross-track ramp spanning about **±2.9 m**, a roll/phase systematic. The corrected field on the same scene gave **std 0.17 m** of sensible mesoscale structure. So a mean and std from `ssha_karin` masked on `ssha_karin_qual` alone is a confident, plausible-looking wrong answer — an order of magnitude too large in the std, and a mean that depends on where your box sits across the swath.
+
+The correct field is `ssha_karin + height_cor_xover`, with `height_cor_xover_qual == 0` in the gate alongside `ssha_karin_qual` (0 good, 1 suspect, 2 bad).
+
+## What I need from you
+
+Neither thing is here — `/home/user/run/evals` has no netCDF and no region defined:
+
+1. **Path to the granule.**
+2. **Your region as a bounding box** (lon_min lat_min lon_max lat_max). Worth knowing because CMR spatial search matches whole pole-to-pole passes, so a granule that "covers" your region can carry zero in-box pixels — the script stops and says so rather than returning an empty mean.
+
+## Ready to run
+
+`swot_ssha_region_stats.py` in the scratchpad does it properly:
+
+- reads `flag_masks`/`flag_meanings` **off the granule** rather than from a remembered bit layout, and gates on `== 0` (never thresholds a packed QA integer — core `quality-control`, check 5)
+- subsets to the box **before** aggregating, reports what each mask dropped and the retained fraction (~39% valid on an open-ocean pass is normal, not a defect)
+- reports corrected vs uncorrected side by side so you can see the ramp's size on *your* scene
+- splits left/right swath — independent error profiles — and never touches the nadir gap
+- records the `crid` global attribute, which is the only record of which processing baseline your granule came from
+- prints the uncertainty caveat: `ssh_karin_uncert` is per-sample random noise only and excludes the correlated swath-scale systematics that dominate a regional average, so it is not the error bar on your mean. Neither is std/√n — SSHA is mesoscale-autocorrelated, so the effective sample size is far below n.
+
+One more check once I see the file: if your granule is from 2023, **`gotchas/swot-calval-orbit-phases.md`** applies — cal/val (1-day orbit, cycles 473–578) and science (21-day, cycles restart at 001) are not one record, and cal/val-era data exists only in the `*_D` family. The script prints the cycle number so we can tell.
+
+*Concepts consulted: `knowledge/podaac/datasets/swot-karin.md`, `knowledge/podaac/gotchas/swot-crossover-unapplied.md`, `knowledge/podaac/gotchas/swot-calval-orbit-phases.md` (all stable, human-verified 2026-09-04, `stale_after` 2027-01-04 — not due for a sweep), plus core `quality-control` and `consult-knowledge`. Provenance gap: `claude plugin list --json` wasn't approved in this sandbox, so bundles were resolved from the running plugin roots — ocean-science 0.9.0 and nasa-daac-knowledge 2026.9.5-6b0ef007a964, which satisfies the `>=2026.9.2` floor in `.osp/package.yaml`.*

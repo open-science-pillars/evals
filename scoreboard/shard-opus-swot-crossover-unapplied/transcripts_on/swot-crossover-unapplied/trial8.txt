@@ -1,0 +1,29 @@
+I can't run this yet — two things are missing, and one of them is a correctness issue, not just a logistics one.
+
+## What I need from you
+
+1. **The granule path.** Nothing under `/home/user/run/evals` is a NetCDF file, and I can't see outside it. Give me the path to the `SWOT_L2_LR_SSH_*.nc` file.
+2. **The region.** "My region" isn't defined anywhere in this session — no bounding box in the project config, no prior context. Give me a lat/lon box (KaRIn granules are whole passes, so I'd trim to the box before aggregating).
+
+## The correctness issue
+
+Flag gating alone will not give you a defensible mean and standard deviation of `ssha`.
+
+The `ocean-science:swot` skill is explicit that flag decoding is "necessary but not sufficient," and `ocean-science:load-swot` requires that ssha statistics be computed **with the crossover correction applied**, stating explicitly that it was applied. KaRIn L2 LR SSH ships with the crossover calibration *unapplied*; the skill names `height_cor_xover` as the field that carries it, and says its quality gate is defined in the gotcha concept `knowledge/podaac/gotchas/swot-crossover-unapplied.md`. Leaving it out biases exactly the two numbers you asked for — cross-track systematic error is what that correction removes.
+
+## Why I'm not just proceeding on memory
+
+Every SWOT dataset fact — which quality flag variables gate pixels and how they're bit-packed, the crossover gate condition, the uncertainty variables to quote alongside the result, the tier and baseline the granule belongs to — lives in the PO.DAAC provider bundle (`knowledge/podaac/`), shipped by the `nasa-daac-knowledge` dependency (ocean-science 0.9.0 requires `>=2026.9.2`).
+
+**That bundle is not reachable in this session.** I searched the two bundle roots I can reach — `ocean-science/0.9.0/knowledge/` and `core/0.6.0/knowledge/` — and neither carries a SWOT concept; the ocean-science index says so directly ("nothing from it is copied here"). `claude plugin list --json`, the sanctioned way to locate installed bundles, is not permitted here, and directory listing outside the working directory is blocked, so I couldn't confirm whether it's absent or just installed at a path I can't guess.
+
+The swot skill's hard refusal covers this case: never work from a remembered SWOT rule where a concept exists. These concepts exist — I just can't read them.
+
+## How to unblock
+
+Either is fine:
+
+- **Install/enable the provider bundle** (`nasa-daac-knowledge >= 2026.9.2`) and allow `claude plugin list --json`, and I'll consult the concepts and run it properly — masked mean and std, per-swath, flagged fraction with dominant reasons, crossover correction applied and stated, uncertainty variables quoted, baseline (`crid`) recorded.
+- **Tell me to proceed anyway**, and I'll compute masked statistics from whatever flag variables the granule actually carries, and label the result as uncorrected for crossover and not concept-backed. That's your call to make, but I'd want the number to carry that caveat wherever it goes.
+
+Send me the path and the box and I'll start on whichever you prefer.

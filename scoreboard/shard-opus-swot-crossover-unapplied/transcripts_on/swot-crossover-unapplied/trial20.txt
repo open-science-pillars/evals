@@ -1,0 +1,21 @@
+What the script does, in the order the skills require:
+
+1. **Trims to the region first**, then aggregates — granules are whole passes, so most of the file is outside your box.
+2. **Gates on `ssha_karin_qual == 0`** (the flag word is a bit-packed 32-bit field; zero means no condition raised). It prints the variable's own `flag_meanings`/`flag_masks` and the per-bit breakdown of what got rejected, rather than me hardcoding bit definitions I can't verify against the concept.
+3. **Applies `height_cor_xover`** under `height_cor_xover_qual <= 0`, and refuses to proceed if the field is absent.
+4. **Reports per swath** (split on the sign of `cross_track_distance`), with the nadir gap left as the data void it is — never interpolated.
+5. Prints the uncorrected number **labelled as not-for-quoting**, plus the shift the crossover applies to your mean, so you can see how much it mattered.
+
+Two choices worth your attention:
+
+- **Sign convention.** I add `height_cor_xover` to `ssha_karin`. The script prints that variable's `comment` attribute so you can confirm the direction against the granule itself — I could not open the provider concept to verify it, and a sign error here doubles the bias instead of removing it.
+- **No `cos(lat)` weighting.** SWOT posting is uniform in along/cross-track, so pixels are near-equal-area and an unweighted mean is right. Applying lat-weighting as you would on a lat-lon grid would be wrong here.
+
+One more thing to decide: `ssha_karin` and `ssha_karin_2` are referenced to **different mean sea surfaces**. Over a small region the choice shifts the mean directly. The script uses `ssha_karin`; change the `SSHA` constant if your work is tied to the other MSS.
+
+**To run it I need:**
+
+1. The **path to your granule** — nothing is present under `/home/user/run/evals`, and that's the only directory I can read.
+2. Your **region** as a bounding box (`lon_min lat_min lon_max lat_max`).
+
+Send those and I'll run it and give you the numbers, along with the flagged fraction and dominant flag reasons. Separately, if you can point me at where `nasa-daac-knowledge` is installed, I'll read the crossover concept properly and confirm the gate and sign rather than inferring them from the granule metadata.

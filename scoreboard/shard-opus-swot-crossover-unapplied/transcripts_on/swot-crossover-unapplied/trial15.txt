@@ -1,0 +1,24 @@
+I can't run this yet — two things are missing, and one thing about the request itself needs flagging first.
+
+## The flag-only approach won't give you a trustworthy number
+
+Your request is "use the quality flags to keep only good data." For SSHA statistics on KaRIn L2 LR SSH, flag gating is necessary but **not sufficient**. The `swot` skill I loaded is explicit that the crossover calibration arrives **unapplied** in this product and is carried by a separate field, `height_cor_xover`, which has its own quality gate. Computing a mean and standard deviation from flag-masked `ssha` alone leaves the cross-swath systematic error in — precisely the error that a regional mean and an SSHA standard deviation are most sensitive to. The skill calls out the crossover issue as the one to read "whenever statistics are the goal."
+
+Two more constraints that change the shape of the answer:
+
+- **Report per swath, not pooled.** The left and right swaths have independent error profiles. A single pooled mean/std across both hides that structure. The nadir gap is a real data void and must not be filled.
+- **Trim before aggregating.** Granules are whole passes, so the file covers far more than your region. The subset to your bounding box has to happen before any mean is taken.
+
+## What I need from you
+
+**1. The granule path.** I searched and found nothing — this session is sandboxed to `/home/user/run/evals` (an evals harness repo, no data in it), and I can't read outside it. If the file lives elsewhere, I'll need the path plus access, or you can move it into the working directory. The filename itself is informative — it encodes cycle, pass, tier and processing baseline (`crid`), so paste it either way.
+
+**2. Your region.** "My region" isn't defined anywhere I can see — there's no project local config in the working directory. Give me a bounding box (lon/lat min/max).
+
+Worth confirming too: **which tier** the granule is (Basic, Expert, WindWave, Unsmoothed). Tiers differ in which correction and uncertainty variables they carry, so whether `height_cor_xover` is even present in your file depends on it.
+
+## Caveat on what I was able to consult
+
+I read the `load-swot` and `swot` skills and the ocean-science bundle index. The actual SWOT concepts — `datasets/swot-karin.md`, `gotchas/swot-crossover-unapplied.md`, `gotchas/swot-calval-orbit-phases.md` — live in the PO.DAAC provider bundle (`nasa-daac-knowledge`, declared at `>=2026.9.2`), and I could not reach it: `claude plugin list --json` and directory listing outside the working directory are both blocked here, and my guesses at its install path missed.
+
+So I have the pointer but not the text. I can't yet quote the flag bit definitions, the exact quality gate on the crossover correction, or which uncertainty variables to report alongside the result — and I'm not going to state those from memory when concepts for them exist. If you can give me the path to that bundle, I'll read them and apply them properly rather than working from general method.

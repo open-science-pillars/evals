@@ -1,0 +1,23 @@
+I can't run this yet, and two of the three blockers matter scientifically rather than just logistically.
+
+## What I could not find
+
+**The granule.** My file access is confined to `/home/user/run/evals`, which is the Open Science Pillars evals harness — no `.nc` anywhere in it, and `runner/fixtures/` is empty. I need the path.
+
+**Your region.** No bounding box was given, and for SWOT this isn't a formality: granules are whole passes, so the box decides whether the pass even crosses your area and how much of each swath survives the trim.
+
+**The knowledge concepts.** The `swot` and `load-swot` skills both point at `knowledge/podaac/datasets/swot-karin.md`, `gotchas/swot-crossover-unapplied.md`, and `gotchas/swot-calval-orbit-phases.md`. I could read the skill bodies and `references/swot-products.md`, but **no installed knowledge tree is reachable from this session** — every `knowledge/` directory under the plugin cache and the workspace is absent (`runner/ablation_scope.py` shows these trees get moved to a holding directory under the system temp dir, which is consistent with what I'm seeing). So the dataset facts those concepts own — the current baseline, the tier ShortNames and postings, the crossover correction's quality gate, the uncertainty variables' caveats — I do **not** have, and I won't substitute remembered values for them. Flagging this as a gap for your steward.
+
+## The part of your request I'd push back on
+
+You asked for mean and std "using the quality flags to keep only good data." Flag gating is necessary but **not sufficient** for this particular statistic. The `swot` skill records that the crossover calibration arrives **unapplied**, carried by `height_cor_xover` with its own quality gate, and that this issue fires specifically *whenever statistics are the goal* — because uncorrected cross-track/crossover error is a systematic offset, exactly the thing that biases a regional **mean** and inflates a **standard deviation**. A flag-gated mean of raw `ssha` is a clean-looking number that is wrong in a way the flags cannot tell you about.
+
+So the answer will be `ssha − height_cor_xover`, gated on both the SSHA quality flag and the crossover quality flag. The exact gate threshold is what I'm missing from the quarantined gotcha — the script takes it as a parameter rather than assuming it.
+
+## What's ready
+
+I wrote a two-stage script at `scratchpad/swot_ssha_stats.py`. Stage 1 (`inspect`) reads the flag bit definitions out of the granule's own `flag_masks`/`flag_meanings` attributes and prints the baseline (`crid`), so the gating comes from the file rather than from my memory of the product. Stage 2 (`stats`) then computes, per swath with the nadir gap intact and no regridding: good-pixel count, mean, sample std (ddof=1), masked fraction with the dominant flag reasons by name, and the per-sample uncertainty over the same pixels.
+
+One convention baked in: KaRIn posts on a near-uniform ground grid, so pixels are equal-area by construction — these must **not** be cos(lat)-weighted the way a lat/lon grid would be.
+
+Send me the granule path and your bounding box (W S E N) and I'll run stage 1, pick the gates from what the file declares, and give you the numbers.

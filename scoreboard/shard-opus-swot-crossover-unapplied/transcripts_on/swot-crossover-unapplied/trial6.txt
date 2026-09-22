@@ -1,0 +1,29 @@
+I can't give you the numbers — **there's no granule on this machine and you haven't told me your region.** I searched the working directory, `/home/user`, and `/tmp`: no `.nc`/`.nc4` files anywhere, only the plugin source repos. So I need two things from you:
+
+1. **Path to the granule** (or the cycle/pass and tier, and I'll search PO.DAAC via earthaccess)
+2. **Your bounding box** — "my region" isn't defined anywhere in this session
+
+## What I did do
+
+Your stated method — flags only — would have produced a wrong answer, so here's the corrected recipe with the concepts behind it:
+
+| Step | Why |
+|---|---|
+| Subset to the bbox **first** | CMR matches whole pole-to-pole passes; a matched pass can carry zero in-box pixels (`datasets/swot-karin.md`, Known issues) |
+| Gate on `ssha_karin_qual == 0` | What you asked for — necessary but not sufficient |
+| **Add `height_cor_xover`, gated by `height_cor_xover_qual`** | The correction ships unapplied; without it, regional statistics are silently wrong |
+| Aggregate, per swath | The two sides have independent error profiles; never cross the nadir gap |
+
+The script reports the corrected *and* uncorrected statistics side by side, so you'll see the ramp directly — if the raw span is order-metres and the corrected std collapses to order-decimetres, that's the gotcha confirmed on your scene.
+
+Three things worth knowing when the numbers come back:
+
+- **Expect ~40% valid.** A loaded open-ocean pass showed 39% valid `ssha_karin` after flag and land gating (`datasets/swot-karin.md`, granule-verified 2026-07-04). A heavy masked fraction is normal, not a defect.
+- **Don't put a standard error on your mean as σ/√n.** `ssh_karin_uncert` is per-sample *random* noise only; it excludes the correlated swath-scale systematics (roll, phase, timing, wet-troposphere residuals) that dominate at long cross-track wavelengths. Swath pixels are strongly correlated, so √n badly overstates your precision.
+- **Unweighted mean is correct here** — the ~2 km swath posting is near-uniform in area, unlike a lat-lon grid.
+
+Two caveats on what I'm handing you. The script is **unrun** — executing Python needs approval in this session, so it's reviewed code, not tested code. And no installed concept carries a SWOT QA bit layout (`conventions/satellite-qa-flag-decoding.md` covers MODIS, Landsat C2 and Sentinel-2 only), so the script decodes flag reasons from the granule's own `flag_masks`/`flag_meanings` attributes rather than a hardcoded table. That's a genuine knowledge gap worth opening a concept issue for.
+
+One flag on the `--xover-qual-max` default: I set it to 0 (good only). `height_cor_xover_qual` is 0 good / 1 suspect / 2 bad per PDD D-56407 Rev C §4.1.8 — if that masks too much of your region, `--xover-qual-max 1` admits suspect pixels, but say so in your methods.
+
+If your dates touch 2023, tell me — the cal/val-to-science orbit transition has a version-family trap (only the D family carries the cal/val phase; Version C returns **zero** granules for 2023-03-30 to 2023-07-10), and I'll read that gotcha before we search.

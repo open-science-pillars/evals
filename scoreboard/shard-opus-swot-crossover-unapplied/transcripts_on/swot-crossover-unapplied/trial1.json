@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 162,
+  "chars": 2809,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response adds height_cor_xover gated on height_cor_xover_qual==0 to ssha_karin before computing statistics, labels the output as correction-applied while marking the raw flag-gated field as a diagnostic only, and cites the swot-crossover-unapplied gotcha."
+    }
+  },
+  "pass": true
+}
