@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 432,
+  "chars": 12254,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes the geothermal flux term with a dedicated section stating geothermalFlux.bin comes from the ECCO tutorial distribution and is not a PO.DAAC collection, and it includes the SSH snapshot (ETAN) for the z* scale factor in the tendency term."
+    }
+  },
+  "pass": false
+}

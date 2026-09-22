@@ -1,0 +1,114 @@
+I consulted the installed knowledge first. Two things to flag up front about that consultation, because they limit what I can cite:
+
+- **The PO.DAAC provider bundle is enabled but not reachable on disk.** `~/.claude/settings.json` lists `nasa-daac-knowledge@open-science-pillars` as enabled and the marketplace pins `v2026.9.5`, but nothing exists under `/root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/` at any version I probed. So `knowledge/podaac/conventions/ecco-budget-formulation.md`, the `ecco-` gotchas and the fields concepts **could not be read**. Everything below comes instead from the in-package attested-computation concepts and their sanctioned code, which carry the formulation verbatim. Re-install that plugin before we run anything.
+- **Earthdata CMR verification is blocked** — `get_collections` was denied by permissions, so the ShortNames below are *not* yet CMR-verified. They come from the sanctioned executor, which is stronger than memory but is not the "Verify before promising data exists" step.
+
+---
+
+# Full-depth ECCO v4r4 heat budget — Argentine Basin
+
+## 0. The blocker you need to decide on first
+
+The attested regional executor (`skills/ocean-budget/scripts/ecco_regional_budget.py`, concept `knowledge/computations/ecco-regional-heat-budget.md`, status stable) has a **stated v1 limit: the control volume must lie inside one LLC90 tile's interior (faces 1–89). A box crossing a tile seam is refused by design**, with no override.
+
+The only registered region is `southeast-atlantic-upper` (tile 1, j 20–60, i 20–60 ≈ 44°S–10°S, 18°W–22°E, upper 323 m). Extrapolating that anchor, tile 1's western edge sits near **38–40°W**. The Argentine Basin (my working definition: **50°S–35°S, 60°W–20°W**) straddles that seam, so `resolve_box` will most likely exit with *"explicit box spans tiles [0, 1] … refused here by design."*
+
+I'm not certain of the seam longitude — it's extrapolated, not read from the grid. **Gate 1 of this plan is to check it**, by opening the geometry granule and running exactly `resolve_box`'s test (`np.unique` of tiles where `YC`/`XC` fall in the box). That's one small file, not the budget dataset.
+
+If it does span the seam, your options are:
+1. **Shrink to the tile-1 portion** (roughly east of 38°W) — attested, but it is not the Argentine Basin and I'd say so in the report.
+2. **Run unattested** on the native grid with tile-aware operators (`ecco_v4_py`/xgcm), judged against the recipe tolerance and reported as *unattested*. This also needs the budget-formulation convention, which is in the missing bundle.
+3. **Wait** for the seam-calibrated section machinery the concept says the limit lifts with.
+
+I'd recommend deciding this before we fetch anything, since it changes nothing about the collection list but everything about what you get at the end.
+
+## 1. PO.DAAC collections to download
+
+All native llc90. **Any `_05DEG` regridded collection is a hard refusal for a budget** — no correct budget formulation exists there.
+
+| # | ShortName | Variables used | Cadence |
+|---|---|---|---|
+| 1 | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `dxG`, `dyG`, `XC`, `YC` | 1 static granule |
+| 2 | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` | 12 monthly means / yr |
+| 3 | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` | 12 monthly means / yr |
+| 4 | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` | **13** month-boundary snapshots / yr |
+| 5 | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` | **13** month-boundary snapshots / yr |
+
+**Plus one non-PO.DAAC input that the budget cannot close without:** `geothermalFlux.bin`, from the ECCO v4 tutorial distribution. The concept is explicit that this is *not* a PO.DAAC collection and that a PO.DAAC-only budget omits it silently. Measured on the reference volume, the omission lands at **1.24e-12** — *inside* the absolute bar, caught only by the relative bar. On a **full-depth** volume every bottom cell is in the control volume, so this term is load-bearing here in a way it is not for the shallow reference region.
+
+Optional, only if you want more than the heat closure — I'd read each concept's own input list before adding them rather than assume:
+- `ECCO_L4_OCEAN_3D_SALINITY_FLUX_…_MONTHLY_V4R4` + `ECCO_L4_FRESH_FLUX_…_MONTHLY_V4R4` → salt budget cross-check (same executor, `--budget salt`)
+- `ECCO_L4_OCEAN_3D_VOLUME_FLUX_…_MONTHLY_V4R4` → volume budget (`--budget volume`; takes **no** separate forcing term — `WVELMASS` at the surface face already carries the freshwater flux, and adding one is a demonstrated double-count)
+
+**Volume:** roughly **0.8–1.0 GB per year** (the 3-D temperature flux collection dominates at ~60 MB/month; heat flux is 7.1 MB/month measured from the fixture manifest). Over 1992–2017 that's ~20–25 GB. Treat those as estimates — the exact figure comes from the `load-ecco` volume gate, which I have not run.
+
+## 2. Terms to compute
+
+Formulation inherited verbatim from the attested pointwise budget (`knowledge/computations/ecco-heat-budget.md`, stable, maintainer-signed). Constants: `RHOCONST = 1029.0`, `C_P = 3994.0`, `R_SW = 0.62`, `ZETA1 = 0.6 m`, `ZETA2 = 20.0 m`. Volume element `rA · drF · hFacC` — partial cells in, and **not** re-applied to the `*MASS` velocities, which already carry `hFac`.
+
+**LHS — tendency**
+- z* scale factor `s* = 1 + ETAN/Depth` from the SSH snapshots
+- `G_total = d(s* · THETA)/dt`, differenced across the 13 bracketing snapshots, `dt` in seconds per month
+- integrated as `Σ G_total · rA · drF · hFacC` over the volume
+
+**RHS term 1 — horizontal rim transport**, from **raw face fluxes at the boundary**, never from the divergence field (the telescoping identity holds for random noise and proves nothing):
+- `fx = ADVx_TH + DFxE_TH`, `fy = ADVy_TH + DFyE_TH`
+- `rim = Σfx(i0) − Σfx(i1) + Σfy(j0) − Σfy(j1)`
+
+**RHS term 2 — vertical face transport**
+- `fr = ADVr_TH + DFrE_TH + DFrI_TH`, zeroed on dry cells, bottom face zero-padded
+- `vert = Σfr(k=K) − Σfr(k=0)`
+
+**RHS term 3 — surface forcing with shortwave penetration**
+- `q1 = R_SW·exp(RF/ZETA1) + (1−R_SW)·exp(RF/ZETA2)` at the upper face, `q2` at the lower; penetration truncated below `Z < −200 m`
+- surface level: `TFLUX − (1 − (q1[0] − q2[0]))·oceQsw`
+- sub-surface: `(q1·mskC − q2·mskC_down)·oceQsw`
+- scaled by `1/(RHOCONST·C_P)` and `1/(hFacC·drF)`
+
+**RHS term 4 — geothermal at the bottom cell**
+- bottom-cell mask `mskB = mskC − mskC_down`
+- `geothermalFlux · mskB / (RHOCONST·C_P) / (hFacC·drF)`
+
+**Residual** = `LHS − (rim + vert + forcing + geothermal)`, reported per month, never absorbed into a term.
+
+## 3. Closure bars — both required
+
+| bar | threshold | units |
+|---|---|---|
+| absolute | max monthly \|residual\| / volume ≤ **1e-10** | degC/s |
+| relative | max monthly \|residual\| / largest term ≤ **1e-6** | — |
+
+One bar is not a criterion — that's the measured geothermal finding above.
+
+Every receipt also carries **mutation evidence**: the executor re-runs four sabotages (geothermal omitted, rim west face shifted one cell, vertical face sign flipped, vertical faces omitted) and records each failing a bar. If a structural sabotage passes, or the correct run fails, **no receipt is written**. On a full-depth volume the geothermal sabotage will be `applicable: true` (unlike the 300 m reference box, where it correctly records `applicable: false`).
+
+## 4. Execution sequence
+
+1. **Gate 1 — tile seam.** Fetch collection 1 only; run `resolve_box`'s test on your box. Decide among the three options in §0.
+2. **Reinstall `nasa-daac-knowledge`**, then re-consult the formulation convention and the `ecco-` gotchas (native-vs-regridded, geothermal, velmass/hFac double count, static-collection access, release mixing). Any of them can change this plan.
+3. **Verify with CMR** (`get_granules`, exact window) once permissions allow — before promising the data exists.
+4. **Fetch** via `load-ecco` with its volume confirmation gate, into `~/ECCO_V4r4_record`, plus `geothermalFlux.bin`.
+5. **Stamp the tree** — every attester refuses an unstamped tree:
+   ```bash
+   uv run <root>/tools/science_record_verify.py \
+     --manifest <root>/knowledge/references/retrieval/fixtures-2010-manifest.json \
+     --data-root ~/ECCO_V4r4_record --checksum all --exact --stamp
+   ```
+6. **Run, one year per invocation** (the executor binds a single `--year`):
+   ```bash
+   uv run <root>/skills/ocean-budget/scripts/ecco_regional_budget.py \
+     --budget heat --box -50 -35 -60 -20 --depth-m 6135 --year 2010 \
+     --data-root ~/ECCO_V4r4_record --receipt argentine-heat-2010.json
+   uv run <root>/skills/ocean-budget/scripts/regional_budget_check.py argentine-heat-2010.json
+   ```
+   `--depth-m 6135` snaps to the level-50 bottom face — that is how "full depth" is expressed here. Never edit the executor; its attester hashes it.
+7. **budget-auditor** runs on the result whether or not it's green.
+8. **Report** all four terms with units, the residual against both bars, the attester verdict and run id, the disclosed mask digest, runtime `claude-code`, and citations via `cite-ecco`.
+
+## 5. Open items for you
+
+- **Period.** You didn't name one. ECCO v4r4 runs 1992–2017 and the executor binds one year per run, so the full record is 26 runs + 26 receipts. **2017 will likely fail** its `assert ds.sizes["time"] == 13` — it needs a 2018-01-01 snapshot that the record doesn't contain. Confirm the window, or I'll default to 1992–2016 and say so.
+- **Basin definition.** Confirm 50°S–35°S, 60°W–20°W, or give me the bounds you want. A tighter 48°S–38°S, 55°W–30°W is also defensible and no less likely to cross the seam.
+- **Explicit boxes carry no reference anchor.** The attester checks the general contract and the mutation story, but the two-sided wet-cell/volume/residual anchor only exists for `southeast-atlantic-upper`. The resolved mask travels disclosed by digest — nothing can verify it's the water you meant except you reading the disclosure.
+
+Nothing has been downloaded. Tell me how you want §0 resolved and I'll start at Gate 1.

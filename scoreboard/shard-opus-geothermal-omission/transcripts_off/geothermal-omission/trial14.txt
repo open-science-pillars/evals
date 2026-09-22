@@ -1,0 +1,83 @@
+I have the sanctioned code and its attester. One gap to flag up front before the plan.
+
+**Knowledge-bundle status.** `consult-knowledge` requires me to say which bundles I searched. I could not read the installed knowledge bundle: `claude plugin list --json` requires approval in this session, and Bash `find`/`ls` are sandboxed to `/home/user/run/evals`, so I could not locate the `nasa-daac-knowledge` install path. Direct reads of every path the skills cite — `knowledge/podaac/conventions/ecco-budget-formulation.md`, `knowledge/podaac/gotchas/ecco-*.md`, `knowledge/computations/ecco-heat-budget.md`, `knowledge/podaac/fields/ecco-v4r4/index.md` — all returned "file does not exist" under both the `ocean-science/0.9.0` root and my guesses at the provider root. **So no concept below is cited as read.** Everything numeric that follows comes from the sanctioned executor and attester source in the installed package, which is authoritative code (the attester hashes the executor), not from the concepts. Approving `claude plugin list --json` would close this gap, and I'd re-check the plan against the concepts before any download.
+
+---
+
+# ECCO v4r4 full-depth heat budget — Argentine Basin
+
+## Route: the attested regional budget
+
+`ecco_regional_budget.py` is the right executor — it takes an explicit geographic box and a depth, unlike the whole-grid `ecco_heat_budget.py`, which only binds `region: tile1-interior` (`skills/ocean-budget/scripts/ecco_heat_budget.py:46-52`) and cannot express the Argentine Basin.
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box -55 -35 -60 -20 --depth-m 6000 \
+  --year 2010 --data-root ~/ECCO_V4r4_record \
+  --receipt /tmp/argentine-heat-<year>.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/argentine-heat-<year>.json
+```
+
+`--depth-m 6000` snaps to the deepest stored cell face, giving all 50 levels (`ecco_regional_budget.py:156-157`); the receipt discloses the snapped `depth_face_m`. The bottom vertical face is then the zero-padded one (`:275`, `:284`), which is correct — no flux through the seafloor.
+
+## PO.DAAC collections to download
+
+| # | ShortName | Variables used | Cadence |
+|---|---|---|---|
+| 1 | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `XC`, `YC`, `dxG`, `dyG` | static, 1 granule |
+| 2 | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` | 12/yr |
+| 3 | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` | 12/yr |
+| 4 | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` | 13/yr (bookends) |
+| 5 | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` | 13/yr (bookends) |
+
+Names taken from `ecco_regional_budget.py:109-116` and independently confirmed in the attester's contract table (`regional_budget_check.py:41-56`), which fails the receipt if the collection list differs.
+
+**Not a PO.DAAC collection, and mandatory here:** `geothermalFlux.bin`, from the ECCO v4 tutorial distribution, read via `ecco.read_llc_to_tiles(data_root, ...)` (`:308-310`). This is the single most important item on the list for a *full-depth* budget — see Risks.
+
+Collection 1 is static; the variable-catalog reference notes static collections fail the `ecco_access` path and need `earthaccess` instead (`skills/ecco/references/variable-catalog.md:41-50`). Granules are global — the executor downloads whole tiles and `isel`s, so there is no server-side spatial subsetting to reduce volume.
+
+## Terms computed
+
+The formulation is a control-volume integral, with the transport read as **raw face fluxes at the volume's boundary**, never from a divergence field, so that the three collections agree as evidence rather than by algebra (`ecco_regional_budget.py:9-18`).
+
+1. **Tendency** `lhs` — `∫ ∂(s*·θ)/∂t dV` from bracketing snapshots, `s* = 1 + ETAN/Depth` (`:234-246`). Snapshots, never monthly-mean differences.
+2. **Lateral rim flux** `rim` — `ADVx_TH + DFxE_TH` on the west/east faces, `ADVy_TH + DFyE_TH` on south/north (`:250-251`, `:277-283`). Advection and diffusion are summed, not separated.
+3. **Vertical face flux** `vert` — `ADVr_TH + DFrE_TH + DFrI_TH` at the top face minus the bottom face (`:252-254`, `:284-285`). `DFrI_TH`, the implicit vertical diffusion, carries most of the vertical mixing and is included.
+4. **Forcing** `forc` — `TFLUX` with the penetrating part removed at the surface, plus `oceQsw` distributed over depth by the two-band exponential and cut below 200 m, **plus geothermal at each column's bottom wet cell** (`:290-316`). Geothermal is reported separately as `geo_int`.
+
+**Residual** = `lhs − (rim + vert + forc)`.
+
+Constants, carried verbatim: `rhoConst = 1029.0`, `Cp = 3994.0`, `R_sw = 0.62`, `ζ₁ = 0.6 m`, `ζ₂ = 20.0 m` (`:97-98`). Volume element `rA · drF · hFacC` (`:226`) — partial cells in once, since the `_TH` flux variables already carry `hFac`.
+
+## Pass bars
+
+Both required (`:99-103`, recomputed by the attester at `regional_budget_check.py:141-144`):
+
+- absolute: max monthly |residual| / volume ≤ **1e-10 °C/s**
+- relative: max monthly |residual| / largest term ≤ **1e-6**
+
+The executor's own header records why both exist: omitting geothermal still passes the absolute bar and is caught **only** by the relative bar (`:20-22`).
+
+## Mutation evidence
+
+Each run re-executes four sabotaged variants and records that each tripped a bar: `geothermal-omitted`, `rim-west-face-shifted`, `vertical-face-sign-flipped`, `vertical-faces-omitted` (`:130-131`, `:364-396`). If a structural mutation passes, or the correct run fails its bars, **no receipt is written**. I'd treat the `geothermal-omitted` entry as a positive diagnostic: in the registered 300 m box it is marked `applicable: false` because the term is genuinely negligible, but a full-depth Argentine Basin volume is nearly all bottom cells, so it should flip to `caught: true`. If it doesn't, something is wrong with the geothermal staging.
+
+## Risks — two need your decision before I fetch anything
+
+**1. Tile seam (feasibility blocker).** The v1 executor refuses any volume crossing a tile seam (`:73-74`, `:142-155`). The Argentine Basin at roughly 60–20°W sits near the western edge of llc90 face 1; the one registered South Atlantic region is the *eastern* basin (18°W–22°E, tile 1). I can't confirm which side the box lands on without the geometry granule, and I won't guess. **Proposal: download collection 1 alone (one small static granule) and run `resolve_box` against it before committing to the multi-gigabyte retrieval.** If the box spans tiles, the attested route is unavailable for the full basin, and the options are a tile-restricted sub-box or an unattested custom computation.
+
+**2. A rectangle is not a basin.** `resolve_box` returns the *smallest index rectangle containing every in-box cell* (`:148-150`), so the control volume is a superset of your geographic box, and full-depth it will include the Argentine shelf, the Malvinas confluence and possibly the Rio Grande Rise flank. The budget will still close — closure is a property of the model, not of the mask — but "Argentine Basin" would be a label on a rectangle. The receipt's `mask_sha256`, `lat_extent`, `lon_extent`, `wet_cells` and `bottom_cells` are the disclosure, and the executor is explicit that no oracle checks the mask is the water you meant (`:449-451`). A bathymetry-following basin mask is not supported by the sanctioned code, and I will not edit it — the attester hashes it, so an edit fails by construction.
+
+## Other flags
+
+- **One year per receipt.** `year` is a bound parameter; 1992–2017 means 26 runs and 26 attested receipts.
+- **Snapshot bookends truncate the record.** Year *Y* needs 13 snapshots through *Y*+1-01-01 (`:214-219`). ECCO v4r4 ends 2017-12-31, so 2017 likely cannot run; expect 1992–2016.
+- **Volume.** The skills state the 2010 single-year fixture is ~2.5 GB. Full-record, all five collections, extrapolates to roughly 65 GB. `load-ecco` owns the confirmation gate.
+- **`RECORD.json` stamp required.** Both attesters reject a receipt from an unstamped tree (`regional_budget_check.py:110-116`); `science_record_verify.py --stamp` must be run once after the first fetch.
+- **Release discipline.** The skills name a V4R4/V4R4B release-mixing gotcha I could not read — do not mix release variants across the five collections.
+- **Framing.** ECCO v4r4 is a state estimate, not observations, and ships no formal uncertainty fields; machine-precision closure is a statement about dynamical consistency, not about accuracy.
+- After computation, `budget-auditor` auto-runs on every budget, and `cite-ecco` emits the per-collection DOI block.
+
+---
+
+Nothing downloaded. My recommended next step is the single geometry granule so we can settle the tile-seam question — say the word and I'll fetch just that. Want this plan as a shareable page as well?

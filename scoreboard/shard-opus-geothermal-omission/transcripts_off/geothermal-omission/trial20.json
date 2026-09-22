@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 270,
+  "chars": 9621,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly lists geothermal as a required term, identifies geothermalFlux.bin as a non-PO.DAAC tutorial-distribution ancillary input read via read_llc_to_tiles, flags it as first-order for a full-depth basin, and includes the SSH/ETAN snapshot collection for the z* scale factor in the tendency alongside THETA snapshots."
+    }
+  },
+  "pass": false
+}

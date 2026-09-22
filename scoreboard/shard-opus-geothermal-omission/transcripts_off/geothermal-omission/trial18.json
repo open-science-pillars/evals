@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 352,
+  "chars": 9109,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly includes the geothermal term, states it is not a PO.DAAC collection but the static ancillary geothermalFlux.bin applied at the bottom-most wet cell, and includes ETAN/THETA snapshots for the z* (s* = 1 + ETAN/Depth) tendency."
+    }
+  },
+  "pass": false
+}

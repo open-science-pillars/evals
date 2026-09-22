@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 303,
+  "chars": 10460,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan lists geothermal flux as required term 5, explicitly flagging geothermalFlux.bin as a non-PO.DAAC static ancillary input from the ECCO v4 tutorial distribution, and includes THETA/ETAN snapshots with s* = 1 + ETAN/Depth scaling for the tendency term."
+    }
+  },
+  "pass": false
+}

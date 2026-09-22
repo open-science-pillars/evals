@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 337,
+  "chars": 10765,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan devotes a dedicated section to geothermalFlux.bin, explicitly flagging it as a tutorial-distribution static ancillary input and NOT a PO.DAAC collection, and includes both THETA and ETAN month-boundary snapshots with the z* factor s* = 1 + ETAN/Depth for the tendency term."
+    }
+  },
+  "pass": false
+}

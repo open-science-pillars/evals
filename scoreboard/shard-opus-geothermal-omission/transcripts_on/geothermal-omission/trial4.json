@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 302,
+  "chars": 11384,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal flux as a computed term, explicitly states geothermalFlux.bin is not a PO.DAAC collection but a static ancillary file from the ECCO v4 tutorial distribution, and includes the ETAN/THETA snapshot collections for the z*-scaled tendency."
+    }
+  },
+  "pass": false
+}

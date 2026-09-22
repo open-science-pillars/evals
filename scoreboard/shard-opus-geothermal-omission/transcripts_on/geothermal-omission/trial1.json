@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 250,
+  "chars": 7052,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal as term 5 with the bottom-cell formula, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input required for a full-depth budget, and lists both THETA and ETAN snapshot collections for the z* tendency."
+    }
+  },
+  "pass": false
+}

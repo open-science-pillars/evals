@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 311,
+  "chars": 8248,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan devotes a dedicated section to geothermalFlux.bin as a non-PO.DAAC static ancillary file from the ECCO v4 tutorial distribution, lists geothermal as a budget term applied at bottom wet cells, and includes the ETAN/THETA snapshot collections with s* = 1 + ETAN/Depth for the z* tendency."
+    }
+  },
+  "pass": false
+}

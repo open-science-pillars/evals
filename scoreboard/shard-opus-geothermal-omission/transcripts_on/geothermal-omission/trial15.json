@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 264,
+  "chars": 10186,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes the geothermal bottom-cell term, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input the budget cannot close without, and includes the z* (ETAN/Depth) snapshot-based tendency term."
+    }
+  },
+  "pass": false
+}

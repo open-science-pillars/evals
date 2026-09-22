@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 246,
+  "chars": 7477,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal as term 4 with a dedicated section explicitly stating geothermalFlux.bin comes from the ECCO v4 tutorial distribution rather than PO.DAAC, and lists the SSH/TEMP_SALINITY snapshot collections (ETAN, THETA) with the 13-snapshot bracketing requirement for the z* tendency."
+    }
+  },
+  "pass": false
+}

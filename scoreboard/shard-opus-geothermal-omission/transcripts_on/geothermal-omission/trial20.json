@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 711,
+  "chars": 9856,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes the geothermal heat flux term, explicitly states it is a static non-PO.DAAC ancillary (geothermalFlux.bin from the tutorial misc/ directory) applied on the bottom-cell mask, and includes the z* (s_star from ETAN snapshots) factor in the tendency term."
+    }
+  },
+  "pass": false
+}

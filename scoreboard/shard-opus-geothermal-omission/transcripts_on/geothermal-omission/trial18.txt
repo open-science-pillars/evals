@@ -1,0 +1,74 @@
+I could not reach the PO.DAAC provider bundle in this session — that shapes the plan, so I'll state it up front.
+
+## What I consulted, and what I could not
+
+**Read (ocean-science bundle root, `…/ocean-science/0.9.0/`):**
+- `knowledge/computations/ecco-regional-heat-budget.md` (stable, human-verified 2026-09-20) — the attested control-volume budget, its two bars, its v1 limit
+- `knowledge/computations/ecco-heat-budget.md` (stable) — the pointwise budget whose formulation, constants and absolute tolerance the regional one inherits
+- `skills/ocean-budget/scripts/ecco_regional_budget.py` — the sanctioned executor (hashed; its ShortNames and terms are ground truth in-package)
+- `knowledge/references/retrieval/fixtures-2010-manifest.json` — granule counts and sizes
+- `skills/ecco/references/budget-formulation.md`, `variable-catalog.md`, `skills/load-ecco/SKILL.md`
+
+**Not read — gap to close before the run.** The provider bundle (`knowledge/podaac/…`) is not reachable from the running plugin's root, and `claude plugin list --json` was not permitted here, so I could not read the fields concepts (`fields/ecco-v4r4/*`, the ShortName/Schema/DOI authority), `conventions/ecco-budget-formulation.md`, or the gotchas (`ecco-geothermal-flux`, `ecco-native-vs-regridded`, `ecco-velmass-hfac-double-count`, `ecco-release-mixing`, `ecco-access-static-collections`). The earthdata MCP connector was also not permitted, so **no ShortName below is verified against live CMR and no granule-level coverage check has been done**. Everything below traces to the in-package attested computation and its executor. I can't quote DOIs until the fields concepts are readable.
+
+## Rules that constrain this plan before any data moves
+
+1. **Native llc90 grid only.** A heat budget on regridded ECCO fields is refused outright — no correct formulation exists there.
+2. **The v1 single-tile limit — the big one for the Argentine Basin.** The attested regional executor resolves a control volume onto **one tile's interior (faces 1–89)** and *refuses a volume that crosses a tile seam*. The only registered South Atlantic volume (`southeast-atlantic-upper`) sits on tile 1 spanning ~18°W–22°E. The Argentine Basin (~60°W–20°W, ~50°S–35°S) will almost certainly span more than one llc90 tile, so I expect `--box` to exit with "explicit box spans tiles […]". This must be resolved against the geometry granule **first** — it decides whether the attested route exists at all.
+3. **Geothermal is mandatory at full depth**, and it is *not* a PO.DAAC collection.
+4. **Never edit the executor** — the attester hashes it; a changed hash fails by construction.
+
+## Collections to download
+
+| ShortName | Variables used | Role | Per year |
+|---|---|---|---|
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `dxG`, `dyG`, `XC`, `YC` | volume element, mask, box resolution | 1 static granule, 8.2 MB (once) |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` | tendency, 13 month-boundary snapshots | 13 gr, 215.1 MB |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` | free-surface `s*` scaling on the same snapshots | 13 gr, ~73 MB |
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` | advective + diffusive transport, as **raw face fluxes** | 12 gr, 735.9 MB |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` | surface forcing + shortwave penetration | 12 gr, 85.2 MB |
+
+**Non-PO.DAAC input, required:** `geothermalFlux.bin` (0.4 MB), ECCO tutorial distribution. Omit it and a full-depth budget lands at ~1.24e-12 — *inside* the absolute bar, caught only by the relative bar. That measurement is exactly why the contract carries two bars.
+
+**Deliberately not downloaded:** `OCEAN_3D_VOLUME_FLUX` and `FRESH_FLUX` (volume/salt budgets only), `OCEAN_VEL`, `DENS_STRAT_PRESS`, `OBP`, `STRESS`. The three-collection design is the point — tendency, transport and forcing come from independent collections so closure is evidence, not arithmetic. Deriving transport from a divergence field instead of raw face fluxes would make the identity telescope and prove nothing.
+
+**Volume:** ~1.11 GB per year. One year ≈ 1.1 GB; the full 1992–2017 record ≈ 29 GB. The second is well past any sane gate threshold (this project has no `ocean-science.local.md`, so no configured ceiling) — I'll want explicit confirmation before fetching a multi-year record.
+
+## Terms to compute
+
+Control volume integral, every month, all 50 levels. Volume element `rA · drF · hFacC` (never re-apply hFac to a MASS variable or a flux — they already carry it).
+
+**Tendency (LHS)** — `d(s*·THETA)/dt` from bracketing snapshots, `s* = 1 + ETAN/Depth`, differenced over the true seconds between snapshots, integrated over the volume.
+
+**RHS, three terms:**
+- **Lateral rim transport** — `(ADVx_TH + DFxE_TH)` on the west face minus the east face, plus `(ADVy_TH + DFyE_TH)` on the south face minus the north face, summed over k = 1…50 on the boundary faces only.
+- **Vertical transport** — `(ADVr_TH + DFrE_TH + DFrI_TH)` at the bottom face minus the surface face. At full depth the bottom face is the zero-padded k=50 face, so this reduces to the surface face alone.
+- **Forcing** — `TFLUX` with the penetrating shortwave removed at level 1, plus the subsurface shortwave convergence `q1 − q2` (R = 0.62, ζ₁ = 0.6 m, ζ₂ = 20 m, zeroed below 200 m) driven by `oceQsw`; **plus geothermal** at bottom wet cells. Both divided by `ρ_const·c_p` (1029 kg m⁻³, 3994 J kg⁻¹ K⁻¹) and by `hFacC·drF`.
+
+**Residual** = tendency − (rim + vertical + forcing). Reported, never absorbed into a term.
+
+**Pass bars, both required:** per-volume residual ≤ **1e-10 °C s⁻¹** (the signed pointwise tolerance) **and** residual/largest-term ≤ **1e-6**. Reference run (southeast-atlantic-upper, 2010): 1.352e-14 absolute, 1.533e-07 relative.
+
+**Mutation evidence** the executor writes into every receipt: geothermal omitted, rim west face shifted one cell, vertical face sign flipped, vertical faces omitted. At full depth the volume is full of bottom cells, so the geothermal sabotage *must* be caught — `applicable: false` would itself be a red flag here.
+
+**Disclosure** (no oracle can check a mask is the water you meant): resolved index bounds, tile, depth face, lat/lon extent, wet and bottom cell counts, volume, SHA-256 of the wet mask, SHA-256 of the geometry granule.
+
+Note the units: the receipt's terms are °C m³ s⁻¹. Converting to watts is a post-step through `ρ_const·c_p`, outside the attested numbers.
+
+## Run sequence
+
+1. Fetch the geometry granule alone (8.2 MB) and resolve the Argentine Basin box — this is the gate. If it spans a seam, the attested route refuses it and we choose between: a sub-basin box inside one tile (partial coverage, disclosed), per-tile sub-volumes summed **unattested**, or getting an Argentine Basin region registered / the seam-calibrated section machinery landed upstream. I won't paper over a seam by editing the executor.
+2. Fetch the four data collections for the agreed period into `~/ECCO_V4r4_record`, plus `geothermalFlux.bin`.
+3. Stamp the tree: `uv run <root>/tools/science_record_verify.py --manifest … --checksum all --exact --stamp`. Without the `RECORD.json` stamp every attester refuses the receipt.
+4. `ecco_regional_budget.py --budget heat --box LAT0 LAT1 LON0 LON1 --depth-m 6500 --year YYYY --receipt …` (the depth snaps to the nearest stored face; confirm `k_cells` = 50 and `depth_face_m` in the receipt).
+5. `regional_budget_check.py <receipt>` — report the verdict as read, FAIL as FAIL with the failing field named.
+6. budget-auditor runs on the result regardless of the residual.
+7. Citations via the cite-ecco skill (needs the fields concepts for per-collection DOIs).
+
+## Decisions I need from you
+
+- **Period.** The executor binds one calendar year per run. 2010 has a verified fixture; 1992–2017 means 26 runs and ~29 GB — the `/sweep` skill can drive `year` and table the receipts if you want the full record.
+- **Basin definition.** Give me the box you mean (I'd start from ~50°S–35°S, 60°W–20°W) and I'll resolve it against the geometry before anything else.
+- **The provider-bundle gap** — worth fixing first if you can install `nasa-daac-knowledge` (>= 2026.9.2) or grant `claude plugin list --json`, so the ShortNames, DOIs and the geothermal/native-grid gotchas come from signed concepts rather than from the executor alone.
+
+Nothing has been downloaded.

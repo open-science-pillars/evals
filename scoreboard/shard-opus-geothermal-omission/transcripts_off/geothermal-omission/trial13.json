@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 175,
+  "chars": 7331,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly includes the geothermal flux term as part of forcing, identifies geothermalFlux.bin as a non-PO.DAAC static ancillary input from the ECCO v4 tutorial distribution that cannot be fetched with earthaccess, and includes the z* snapshot collections (TEMP_SALINITY and SSH snapshots) with the s* = 1 + ETAN/Depth tendency formulation."
+    }
+  },
+  "pass": false
+}

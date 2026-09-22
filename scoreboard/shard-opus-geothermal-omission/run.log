@@ -1,0 +1,78 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-geothermal-omission/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no recorded answer to the 1 cases is readable under /; the cited concepts are readable, which is what this arm is
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  geothermal-omission trial 1: FAIL (250s, 7052 chars)
+  geothermal-omission trial 2: FAIL (263s, 9016 chars)
+  geothermal-omission trial 3: FAIL (291s, 10217 chars)
+  geothermal-omission trial 4: FAIL (302s, 11384 chars)
+  geothermal-omission trial 5: FAIL (269s, 10469 chars)
+  geothermal-omission trial 7: FAIL (245s, 10202 chars)
+  geothermal-omission trial 6: FAIL (316s, 11240 chars)
+  geothermal-omission trial 10: empty or limit message (120s, 29 chars)
+  geothermal-omission trial 9: empty or limit message (183s, 29 chars)
+  geothermal-omission trial 8: FAIL (432s, 12254 chars)
+  geothermal-omission trial 11: FAIL (246s, 7477 chars)
+  geothermal-omission trial 14: empty or limit message (192s, 29 chars)
+  geothermal-omission trial 13: FAIL (261s, 6737 chars)
+  geothermal-omission trial 15: FAIL (264s, 10186 chars)
+  geothermal-omission trial 12: FAIL (496s, 14342 chars)
+  geothermal-omission trial 17: FAIL (190s, 10213 chars)
+  geothermal-omission trial 16: FAIL (293s, 8655 chars)
+  geothermal-omission trial 19: empty or limit message (133s, 29 chars)
+  geothermal-omission trial 18: FAIL (307s, 8508 chars)
+  geothermal-omission trial 20: FAIL (711s, 9856 chars)
+geothermal-omission: 0/16 valid (rate 0.0, 4 errors) CI [0.0, 0.194] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-geothermal-omission/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+set aside /home/user/run/evals/scoreboard/shard-opus-geothermal-omission/transcripts_on
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  geothermal-omission trial 1: FAIL (218s, 9489 chars)
+  geothermal-omission trial 2: FAIL (241s, 9500 chars)
+  geothermal-omission trial 3: FAIL (286s, 4130 chars)
+  geothermal-omission trial 5: FAIL (255s, 9234 chars)
+  geothermal-omission trial 7: PASS (187s, 8389 chars)
+  geothermal-omission trial 6: FAIL (247s, 12612 chars)
+  geothermal-omission trial 4: FAIL (522s, 13171 chars)
+  geothermal-omission trial 8: FAIL (236s, 9576 chars)
+  geothermal-omission trial 10: FAIL (258s, 9822 chars)
+  geothermal-omission trial 9: FAIL (295s, 11280 chars)
+  geothermal-omission trial 11: FAIL (271s, 11731 chars)
+  geothermal-omission trial 13: FAIL (175s, 7331 chars)
+  geothermal-omission trial 14: FAIL (220s, 8941 chars)
+  geothermal-omission trial 15: empty or limit message (260s, 29 chars)
+  geothermal-omission trial 12: FAIL (337s, 10765 chars)
+  geothermal-omission trial 16: FAIL (311s, 8248 chars)
+  geothermal-omission trial 17: empty or limit message (265s, 29 chars)
+  geothermal-omission trial 19: FAIL (303s, 10460 chars)
+  geothermal-omission trial 18: FAIL (352s, 9109 chars)
+  geothermal-omission trial 20: FAIL (270s, 9621 chars)
+geothermal-omission: 1/18 valid (rate 0.056, 2 errors) CI [0.01, 0.258] -> FAIL
+wrote /home/user/run/evals/scoreboard/shard-opus-geothermal-omission/results_off.json
+put back 8 directories
+transcripts kept: 40 trial files
+== delta scoreboard ==
+wrote /home/user/run/evals/scoreboard/shard-opus-geothermal-omission/ablation.html
+ABLATION_DONE

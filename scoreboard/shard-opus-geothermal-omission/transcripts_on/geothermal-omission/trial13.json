@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 261,
+  "chars": 6737,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly lists geothermal as a budget term (term 5, bottom wet cells via mskb) and names geothermalFlux.bin as a non-PO.DAAC static ancillary input staged at --data-root, and it includes the z*/s* snapshot collections (TEMP_SALINITY_SNAPSHOT THETA plus SSH_SNAPSHOT ETAN) for the d(s*\u00b7THETA)/dt tendency."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 291,
+  "chars": 10217,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal flux as a forcing term with a dedicated section stating geothermalFlux.bin is a static tutorial-distribution input and not a PO.DAAC collection, and it lists THETA and ETAN snapshot collections for the z*-scaled tendency."
+    }
+  },
+  "pass": false
+}

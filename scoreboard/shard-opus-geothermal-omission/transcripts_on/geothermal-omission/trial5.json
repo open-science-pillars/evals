@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 269,
+  "chars": 10469,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes the geothermal flux term, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input to be staged manually, and specifies z* (ETAN-based s*) snapshots for the tendency term."
+    }
+  },
+  "pass": false
+}

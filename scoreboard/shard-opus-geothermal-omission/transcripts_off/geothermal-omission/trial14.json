@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 220,
+  "chars": 8941,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly includes geothermal flux at the bottom wet cell, flags geothermalFlux.bin as a static ancillary file that is not a PO.DAAC collection, and specifies the z* (s* = 1 + ETAN/Depth) snapshot-based tendency including the SSH snapshot collection."
+    }
+  },
+  "pass": false
+}

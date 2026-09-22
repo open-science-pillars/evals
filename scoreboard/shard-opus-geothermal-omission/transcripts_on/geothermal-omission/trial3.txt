@@ -1,0 +1,84 @@
+## What I consulted
+
+Read in full, and cited below by path:
+
+- `knowledge/computations/ecco-heat-budget.md` (status **stable**, human-verified, maintainer-signed) — the pointwise formulation and the absolute tolerance
+- `knowledge/computations/ecco-regional-heat-budget.md` (status **stable**) — the control-volume contract, the two bars, mutation evidence, the v1 tile limit
+- `skills/ocean-budget/scripts/ecco_regional_budget.py` — the sanctioned executor (its header and body are authoritative for the ShortNames and constants below)
+- `skills/ecco/references/budget-formulation.md`, `skills/ecco/references/variable-catalog.md`, `skills/load-ecco/SKILL.md`
+
+**Two things I could not consult**, so nothing below rests on them: the PO.DAAC provider bundle (`knowledge/podaac/…` — the fields concepts, the geothermal, native-vs-regridded, hFac and release-mixing gotchas) is in the `nasa-daac-knowledge` plugin, and `claude plugin list --json`, `ls` and `find` outside `/home/user/run/evals` are all blocked in this session; and the earthdata MCP connector wasn't granted, so I could not run the `get_collections`/`get_granules` verification step the ecco skill requires before promising coverage. The ShortNames below come from the sanctioned executor itself rather than from the signed fields concepts — good provenance, but the Schema rows (units, grid placement) are still unverified, and granule-level availability for your window is unconfirmed.
+
+## The blocker you need before downloading anything
+
+The attested regional budget has a **stated v1 limit: the control volume must lie inside one tile's interior (indices 1–89). A box spanning a tile seam is refused by design** (`ecco_regional_budget.py:71`, `resolve_box` raises at `:143` and `:151`).
+
+The Argentine Basin is roughly **48°S–36°S, 58°W–38°W**. The only registered region, `southeast-atlantic-upper`, maps tile-1 indices `i` 20–60 to 18°W–22°E — about 1°/cell, putting **tile 1's western edge near 38°W**, which matches the llc90 grid's longitudinal origin at −37.5°. So essentially the whole basin sits *west* of tile 1, on another face whose tile number and index orientation I cannot resolve without the geometry granule.
+
+That leaves three possibilities, and which one holds decides the entire plan:
+
+1. The basin falls inside one tile interior of another face → the attested route works with `--box`.
+2. It straddles a face seam → **the attested executor refuses it**, and the honest path is an unattested, recipe-owned budget computed per the convention with seam-aware differencing, reported as unattested with the auditor's diagnosis.
+3. It fits but touches a tile edge (index 0 or 90) → also refused (`:151`).
+
+**Pre-flight check, before any bulk download:** fetch only `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (one static granule, via the static-collection access path, not `ecco_access`) and run `resolve_box(grid_all, -48, -36, -58, -38, 6500)`. It returns the tile and index rectangle or exits with the refusal. Everything else is contingent on that.
+
+One consequence if it resolves onto face 4 or 5: those tiles are rotated, so `ADVx_TH` is **not** a zonal flux there. The budget is still correct — `rim_flux` sums raw face-normal fluxes on index faces — but don't interpret the east/west rim terms as zonal transports without rotation.
+
+## Collections to download
+
+Required for the full-depth heat budget, all native llc90, all `V4R4`:
+
+| ShortName | Cadence | Variables used | Role |
+|---|---|---|---|
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | static, 1 granule | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `dxG`, `dyG`, `XC`, `YC` | volume element, masks, box resolution |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | 13 snapshots/yr | `THETA` | tendency bookends |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | 13 snapshots/yr | `ETAN` | free-surface scaling `s*` |
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | 12/yr | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` | rim + vertical transport |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | 12/yr | `TFLUX`, `oceQsw` | surface forcing + shortwave penetration |
+
+Optional, not read by the heat executor — add only if you want the cross-checks: `ECCO_L4_OCEAN_3D_VOLUME_FLUX_…_MONTHLY_V4R4` and `ECCO_L4_FRESH_FLUX_…_MONTHLY_V4R4` (run `--budget volume` over the same box as an independent mass-conservation check), and `ECCO_L4_TEMP_SALINITY_…_MONTHLY_V4R4` for diagnostics and figures.
+
+**Take the `V4R4` SSH snapshot, not `V4R4B`.** The executor names `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` and the attester hashes the code, so a B-release substitution is both a release-mixing error and an attestation failure.
+
+## The one input that is not a PO.DAAC collection
+
+`geothermalFlux.bin` — from the ECCO v4 tutorial distribution, read with `ecco.read_llc_to_tiles` from `--data-root`. Named in the executor header as "NOT a PO.DAAC collection; a budget without it fails the relative bar."
+
+This is the highest-stakes item in the plan, and it is worse for you than for a typical budget. The regional computation concept records the measurement from 2026-08-31: **omitting geothermal lands the residual at 1.24e-12 degC/s — inside the absolute bar of 1e-10 — and is caught only by the relative bar of 1e-6.** That measurement came from an *upper-ocean* volume. A full-depth Argentine Basin box is nearly all abyssal plain, so its bottom-cell count is large and the geothermal term is correspondingly bigger: a PO.DAAC-only download would produce a budget that looks closed on the absolute criterion and is wrong. The reference explicit box in the concept (300 m deep) recorded geothermal as `applicable: false`; yours will be `applicable: true`, and the geothermal mutation **must** be caught or the executor aborts with no receipt.
+
+## Terms to compute
+
+Residual = tendency − (rim + vertical + forcing), integrated over the control volume, monthly, for K = 50 levels (set `--depth-m 6500`; `k_cells` snaps to the nearest stored `Zp1` face, so this lands on the deepest one).
+
+1. **Tendency.** `d(s*·THETA)/dt` from the 13 month-boundary snapshots, `s* = 1 + ETAN/Depth`, differenced on exact snapshot time deltas, times `rA·drF·hFacC`, summed over the box. Snapshots, never monthly means.
+2. **Rim (horizontal).** `(ADVx_TH + DFxE_TH)` at the west face minus the east face, plus `(ADVy_TH + DFyE_TH)` at the south face minus the north face — **raw face fluxes at the boundary, never derived from a divergence field** (the telescoping identity closes for random noise and proves nothing). Accumulated in float64.
+3. **Vertical.** `(ADVr_TH + DFrE_TH + DFrI_TH)` at the box bottom face minus the top face, array zero-padded below so the sea floor carries no flux. At full depth K = 50 the bottom term is identically zero — the vertical term reduces to the surface face alone, which is a useful sanity check that your K really reached the bottom.
+4. **Forcing**, three pieces, all divided by `RHOCONST·C_P = 1029.0 × 3994.0` and by `hFacC·drF`:
+   - surface level: `TFLUX − (1 − (q₁−q₂))·oceQsw`
+   - sub-surface: `(q₁·mask − q₂·mask_below)·oceQsw` with `q(z) = 0.62·exp(z/0.6) + 0.38·exp(z/20.0)`, truncated below 200 m
+   - **geothermal**: `geothermalFlux × bottom-cell mask`, where the mask is a wet cell whose neighbour below is dry
+
+No term is approximated, and the residual is never absorbed into a term.
+
+## Closure and evidence
+
+Both bars required, neither sufficient: absolute `|residual|/volume ≤ 1e-10` degC/s, and relative `|residual|/largest term ≤ 1e-6`. Every receipt carries four mutations rerun by the executor — geothermal omitted, rim west face shifted one cell, vertical face sign flipped, vertical faces omitted — each recorded as failing a bar; a structural sabotage that cannot fail aborts the run. The receipt also discloses the resolved index bounds, tile, depth face, lat/lon extent, wet and bottom cell counts, volume, a sha256 of the resolved wet mask, and the geometry granule digest, because no oracle can check the mask is the water you meant.
+
+An explicit `--box` is the general contract: it **carries no reference anchor** (the two-sided wet-cell/volume/residual checks apply only to `southeast-atlantic-upper`), and the report has to say so. The `budget-auditor` agent runs on the result whether or not it passes.
+
+## Execution order
+
+1. Geometry granule only → run the box resolution → get tile, indices, K, wet and bottom cell counts. **Stop here if refused.**
+2. Decide the period. The executor binds one `--year` per run (default 2010). One year of the input set is order 2–3 GB, anchored on the 2.5 GB 2010 fixture cache; 1992–2017 is order 65 GB and 26 runs. There is no `ocean-science.local.md` in this directory, so no ungated-download threshold is configured — that download needs your explicit confirmation, and I'd want a granule-count and size estimate from CMR first.
+3. Stage into `~/ECCO_V4r4_record` and stamp it: `uv run <root>/tools/science_record_verify.py --data-root ~/ECCO_V4r4_record --checksum all --exact --stamp`. Every attester refuses a receipt from an unstamped tree.
+4. Place `geothermalFlux.bin` in the data root.
+5. Per year: `ecco_regional_budget.py --budget heat --box -48 -36 -58 -38 --depth-m 6500 --year YYYY` → `regional_budget_check.py` on each receipt before quoting any number. For the multi-year sweep, `year` is a declared parameter, so the `ocean-science:sweep` skill is the sanctioned way to table the receipts.
+6. `ocean-science:cite-ecco` for the per-collection DOIs at write-up.
+
+## Two decisions I need from you
+
+- **Period.** One year (2010, cheap, fixture-sized) to prove the box and the geothermal catch, then extend? That's what I'd recommend over committing to 26 years before step 1 passes.
+- **If the box straddles a seam** — take the unattested convention-based budget for the true basin, or shrink the volume to whatever fits one tile interior and accept that it is no longer the Argentine Basin? I'd take the unattested basin budget and label it as such; a correctly-bounded basin with an honest "unattested" stamp is worth more than an attested budget of the wrong water.
+
+Want this as a page you can keep open while you work through it?

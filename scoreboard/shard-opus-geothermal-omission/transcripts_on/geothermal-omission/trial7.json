@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 245,
+  "chars": 10202,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal flux as a budget term, explicitly flags it as a static non-PO.DAAC input (geothermalFlux.bin from the ECCO v4 tutorial distribution) with the omission-detection caveat, and lists THETA/ETAN snapshot collections with s* = 1 + ETAN/Depth for the z*-scaled tendency."
+    }
+  },
+  "pass": false
+}

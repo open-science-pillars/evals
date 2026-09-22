@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 307,
+  "chars": 8508,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal flux in the forcing term, explicitly flags it as a required non-PO.DAAC static ancillary input (geothermalFlux.bin) rather than a collection, and includes THETA/ETAN snapshot collections for the z*-scaled tendency."
+    }
+  },
+  "pass": false
+}

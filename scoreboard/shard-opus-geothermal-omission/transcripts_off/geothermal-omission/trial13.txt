@@ -1,0 +1,62 @@
+I have the contract from the sanctioned executor and its attester. Two things to flag before the plan itself.
+
+**What I could and couldn't read.** The `ocean-budget` and `ecco` skills both route every dataset fact to the PO.DAAC provider bundle (`knowledge/podaac/…`, from `nasa-daac-knowledge >=2026.9.2`). That bundle is not reachable from this session — Bash is sandboxed to `/home/user/run/evals` and no path under the plugin cache resolves it — so I could not read the signed fields concepts, `conventions/ecco-budget-formulation.md`, or the `ecco-geothermal-flux` / `ecco-native-vs-regridded` gotchas. `knowledge/computations/ecco-regional-heat-budget.md` is also absent from the installed `ocean-science/0.9.0` tree. Everything below instead comes from the two files that *are* reachable and that carry the contract verbatim: the sanctioned executor `skills/ocean-budget/scripts/ecco_regional_budget.py` and its attester `skills/ocean-budget/scripts/regional_budget_check.py`. Treat the ShortNames as executor-sourced, not fields-concept-verified; re-check them against the bundle before you fetch.
+
+## PO.DAAC collections
+
+Five, all native llc90. No regridded (`*_LATLON_*`) collection can substitute — a budget on regridded fields is a hard refusal, not a quality trade.
+
+| # | ShortName | Cadence | Variables used |
+|---|---|---|---|
+| 1 | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | static | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `dxG`, `dyG`, `XC`, `YC` |
+| 2 | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` |
+| 3 | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly | `TFLUX`, `oceQsw` |
+| 4 | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | snapshot | `THETA` |
+| 5 | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | snapshot | `ETAN` |
+
+Plus one **non-PO.DAAC** input: `geothermalFlux.bin`, from the ECCO v4 tutorial distribution. It is not a collection and cannot be fetched with `earthaccess`. For a full-depth budget it is not optional — see below.
+
+Collections 2 and 3 need 12 monthly granules per year; 4 and 5 need **13** snapshots per year (Jan 1 through the following Jan 1) — the executor asserts both counts and dies otherwise. The geometry collection is static, which trips a known `ecco_access` quirk; fetch it via `earthaccess` directly.
+
+## Terms
+
+Budget is `LHS = rim + vert + forc`, integrated over the control volume, per month.
+
+**Tendency (LHS)** — `d(s*·THETA)/dt` from bracketing snapshots, `s* = 1 + ETAN/Depth`, differenced over the actual second-count between snapshots, times cell volume `rA · drF · hFacC`. The `s*` factor is the z* correction; dropping it is a silent failure mode.
+
+**Horizontal convergence (rim)** — `ADVx_TH + DFxE_TH` and `ADVy_TH + DFyE_TH` read as **raw face fluxes on the four boundary faces only**, west minus east plus south minus north. Deliberately *not* derived from a divergence field: the telescoping identity is algebra and would make agreement circular rather than evidential.
+
+**Vertical convergence (vert)** — `ADVr_TH + DFrE_TH + DFrI_TH` through the top and bottom faces of the volume, with the array zero-padded at level `K` so the bottom face of a full-depth volume is a true closed face.
+
+**Surface forcing (forc, part 1)** — `TFLUX` at level 0 with the penetrating shortwave removed, plus `oceQsw` redistributed over depth by the two-band exponential `R·exp(z/ζ1) + (1−R)·exp(z/ζ2)`, `R = 0.62`, `ζ1 = 0.6 m`, `ζ2 = 20 m`, forced to zero below 200 m. Scaled by `1/(ρ·c_p)` and by `hFacC·drF`.
+
+**Geothermal (forc, part 2)** — `geothermalFlux.bin` applied at bottom wet cells only, via the bottom mask `hFacC_k − hFacC_{k+1}`. Same `1/(ρ·c_p)` scaling.
+
+Constants: `ρ = 1029.0`, `c_p = 3994.0`.
+
+**Pass bars, both required:** absolute `|residual|/volume ≤ 1e-10` degC/s, and relative `|residual|/largest term ≤ 1e-6`. The relative bar is the one that matters here — it was added precisely because omitting geothermal still passes the absolute bar.
+
+The executor also self-sabotages four ways (geothermal omitted, rim west face shifted a cell, vertical face sign flipped, vertical faces omitted) and refuses to write a receipt if a structural mutation fails to trip a bar.
+
+## Two problems with "Argentine Basin, full depth"
+
+**1. The tile-interior limit will probably refuse your region.** The executor is explicitly v1-limited: the control volume must lie inside **one** llc90 tile, indices 1–89. A box spanning a tile seam or touching a tile edge is refused by design. The one registered region is `southeast-atlantic-upper` (tile 1, upper 323 m) — the Argentine Basin is west of it and much deeper. Whether a box at roughly 55°S–35°S, 60°W–20°W lands inside a single tile's interior is not something I can settle without `XC`/`YC` from the geometry granule. **This is the first thing to check after downloading collection 1, before fetching the other four.** If it spans a seam, the attested path is closed and the budget needs the seam-calibrated section machinery, which isn't in this release.
+
+**2. An explicit box carries no anchor.** The attester's two-sided reference checks (wet-cell count, volume, residual within 3× of 1.352e-14) apply only to `southeast-atlantic-upper`/2010. A `--box` run is disclosed by mask digest and geometry hash and nothing more. It can still PASS on both bars and the mutation set — but the result is unanchored and the report must say so.
+
+Also worth knowing: `--box` resolves to the smallest **index rectangle** containing every cell centre in your lat/lon box. That is not a bathymetric basin outline — it will include shelf and ridge cells the name "Argentine Basin" excludes. If you want the basin proper, the honest options are to accept the rectangle and disclose it, or to state the box as the definition of the region.
+
+On the plus side, full depth is exactly where geothermal becomes physically real: a volume reaching the seafloor has abundant bottom cells, so the geothermal mutation will be *structural* here (it must be caught), not the applicability-waived case the executor allows for shallow boxes.
+
+## Sequence
+
+1. Fetch geometry only. Resolve the box against `XC`/`YC`; confirm single tile and interior. Read `Zp1` for the deepest stored face and set `--depth-m` at or past it so `K = 50`.
+2. If step 1 passes, fetch collections 2–5 for the target years, plus `geothermalFlux.bin`.
+3. Stamp the tree: `science_record_verify.py … --checksum all --exact --stamp`. Every attester refuses a receipt from a tree with no `RECORD.json`.
+4. Run `ecco_regional_budget.py --budget heat --box … --depth-m … --year YYYY` — **one year per run**, so 1992–2017 is 26 runs and 26 receipts.
+5. Attest each receipt with `regional_budget_check.py` before quoting any number. Report FAIL as FAIL.
+6. `budget-auditor` runs on the result regardless of residual.
+
+Volume estimate I can't give you yet — the 3D temperature flux collection is the driver and it's the large one; the 2010 fixture for the whole set is ~2.5 GB, so a 26-year full-record pull is substantially bigger. `load-ecco`'s volume gate will size it properly at fetch time.
+
+Want me to start with step 1 — geometry only, to settle the tile question? That's a single static granule and it decides whether the rest of this plan is runnable at all.

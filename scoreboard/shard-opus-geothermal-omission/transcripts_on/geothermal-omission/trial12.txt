@@ -1,0 +1,166 @@
+The plugin's knowledge is consulted and the concepts are read. Here is the complete plan. **Nothing has been downloaded.**
+
+---
+
+# Full-depth ECCO v4r4 heat budget — Argentine Basin
+
+## 0. Request as I've resolved it
+
+| | |
+|---|---|
+| Property | Heat (potential temperature) |
+| Domain | Argentine Basin, box **60°S–35°S, 65°W–20°W** (adjust if you want a bathymetry-following basin mask instead) |
+| Depth | Surface to seafloor — all 50 levels, `Zp1[50] ≈ 6134.5 m` |
+| Period | **Assumed 1992–2017**, the full v4r4 record (you didn't state one) |
+| Time resolution | Monthly means + month-boundary snapshots |
+| Grid | **Native llc90 only** |
+
+Two structural findings you need before anything is fetched are in §6. Read those before approving the download list.
+
+## 1. Knowledge consulted (all read in full, cited by path)
+
+Bundle roots: `nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge/podaac/` (the provider tier, canonical) and `ocean-science/0.9.0/knowledge/`.
+
+| Concept | Status | What it changes here |
+|---|---|---|
+| `knowledge/podaac/conventions/ecco-budget-formulation.md` | stable | The authority for every term, constant and sign below. Verified against the ECCO v4 tutorial line by line 2026-07-04. |
+| `knowledge/computations/ecco-heat-budget.md` | stable | Owns the pointwise pass bar: `residual_max ≤ 1e-10`, `residual_p999 ≤ 1e-11` degC/s. |
+| `knowledge/computations/ecco-regional-heat-budget.md` | stable | Owns the control-volume contract: **two** bars, mutation evidence, mask disclosure, **single-tile-interior limit**. |
+| `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` | stable, high | Hard refusal. `05DEG` collections carry no 3D flux variables at all — a budget isn't even assemblable there. |
+| `knowledge/podaac/gotchas/ecco-geothermal-flux.md` | stable, high | **The dominant risk for a full-depth budget.** Not a PO.DAAC collection; its omission's wrong-result mode names full-depth column budgets explicitly. |
+| `knowledge/podaac/gotchas/ecco-velmass-hfac-double-count.md` | stable, high | `ADV*`/`DF*` are already face-integrated (degC m³/s) — apply no weighting to them. hFac enters once, in the volume element. |
+| `knowledge/podaac/gotchas/ecco-release-mixing.md` | stable, high | One release throughout. There is **no `..._SNAPSHOT_V4R4B`**, so this budget is unavoidably all-V4R4; state that. |
+| `knowledge/podaac/gotchas/ecco-access-static-collections.md` | stable, medium | Geometry is fetched with `earthaccess`, never `ecco_access` with a date range (that path 404s and reports a bogus 75.8 GB estimate). |
+| `knowledge/podaac/recipes/ecco-heat-budget.md` | stable | Input list; the absolute-tolerance rationale; the domain caveat. |
+| `knowledge/podaac/recipes/ecco-regional-heat-budget.md` | stable | Rim from raw face fluxes on a disjoint path; both bars; disclosure doctrine. |
+| `knowledge/podaac/fields/ecco-v4r4/{temperature-flux-3d, heat-flux, temp-salinity, ssh, geometry}.md` | stable | ShortNames, variables, units, C-grid placement, DOIs. |
+| `knowledge/podaac/validity-domains/ecco-large-scale-statistics.md` | **draft** | Voiced as unverified: its own "Known limits" says it would wrongly answer IN for an arbitrarily small box; the verified basis is large-scale statistics only. Bears on basin-scale claims drawn from the budget, not on closure. |
+
+Two things the concepts explicitly do **not** cover, so I'm not filling them from memory: no concept maps llc90 tile indices to geography, and no concept records granule sizes for the flux, heat-flux or snapshot collections.
+
+## 2. PO.DAAC collections to download
+
+**Required — and this is exactly the recipe's `collections:` list, unchanged:**
+
+| ShortName | Variables used | Cadence | DOI |
+|---|---|---|---|
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, **`DFrI_TH`** | monthly mean | 10.5067/ECL5M-3TF44 |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` | monthly mean | 10.5067/ECL5M-HEA44 |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` | snapshot | 10.5067/ECL5S-OTS44 |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` | snapshot | 10.5067/ECL5S-SSH44 |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `maskC`, `XC`/`YC` | static, 1 granule ≈ 8.6 MB | 10.5067/ECL5A-GRD44 |
+
+`DFrI_TH` ships in the same 3D flux collection — no separate source for implicit vertical mixing.
+
+**Required but NOT a PO.DAAC collection:**
+
+- **`geothermalFlux.bin`** — ECCO v4 Python Tutorial repo, `misc/` directory. A static *model input*, not an output diagnostic. Read with `ecco.read_llc_to_tiles`, masked to bottom wet cells. Mandatory here, not optional: see §6.2.
+
+**Explicitly excluded, and why:**
+
+- Every `05DEG` collection — `ecco-native-vs-regridded`, hard refusal.
+- Every `V4R4B` collection — no B-release snapshot exists, so mixing would conflate the geodetic correction with signal.
+- `ECCO_L4_FRESH_FLUX_...` / `oceFWflx` — appears in no heat-budget term. It belongs to the volume budget, where adding it as forcing is itself a named trap.
+- `oceQnet` — present in the heat-flux collection but *not* a budget term. The formulation uses `TFLUX` and `oceQsw`. Do not substitute.
+- `ECCO_L4_OCEAN_3D_VOLUME_FLUX_...` (`UVELMASS`/`VVELMASS`/`WVELMASS`) — not needed. The rim is read from raw `ADV*_TH`/`DF*_TH` face fluxes. Take it only if you separately want the rim in Sv, in which case the velmass double-count gotcha binds.
+- `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4` — optional context only. Monthly means as tendency bookends is a named trap.
+
+## 3. Every term computed
+
+Constants, verbatim from the convention: `rhoconst = 1029` kg m⁻³, `c_p = 3994` J kg⁻¹ K⁻¹, shortwave `R = 0.62`, `zeta1 = 0.6` m, `zeta2 = 20.0` m, cut off below 200 m. Volume element `vol = rA * drF * hFacC` — hFac enters **here and nowhere else**.
+
+Identity: `G_total = G_advection + G_diffusion + G_forcing`, per wet cell, per month, in degC/s.
+
+**Term 1 — Tendency** (snapshots, with the z* scale factor)
+```
+s_star  = 1 + ETAN_snp / Depth
+G_total = (s_star * THETA_snp).diff('time_snp') / delta_t
+```
+`delta_t` is the actual snapshot spacing in seconds. The `(1 + ETAN/Depth)` factor is *part of* the tendency, not a refinement.
+
+**Term 2 — Advective convergence**
+```
+adv_hConv   = -(diff_X(ADVx_TH) + diff_Y(ADVy_TH))     # tile-aware
+adv_vConv   = ADVr_TH.diff('k_l')                      # bottom face zero-padded
+G_advection = (adv_hConv + adv_vConv) / vol
+```
+`ADVr_TH` masked to zero where `hFacC == 0` before differencing.
+
+**Term 3 — Diffusive convergence** (explicit **and** implicit)
+```
+dif_hConv   = -(diff_X(DFxE_TH) + diff_Y(DFyE_TH))
+dif_vConv   = (DFrE_TH + DFrI_TH).diff('k_l')
+G_diffusion = (dif_hConv + dif_vConv) / vol
+```
+
+**Term 4 — Forcing** (three sub-terms)
+```
+q1 = R*exp(RF[:-1]/zeta1) + (1-R)*exp(RF[:-1]/zeta2)
+q2 = R*exp(RF[1:] /zeta1) + (1-R)*exp(RF[1:] /zeta2)
+q1[zCut:] = 0; q2[zCut-1:] = 0                          # Z < -200 m
+forcH_subsurf = (q1*(mskC==1) - q2*(mskC.shift(k=-1)==1)) * oceQsw   # penetrating SW
+forcH_surf    = (TFLUX - (1-(q1[0]-q2[0]))*oceQsw) * mskC[0]         # non-solar + top-layer SW
+mskb   = mskC - mskC.shift(k=-1)                        # bottom-cell mask
+GEOFLX = geoflx_llc * mskb                              # W m-2, 3D
+G_forcing = ((forcH + GEOFLX) / (rhoconst*c_p)) / (hFacC*drF)
+```
+
+**Term 5 — Residual** `G_total - (G_advection + G_diffusion + G_forcing)`, evaluated pointwise at every wet cell and every month, in **absolute** units.
+
+**Control-volume terms** (the `--box` path, in addition to the above):
+
+| Term | Construction |
+|---|---|
+| Volume-integrated tendency | `Σ G_total · vol` over the box |
+| Rim transport, 4 lateral faces | raw `ADVx_TH+DFxE_TH` at west minus east `i` faces; `ADVy_TH+DFyE_TH` at south minus north `j` faces — read from face fluxes, **never** from a divergence field (the telescoping identity holds for random noise and proves nothing) |
+| Vertical faces | `ADVr_TH+DFrE_TH+DFrI_TH` at the bottom face minus the top face, bottom zero-padded |
+| Forcing integral | `Σ (G_forcing) · vol` |
+| Geothermal integral | reported separately, since it's the term the absolute bar cannot police |
+| Residual, two bars | `|res|/V ≤ 1e-10` degC/s **and** `|res|/largest_term ≤ 1e-6` |
+| Mutation evidence | 4 sabotages rerun every execution: geothermal omitted, rim west face shifted one cell, vertical face sign flipped, vertical faces omitted. A structural sabotage that *cannot* fail aborts the run with no receipt. |
+
+## 4. Sign and placement rules the code must honour
+
+- Horizontal fluxes on the west (`i_g`) and south (`j_g`) faces, positive toward increasing `i`/`j`; convergence is minus the divergence.
+- Vertical fluxes on the upper face (`k_l`); convergence differences along `k_l` with the bottom zero-padded.
+- Surface fluxes positive into the ocean, applied at `k=0` except the penetrating shortwave.
+- `ADV*`/`DF*` arrive already integrated over the cell face (degC m³/s) — divide by volume directly, never re-weight by hFac.
+- Convergences divide by `rA·drF·hFacC`; forcing divides by `hFacC·drF` after the `rhoconst·c_p` conversion.
+
+## 5. Execution route
+
+The only **attested** route for a non-registered region is the regional executor with an explicit box:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box -60 -35 -65 -20 --depth-m 6134.5 --year YYYY \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/argentine-heat-YYYY.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/argentine-heat-YYYY.json
+```
+
+- The pointwise executor `ecco_heat_budget.py` registers only `tile1-interior`; the Argentine Basin is not a registered region there.
+- `--year` binds **one** year (asserts exactly 12 monthly granules and 13 snapshots). 1992–2017 is **26 runs**, each with its own receipt, each attested before any number is read.
+- An explicit box carries **no reference anchor** — it's disclosed by mask digest, wet-cell count, resolved lat/lon extent and geometry digest. Read that disclosure before believing any number; no oracle can check the mask is the water you meant.
+- `budget-auditor` runs on the result regardless of whether it's green.
+
+## 6. Four things to settle before fetching
+
+**6.1 — The tile seam is likely a hard blocker.** The regional computation's stated v1 limit: *"the volume must lie within one tile interior; seam-crossing volumes are refused until the seam-calibrated section machinery lands."* The executor enforces it — `resolve_box` exits if the box selects cells on more than one tile, or if the resolved rectangle touches `j`/`i` outside 1–89. The registered reference volume sits on tile index 1 at `i` 20–60 spanning 18°W–22°E; extrapolating that mapping, a box reaching 65°W falls off tile 1's western edge. I'm flagging this as an *expectation to confirm*, not a fact — no concept records tile geography, so it gets settled from `XC`/`YC` in the geometry granule. If it crosses, the domain-integrated budget is refused by design and your options are: shrink the box to the eastern Argentine Basin, or fall back to the pointwise-closure path (valid on *any* spatial subset, no rim, no tile restriction — but it gives you a closure map, not a basin heat balance).
+
+**6.2 — Geothermal is the one that bites, and the absolute bar won't catch it.** Measured 2026-08-31: omitting geothermal lands at 1.24e-12 — *inside* the 1e-10 absolute bar. It's caught only by the relative bar. A full-depth Argentine Basin box is thick with bottom cells, so the geothermal mutation must register `caught: true`; if it comes back `applicable: false`, something is wrong with the volume, not with the physics. Fetch `geothermalFlux.bin` in the same step as the collections.
+
+**6.3 — The attester refuses an unstamped tree.** Every receipt carries a `data.record` block and attestation fails without the `RECORD.json` stamp left by `tools/science_record_verify.py`. The manifest shipped in this package is `fixtures-2010-manifest.json` — a 2010 fixture, not a 1992–2017 record. **A manifest covering the science-record tree must exist before a 26-year run can attest.** This needs confirming; if it doesn't exist, the 26-year plan stalls at attestation regardless of the data.
+
+**6.4 — Two retrieval details worth a CMR query at the gate.** The snapshot collections are described inconsistently across concepts ("daily snapshots" vs "instantaneous snapshots (budget bookends)"). The executor asserts exactly 13 snapshots per year, so if the cadence is daily you must stage **only the month-boundary granules** — a ~30× difference in what you fetch. Separately, the 2017 run needs the **2018-01-01** snapshot to close its 13th bookend; if the record stops at 2017-12-31 the final year fails its assertion.
+
+## 7. Volume estimate — honestly incomplete
+
+I won't extrapolate a total. What's actually recorded: geometry is 1 granule ≈ 8.6 MB; a 2010 native THETA year is ≈ 209 MB (one variable, one year); native monthly 3D granules in the shipped manifest run ≈ 29.6 MB each. The 3D temperature-flux collection carries **seven** 3D variables and will dominate; no concept records its granule size. 26 years is 312 granules per monthly collection. The real numbers come from a CMR granule query in the `load-ecco` volume gate, before any download.
+
+There's no `ocean-science.local.md` in this working directory, so no gate threshold is configured — I'll treat the whole fetch as requiring your explicit confirmation.
+
+---
+
+**The one decision I need from you:** the basin-integrated balance (heat content change = rim transport + surface forcing + geothermal) is the physically interesting version, and it's the one at risk from §6.1. My recommendation: fetch the **geometry granule alone (~8.6 MB)** as step one, resolve the box against `XC`/`YC`, and let that settle whether we run the control-volume budget on a trimmed single-tile box or switch to pointwise closure over the full basin. That's a trivial download that de-risks a multi-hundred-GB one.
+
+Say the word and I'll run the geometry fetch and the tile resolution — or tell me to just plan for the pointwise path and I'll rewrite §5 accordingly. I can also put this plan in a shareable page if you want it outside the terminal.

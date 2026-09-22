@@ -1,0 +1,130 @@
+I have what I need. One environment note first, then the plan.
+
+**Knowledge-bundle gap (affects how I cite this):** `settings.json` enables `nasa-daac-knowledge@open-science-pillars`, and the marketplace pins it at `v2026.9.5` — but no `knowledge/` tree is present on disk for *any* of the three plugins (core, ocean-science, nasa-daac-knowledge); only `skills/` and `scripts/` are installed. So I could not read the signed concepts the skills point to (`conventions/ecco-budget-formulation.md`, `gotchas/ecco-geothermal-flux.md`, `ecco-native-vs-regridded.md`, `fields/ecco-v4r4/*`). I also could not run `claude plugin list --json` — it required approval that wasn't granted.
+
+What I *could* read is the sanctioned, hash-attested executors and their attesters, which carry the formulation and the contract verbatim. Everything below is bound to those files. Where a fact would normally come from a concept, I say so.
+
+---
+
+# Full-depth ECCO v4r4 heat budget — Argentine Basin
+
+## 1. Domain and the route
+
+Argentine Basin ≈ **55°S–35°S, 60°W–20°W**, full depth.
+
+The attested route is `ecco-regional-heat-budget` — `skills/ocean-budget/scripts/ecco_regional_budget.py`, attested by `regional_budget_check.py`. Not the pointwise `ecco_heat_budget.py`: that one binds `region` to a registry whose only value is `tile1-interior`, so it cannot express this basin.
+
+The basin is not a registered region, so it is an **explicit box**:
+
+```
+--budget heat --box -55 -35 -60 -20 --depth-m 6135 --year YYYY
+```
+
+`--depth-m` snaps to the nearest stored cell face. Any value at or below the deepest face (ECCO v4r4's 50th face, ≈6134 m — confirm from `Zp1` in the geometry granule) yields `k_cells = 50`, i.e. full depth.
+
+## 2. PO.DAAC collections to download
+
+Native **llc90** only. Five collections, all `V4R4`:
+
+| # | ShortName | Cadence | Variables used | Role |
+|---|---|---|---|---|
+| 1 | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | static, 1 granule | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `YC`, `XC` | volume element, masks, box resolution |
+| 2 | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | snapshot | `THETA` | tendency |
+| 3 | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | snapshot | `ETAN` | z\* free-surface scaling |
+| 4 | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` | rim + vertical transport |
+| 5 | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly | `TFLUX`, `oceQsw` | surface forcing + shortwave penetration |
+
+Collections 2–5 are exactly the heat contract the attester enforces (`regional_budget_check.py:51`); a receipt listing anything else FAILs on bound parameters.
+
+**One required input is not a PO.DAAC collection:** `geothermalFlux.bin`, from the ECCO v4 tutorial distribution, staged at the root of `--data-root` and read via `ecco_v4_py.read_llc_to_tiles`. For a full-depth basin this is not optional — see §5.
+
+Collection 1 is static, and per the access-quirk the ecco skill flags, it does *not* load through `ecco_access` with a date range; fetch it with `earthaccess`.
+
+## 3. Terms to compute
+
+Integrated over the control volume, in °C·m³/s. Volume element `rA · drF · hFacC`.
+
+**LHS — tendency**
+
+$$\text{LHS} = \sum_{\text{vol}} \frac{\Delta(s^*\,\Theta)}{\Delta t}\,\cdot V,\qquad s^* = 1 + \frac{\text{ETAN}}{\text{Depth}}$$
+
+from **bracketing month-boundary snapshots** (13 per year: Jan 1 of *Y* through Jan 1 of *Y*+1), differenced in seconds.
+
+**RHS term 1 — lateral rim convergence.** Raw face fluxes on the four boundary faces, never the divergence field:
+- west − east: `ADVx_TH + DFxE_TH` at `i0` and `i1`
+- south − north: `ADVy_TH + DFyE_TH` at `j0` and `j1`
+
+**RHS term 2 — vertical faces.** `ADVr_TH + DFrE_TH + DFrI_TH`, bottom face at `k=K` minus top face at `k=0`. At full depth the `k=50` face is the sea floor, so this reduces to the surface face alone.
+
+**RHS term 3 — surface forcing with shortwave penetration.**
+- surface level: `TFLUX − (1 − (q₁(0) − q₂(0)))·oceQsw`
+- subsurface: `(q₁·mskC − q₂·mskC_dn)·oceQsw`, with
+
+$$q(z) = R_{SW}e^{z/\zeta_1} + (1-R_{SW})e^{z/\zeta_2}$$
+
+zeroed below the level where `Z < −200 m`. Divided by `rhoConst·Cp·hFacC·drF`.
+
+**RHS term 4 — geothermal.** `geothermalFlux` applied at bottom wet cells only (`mskb = mskC − mskC_dn`), divided by `rhoConst·Cp·hFacC·drF`.
+
+**Residual** = LHS − (rim + vertical + forcing + geothermal).
+
+**Constants** (carried verbatim from the signed convention into the executor, `ecco_regional_budget.py:97-98`): `rhoConst = 1029.0` kg/m³, `Cp = 3994.0` J/kg/K, `R_SW = 0.62`, `ζ₁ = 0.6` m, `ζ₂ = 20.0` m, shortwave cut at `Z < −200 m`.
+
+## 4. Pass bars — both required
+
+- **absolute:** max monthly |residual| / volume ≤ **1e-10** °C/s
+- **relative:** max monthly |residual| / largest term ≤ **1e-6**
+
+The relative bar exists precisely because omitting geothermal still passes the absolute bar (measured 2026-08-31). The executor writes **no receipt at all** if the correct formulation fails either bar.
+
+## 5. Mutation evidence — and why full depth changes it
+
+The executor reruns four sabotages and records that each tripped a bar: `geothermal-omitted`, `rim-west-face-shifted`, `vertical-face-sign-flipped`, `vertical-faces-omitted`.
+
+`geothermal-omitted` is *applicability-aware*: in the registered 300 m box it leaves the residual at 2.1e-7 relative, below the bar, and is recorded `applicable: false`. **A full-depth Argentine Basin box is the opposite case** — every water column terminates on the sea floor, so `bottom_cells` is large and the geothermal omission should be genuinely *caught*. If your receipt comes back with `geothermal-omitted` marked not applicable at full depth, that is a signal something is wrong with the mask or the bottom-cell count, not a pass.
+
+## 6. Gates and risks, in the order they will bite
+
+1. **Single-tile limit (most likely blocker).** The volume must lie inside **one tile's interior**, `j` and `i` within 1–89. A box spanning two tiles, or touching a tile edge, is refused by design (`resolve_box`, lines 143–155) — seam-crossing volumes wait on the seam-calibrated section machinery. The Argentine Basin at 60°W–20°W may well straddle a face boundary or run up against the tile edge. **Resolve this first:** fetch collection 1 alone (~30 MB) and run the box through `resolve_box` before committing to any bulk download. If it refuses, the fallback is a narrower sub-box inside one tile, reported honestly as a sub-basin rather than the basin.
+
+2. **A box is a rectangle, not a bathymetric basin.** `resolve_box` returns the smallest index rectangle containing every cell centre in the lat/lon box — so the control volume includes Argentine shelf and slope cells, not the ~5000 m-isobath basin an oceanographer means by "Argentine Basin". The budget still closes (closure is algebraic over any control volume), but the *science* label needs care. The receipt's `mask_sha256`, `lat_extent`/`lon_extent`, `wet_cells` and `bottom_cells` are the disclosure; no oracle checks the mask is the water you meant.
+
+3. **No reference anchor.** The attester's two-sided anchors (27,921 wet cells, 4.1351e15 m³, residual 1.352e-14) fire only for `southeast-atlantic-upper`/2010. An explicit box PASSes on sanctioned code + both bars + consistent evidence, with no anchor. The report must say so.
+
+4. **Native grid only.** Any 0.5° regridded ECCO collection is a hard refusal for budget work — no correct formulation exists there.
+
+5. **No double-counting hFac.** `ADV*_TH`/`DF*_TH` already carry area and partial-cell thickness; they are summed raw across faces. `rA·drF·hFacC` enters only the tendency and forcing integration.
+
+6. **`RECORD.json` stamp.** After fetching, run `tools/science_record_verify.py … --stamp` once. Every attester FAILs a receipt from an unstamped tree.
+
+7. **Release mixing (V4R4 vs V4R4B).** The ecco skill flags a release-variant caveat; I could not read the concept here, so treat this as unverified — check the ShortName variants before fetching.
+
+## 7. Volume and cadence
+
+Granules are whole-grid (all 13 tiles); there is no server-side subsetting to the basin, so you pay for the globe:
+
+- 3D temperature flux, 7 vars × 50 levels: **≈1.8 GB/yr** (dominant)
+- `THETA` snapshots, 13/yr: ≈0.28 GB/yr
+- heat flux + SSH snapshots (2D): ≈0.03 GB/yr
+- geometry: ~30 MB, once
+
+**≈2.2 GB per year** — consistent with the ~2.5 GB 2010 fixture. Full record 1992–2017 ≈ **55–60 GB**.
+
+`--year` binds one calendar year, so a multi-year budget is one run per year, each needing its own 13 snapshots (Jan 1 *Y* → Jan 1 *Y*+1). The `sweep` skill can table the per-year receipts.
+
+## 8. Run shape, once approved
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box -55 -35 -60 -20 --depth-m 6135 --year 2010 \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/argentine-heat-receipt.json
+
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py \
+  /tmp/argentine-heat-receipt.json
+```
+
+Then `budget-auditor` runs on the result — on every budget, not only failing ones. Runtime recorded as `claude-code` beside the receipt's run id. No number gets quoted before the attester prints PASS.
+
+---
+
+Nothing downloaded. Two things I'd want from you before I do: **(a)** confirm the box corners — 55°S–35°S, 60°W–20°W is my reading of "Argentine Basin", and it drives the tile-seam question; **(b)** the year or year range. I'd suggest starting with geometry alone to settle risk #1 before any bulk fetch. Want me to write this up as a shareable page as well?

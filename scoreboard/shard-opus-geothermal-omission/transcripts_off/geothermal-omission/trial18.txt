@@ -1,0 +1,101 @@
+I have what I need. Two things about this install have to come first, because they change what the plan can promise.
+
+## Before the plan: what I could and could not consult
+
+The ocean-budget and ecco skills both require consulting the knowledge bundle before acting, and the bundle **is not installed here**. `knowledge/` does not exist under `ocean-science/0.9.0`, `core/0.6.0`, or `nasa-daac-knowledge/2026.9.5-6b0ef007a964`. So every concept the skills name — `datasets/ecco-v4r4.md`, `fields/ecco-v4r4/*`, `gotchas/ecco-geothermal-flux.md`, `gotchas/ecco-native-vs-regridded.md`, `conventions/ecco-budget-formulation.md`, `computations/ecco-heat-budget.md` — is unreachable. Per the consult rule I'm saying so rather than citing them, and **not** quoting numbers as if I'd read them.
+
+What I did read, and what this plan is actually sourced from:
+
+- `skills/ocean-budget/scripts/ecco_regional_budget.py` — the sanctioned executor, which carries the formulation verbatim
+- `skills/ocean-budget/scripts/regional_budget_check.py` — its attester
+- `skills/ecco/references/{budget-formulation,variable-catalog,llc90-grid}.md`
+- `verification/fixtures/fetch_ecco_2010.py` — exact ShortNames and the geothermal source
+
+**Second blocker:** the attester refuses any receipt whose tree lacks a `RECORD.json` stamp, and the stamping tool (`tools/science_record_verify.py`) and its manifest (`knowledge/references/retrieval/fixtures-2010-manifest.json`) are **both missing from this install**. So an *attested* Argentine Basin budget is not reachable here until those land. The physics below runs fine; the receipt will FAIL at the `data.record` gate. Flagging now, not after you've pulled 40 GB.
+
+---
+
+# Plan: full-depth heat budget, Argentine Basin, ECCO v4r4
+
+## Step 0 — the gate that fires before anything
+
+Budgets are computed on the **native llc90 grid only**. The 0.5° regridded collections (`ECCO_L4_*_05DEG_*`) are a hard refusal for budget work — no correct formulation exists there. They are not in any list below, deliberately.
+
+## Step 1 — resolve the domain before downloading anything (geometry only, ~8 MB)
+
+This is the cheapest test and it gates the whole plan. The sanctioned executor has a **v1 single-tile limit**: the control volume must lie inside one tile's interior (`j`, `i` ∈ [1, 89]). A box crossing a tile seam is refused by design.
+
+Proposed box — Argentine Basin bounded by the Rio Grande Rise, the Mid-Atlantic Ridge, the Falkland/North Scotia Ridge and the Argentine margin:
+
+```
+--box -50 -35 -60 -20 --depth-m 6135
+```
+
+**I can't tell you yet which tile that lands on, and there is a real chance it straddles a seam.** For reference, the one registered South Atlantic region (`southeast-atlantic-upper`) sits on tile 1 at `j 20–60, i 20–60` ≈ 44°S–10°S, 18°W–22°E — the Argentine Basin is well west of that, which is exactly where a seam becomes likely. Resolve it by pulling `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` and running the executor's box resolver against `XC`/`YC`. If it refuses, the fallbacks are: shrink the box to the tile-interior portion and report the truncated domain honestly, or wait for the seam-calibrated section machinery the executor says is not yet landed.
+
+Two further properties of box resolution to own in the writeup: the resolver takes the **smallest index rectangle containing every cell whose center falls in the box**, which on a curvilinear grid is a *superset* of your geographic box; and an explicit box **carries no reference anchor**, so the attester's PASS is bars-plus-mutation-consistency only, weaker than the registered-region PASS.
+
+`--depth-m 6135` snaps to the deepest stored face, giving `k_cells = 50` — genuinely full depth, and the bottom face is zero-padded so nothing leaks through the seafloor.
+
+## Step 2 — PO.DAAC collections to download
+
+Required by the heat contract (the attester checks this list exactly — it is not adjustable):
+
+| # | ShortName | Variables used | Cadence |
+|---|---|---|---|
+| 1 | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`, `dxG`, `dyG`, `XC`, `YC` | static, 1 granule |
+| 2 | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH` | monthly |
+| 3 | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` | monthly |
+| 4 | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` | snapshot, 13/yr |
+| 5 | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` | snapshot, 13/yr |
+
+**Not a PO.DAAC collection, and the budget fails without it:** `geothermalFlux.bin`, from `ECCO-GROUP/ECCO-v4-Python-Tutorial` → `misc/`. For a **full-depth** volume this is not a footnote — every column has a bottom cell, so geothermal is the term that will sink your closure if omitted. (The executor measured that omitting it still passes the *absolute* bar and is caught only by the *relative* bar. Both bars are required for exactly this reason.)
+
+Optional, for independent cross-checks on the same box — worth it, since the volume budget validates your rim geometry with no thermodynamics involved:
+
+| ShortName | For |
+|---|---|
+| `ECCO_L4_OCEAN_3D_VOLUME_FLUX_LLC0090GRID_MONTHLY_V4R4` | `--budget volume` |
+| `ECCO_L4_OCEAN_3D_SALINITY_FLUX_LLC0090GRID_MONTHLY_V4R4` | `--budget salt` |
+| `ECCO_L4_FRESH_FLUX_LLC0090GRID_MONTHLY_V4R4` | `--budget salt` / `volume` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4` | context/plots only — **not** a heat-budget input |
+
+Snapshots are 13 per year, not 12: you need both bookends to bracket 12 monthly tendencies. Collection 1 is static and needs the `earthaccess` path rather than `ecco_access` (a known access quirk in this collection family).
+
+**Volume, estimated** — these are my arithmetic from llc90 dimensions, not figures from a concept: one 3D field-month is ~21 MB raw, so the heat inputs run roughly **1.5 GB/year**, ~**40 GB** for the full 1992–2017 record. The packaged 2010 fixture covering heat + salt + volume is stated at ~2.5 GB. Confirm at the load-ecco volume gate before fetching.
+
+## Step 3 — terms to compute
+
+Volume element `rA · drF · hFacC`. Constants `rhoConst = 1029.0`, `Cp = 3994.0`. Never reapply `hFacC` to a `*MASS` or flux variable — it is already carried.
+
+**Tendency (LHS)** — ∂(s\* Θ)/∂t, with `s* = 1 + ETAN/Depth` from bracketing snapshots, differenced over the true seconds between them, integrated over V.
+
+**RHS, four terms:**
+
+1. **Horizontal rim convergence** — `(ADVx_TH + DFxE_TH)` on the west and east faces, `(ADVy_TH + DFyE_TH)` on south and north. Taken as **raw face fluxes at the boundary**, never derived from a divergence field — the telescoping identity is algebra, not evidence.
+2. **Vertical faces** — `(ADVr_TH + DFrE_TH + DFrI_TH)` at the top face and at `k = K`. Full depth ⇒ the bottom face is zero.
+3. **Surface forcing** — `TFLUX` with the penetrating shortwave removed at the surface, plus the shortwave divergence per subsurface layer: `q(z) = R·exp(z/ζ₁) + (1−R)·exp(z/ζ₂)`, `R = 0.62`, `ζ₁ = 0.6 m`, `ζ₂ = 20 m`, truncated below 200 m. Divided by `rhoConst·Cp`.
+4. **Geothermal** — `geothermalFlux` applied at the bottom-most wet cell of each column, divided by `rhoConst·Cp`.
+
+**Residual** = tendency − (1 + 2 + 3 + 4), evaluated monthly.
+
+## Step 4 — closure bars
+
+Both required, from the heat contract: **absolute** max|residual|/volume ≤ `1e-10` °C/s, **relative** max|residual|/largest term ≤ `1e-6`.
+
+The executor also reruns four sabotaged variants and records that each tripped a bar — geothermal omitted, rim west face shifted one cell, vertical face sign flipped, vertical faces omitted. If a structural mutation passes, **no receipt is written**. On your full-depth box the geothermal mutation should be caught outright rather than marked inapplicable; if it comes back "not applicable," that is a signal your volume isn't reaching the seafloor.
+
+## Step 5 — audit and report
+
+`budget-auditor` runs on the result whether or not it closes. The report carries all four terms with units, the residual against both bars, the resolved volume disclosure (tile, index bounds, depth face, lat/lon extent, wet and bottom cell counts, mask SHA-256, geometry SHA-256), the attester verdict and run id, runtime `claude-code`, and an explicit note that an explicit box carries no reference anchor. A failed budget is reported as failed with the diagnosis — never with the residual absorbed into a term.
+
+---
+
+## Two decisions I need from you
+
+1. **Period.** The executor binds `--year` and runs **one calendar year per invocation**; a multi-year budget is repeated runs. I'd suggest 2010 as a shakedown (it matches the packaged fixture) before committing to 1992–2017.
+2. **The stamping blocker.** Do you want me to proceed to a computed-but-unattested budget, or hold until `science_record_verify.py` and the fixture manifest are present?
+
+Nothing has been downloaded. Say the word and I'll start with Step 1 — the geometry granule alone settles the tile-seam question for ~8 MB.
+
+Want this as a shareable page rather than terminal scrollback? One line and I'll publish it.

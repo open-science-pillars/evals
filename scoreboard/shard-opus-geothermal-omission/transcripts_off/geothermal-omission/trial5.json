@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 255,
+  "chars": 9234,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly lists geothermalFlux.bin as a mandatory non-PO.DAAC ancillary input in its own row ('Not a PO.DAAC collection, and mandatory here'), includes it as a forcing term at the bottom wet cell, and lists the z* snapshot collections (THETA snapshots and ETAN snapshots) used for the tendency term."
+    }
+  },
+  "pass": false
+}

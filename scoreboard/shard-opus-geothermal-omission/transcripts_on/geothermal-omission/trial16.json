@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 293,
+  "chars": 8655,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly includes geothermalFlux.bin as a mandatory non-PO.DAAC static ancillary input (with rationale and bottom-cell application) and specifies z*/ETAN snapshot-based tendency alongside THETA snapshots."
+    }
+  },
+  "pass": false
+}

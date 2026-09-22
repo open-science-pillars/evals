@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 286,
+  "chars": 4130,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The transcript references geothermal as a constraint but never states in the plan that the geothermal flux term is a static ancillary input file (geothermalFlux.bin) rather than a PO.DAAC collection, and it gives no explicit z* snapshot requirement for the tendency term (only a vague 'snapshot bookends' aside)."
+    }
+  },
+  "pass": false
+}

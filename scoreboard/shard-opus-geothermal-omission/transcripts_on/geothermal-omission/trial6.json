@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 316,
+  "chars": 11240,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly lists geothermalFlux.bin as a non-PO.DAAC static ancillary input, includes geothermal in the forcing term with the bottom-cell mask, and includes the ETAN/THETA snapshot collections with the z* (s* = 1 + ETAN/Depth) tendency formulation."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 258,
+  "chars": 9822,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan lists geothermalFlux.bin as a required sixth input explicitly flagged as a static ancillary file shipped with the ECCO tutorial distribution rather than a PO.DAAC collection, and includes the ETAN/THETA snapshot collections for the z* tendency term."
+    }
+  },
+  "pass": false
+}

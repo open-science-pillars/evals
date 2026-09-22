@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 522,
+  "chars": 13171,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan lists geothermal flux as a required forcing term explicitly flagged as a non-PO.DAAC static ancillary input (geothermalFlux.bin from the tutorial repo / ANCILLARY_DATA tar), and includes the SSH snapshot collection with the z* scale factor s*=1+ETAN/Depth in the tendency alongside THETA snapshots."
+    }
+  },
+  "pass": false
+}

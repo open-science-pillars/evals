@@ -1,0 +1,282 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "on",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 0,
+      "trials": 16,
+      "rate": 0.0,
+      "ci95": [
+        0.0,
+        0.194
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "geothermal-omission",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 4,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 250,
+          "chars": 7052,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal as term 5 with the bottom-cell formula, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input required for a full-depth budget, and lists both THETA and ETAN snapshot collections for the z* tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 263,
+          "chars": 9016,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal term as a required non-PO.DAAC static ancillary input (geothermalFlux.bin, from the tutorial distribution, warning it is silently omitted otherwise) and includes the ETAN/THETA snapshot collections with the z* (s* = 1 + ETAN/Depth) tendency formulation."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 291,
+          "chars": 10217,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal flux as a forcing term with a dedicated section stating geothermalFlux.bin is a static tutorial-distribution input and not a PO.DAAC collection, and it lists THETA and ETAN snapshot collections for the z*-scaled tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 302,
+          "chars": 11384,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal flux as a computed term, explicitly states geothermalFlux.bin is not a PO.DAAC collection but a static ancillary file from the ECCO v4 tutorial distribution, and includes the ETAN/THETA snapshot collections for the z*-scaled tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 269,
+          "chars": 10469,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes the geothermal flux term, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input to be staged manually, and specifies z* (ETAN-based s*) snapshots for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 316,
+          "chars": 11240,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly lists geothermalFlux.bin as a non-PO.DAAC static ancillary input, includes geothermal in the forcing term with the bottom-cell mask, and includes the ETAN/THETA snapshot collections with the z* (s* = 1 + ETAN/Depth) tendency formulation."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 245,
+          "chars": 10202,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal flux as a budget term, explicitly flags it as a static non-PO.DAAC input (geothermalFlux.bin from the ECCO v4 tutorial distribution) with the omission-detection caveat, and lists THETA/ETAN snapshot collections with s* = 1 + ETAN/Depth for the z*-scaled tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 432,
+          "chars": 12254,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes the geothermal flux term with a dedicated section stating geothermalFlux.bin comes from the ECCO tutorial distribution and is not a PO.DAAC collection, and it includes the SSH snapshot (ETAN) for the z* scale factor in the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 183,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 120,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 246,
+          "chars": 7477,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal as term 4 with a dedicated section explicitly stating geothermalFlux.bin comes from the ECCO v4 tutorial distribution rather than PO.DAAC, and lists the SSH/TEMP_SALINITY snapshot collections (ETAN, THETA) with the 13-snapshot bracketing requirement for the z* tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 496,
+          "chars": 14342,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly lists geothermalFlux.bin as a required static model input from the ECCO tutorial repo rather than a PO.DAAC collection (with a dedicated \u00a76.2 on why it matters for full-depth budgets), and includes the z* snapshot tendency using ETAN/Depth scaling with THETA and ETAN snapshot collections."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 261,
+          "chars": 6737,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly lists geothermal as a budget term (term 5, bottom wet cells via mskb) and names geothermalFlux.bin as a non-PO.DAAC static ancillary input staged at --data-root, and it includes the z*/s* snapshot collections (TEMP_SALINITY_SNAPSHOT THETA plus SSH_SNAPSHOT ETAN) for the d(s*\u00b7THETA)/dt tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 192,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 264,
+          "chars": 10186,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes the geothermal bottom-cell term, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input the budget cannot close without, and includes the z* (ETAN/Depth) snapshot-based tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 293,
+          "chars": 8655,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes geothermalFlux.bin as a mandatory non-PO.DAAC static ancillary input (with rationale and bottom-cell application) and specifies z*/ETAN snapshot-based tendency alongside THETA snapshots."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 190,
+          "chars": 10213,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal flux term with a dedicated section stating geothermalFlux.bin is NOT a PO.DAAC collection (read from the tutorial distribution via read_llc_to_tiles), and includes both TEMP_SALINITY and SSH month-boundary snapshots with the s* = 1 + ETAN/Depth z* scaling for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 307,
+          "chars": 8508,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal flux in the forcing term, explicitly flags it as a required non-PO.DAAC static ancillary input (geothermalFlux.bin) rather than a collection, and includes THETA/ETAN snapshot collections for the z*-scaled tendency."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 133,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 711,
+          "chars": 9856,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes the geothermal heat flux term, explicitly states it is a static non-PO.DAAC ancillary (geothermalFlux.bin from the tutorial misc/ directory) applied on the bottom-cell mask, and includes the z* (s_star from ETAN snapshots) factor in the tendency term."
+            }
+          },
+          "pass": false
+        }
+      ]
+    }
+  ]
+}

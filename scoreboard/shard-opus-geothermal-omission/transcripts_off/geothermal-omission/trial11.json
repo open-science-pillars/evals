@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 271,
+  "chars": 11731,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan dedicates a section to geothermal flux, explicitly naming geothermalFlux.bin as an ECCO tutorial static input that is not a PO.DAAC collection, includes it as a forcing sub-term at bottom wet cells, and lists both TEMP_SALINITY and SSH (ETAN) snapshot collections for the z*-scaled tendency."
+    }
+  },
+  "pass": false
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 496,
+  "chars": 14342,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly lists geothermalFlux.bin as a required static model input from the ECCO tutorial repo rather than a PO.DAAC collection (with a dedicated \u00a76.2 on why it matters for full-depth budgets), and includes the z* snapshot tendency using ETAN/Depth scaling with THETA and ETAN snapshot collections."
+    }
+  },
+  "pass": false
+}

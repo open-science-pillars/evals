@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 190,
+  "chars": 10213,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan explicitly includes the geothermal flux term with a dedicated section stating geothermalFlux.bin is NOT a PO.DAAC collection (read from the tutorial distribution via read_llc_to_tiles), and includes both TEMP_SALINITY and SSH month-boundary snapshots with the s* = 1 + ETAN/Depth z* scaling for the tendency term."
+    }
+  },
+  "pass": false
+}

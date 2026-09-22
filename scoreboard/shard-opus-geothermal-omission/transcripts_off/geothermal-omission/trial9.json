@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 295,
+  "chars": 11280,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes the geothermal flux term, explicitly flags geothermalFlux.bin as a non-PO.DAAC static ancillary input read from --data-root (and cites it separately in the citation block), and includes the z* snapshot handling via the ETAN/SSH snapshot and T/S snapshot collections for the tendency term."
+    }
+  },
+  "pass": false
+}

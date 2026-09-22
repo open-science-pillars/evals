@@ -1,0 +1,93 @@
+## Before the plan: two blocked lookups you should know about
+
+This plugin is knowledge-first — ShortNames, the budget formulation, and pass bars are supposed to come from signed concepts, never from my recollection. In this session I could reach **neither**:
+
+- `claude plugin list --json` (the installer record that locates bundles) — **permission denied**; directory listing outside `/home/user/run/evals` is also blocked, so I couldn't find the `nasa-daac-knowledge` bundle by hand.
+- Probing the ocean-science package directly: `skills/ecco/references/*.md` read fine, but `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge/` **does not exist** in the cached copy — so `knowledge/computations/ecco-heat-budget.md` and the `knowledge/podaac/...` concepts (formulation convention, fields families, gotchas) are unreachable.
+- The fallback live check — `get_collections` against CMR — is **not permission-granted** either.
+
+**Bundles searched:** ocean-science 0.9.0 (skills only; no knowledge tree present). Provider bundle: not found, not searched.
+
+So everything below marked ⚠️ is **from my own knowledge, not from a signed concept or a live CMR verification**. It is a plan to check, not a plan to run. Two things that *are* properly sourced, because I read them in this session: the pass bars quoted in the `ocean-budget` skill body, and the procedure in `skills/ecco/references/budget-formulation.md`.
+
+## The rule that fires regardless
+
+The budget is computed on the **native llc90 grid only**. No regridded/interpolated ECCO product (the `0p50DEG` family) can close a budget, under any framing — that refusal doesn't depend on any lookup. Everything below is native.
+
+## Domain and period (my assumptions — say if wrong)
+
+| | |
+|---|---|
+| Box ⚠️ | 55°S–35°S, 65°W–20°W (Argentine Basin proper; abyssal plain + Zapiola Rise) |
+| Depth | Full column, surface to bottom (~6000 m; ECCO v4r4 has 50 levels ⚠️) |
+| Period | Full record 1992–2017, monthly |
+| Control volume | **Open** on all four lateral faces and closed at the bottom |
+
+Two consequences that shape the whole plan:
+
+1. **Open domain** → a domain-integrated closure statement is not assertable on its own. Lateral boundary transports across all four faces must be carried as explicit terms, not folded into a residual. (Pointwise closure at every wet cell is still the real test.)
+2. **Full depth** → the **geothermal flux term is mandatory** at the bottom cell. This is the first thing `budget-auditor` checks on a failed deep heat budget, and the Argentine Basin is ~6 km deep over most of the box, so it is not negligible here.
+
+## Collections to download ⚠️
+
+All `LLC0090GRID` (native), all `V4R4`. Names to be confirmed against the fields concepts or CMR before any fetch.
+
+| Purpose | ShortName ⚠️ | Cadence | Est. size ⚠️ |
+|---|---|---|---|
+| Grid geometry (`rA`, `drF`, `hFacC`, `hFacW/S`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | static, 1 granule | ~10 MB |
+| θ, S monthly means | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4` | monthly ×312 | ~13 GB |
+| θ month-boundary snapshots (tendency) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | 313 snapshots | ~13 GB |
+| ETAN snapshots (z\* tendency correction) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | 313 snapshots | ~0.3 GB |
+| ETAN monthly (s\* scaling of flux terms) | `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` | monthly ×312 | ~0.3 GB |
+| **Advective + diffusive θ fluxes** (`ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH`) | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly ×312 | ~46 GB |
+| Volume fluxes (`UVELMASS`, `VVELMASS`, `WVELMASS`) — for the z\* correction and for decomposing advection | `ECCO_L4_OCEAN_3D_VOLUME_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly ×312 | ~20 GB |
+| Surface heat forcing (`TFLUX`, `oceQsw`, `oceQnet`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly ×312 | ~3 GB |
+| Freshwater flux (`oceFWflx`) — enters the z\* volume/dilution term | `ECCO_L4_FRESH_FLUX_LLC0090GRID_MONTHLY_V4R4` | monthly ×312 | ~1 GB |
+
+**Order ~100 GB** for the full record. My arithmetic: 13 tiles × 90 × 90 × 50 × 4 bytes ≈ 21 MB per 3D variable-month. A single-year scoping run (2010, the fixture year) is ~2.5 GB and is the sane first step.
+
+### The one input that is *not* a PO.DAAC collection
+
+**Geothermal heat flux.** ⚠️ It's an MITgcm forcing input (`geothermalFlux.bin`, from the ECCO v4r4 input/forcing archive), not a PO.DAAC granule — that's exactly the gotcha `ecco-geothermal-flux` exists to catch. A full-depth budget that skips it fails closure with a residual concentrated in bottom cells. This must be fetched separately and confirmed present *before* the run, not discovered at audit time.
+
+## Terms to compute ⚠️
+
+Per-cell, units °C/s, on volume element `rA · drF · hFacC`. The formulation authority is `knowledge/podaac/conventions/ecco-budget-formulation.md`, which I could not read — so this term set is reconstructed and must be checked against it before coding.
+
+**G_total = G_advection + G_diffusion + G_forcing**
+
+1. **Tendency `G_total`** — `∂(s*·θ)/∂t` from consecutive month-boundary θ snapshots, with `s* = 1 + ETAN/Depth` from the ETAN snapshots. The z\* correction is not optional; monthly means cannot substitute for snapshots here.
+2. **Advection `G_advection`** — `−∇·(u θ)`: horizontal convergence of `ADVx_TH`, `ADVy_TH`; vertical convergence of `ADVr_TH`, bottom face zero-padded.
+3. **Diffusion `G_diffusion`** — explicit `DFxE_TH`, `DFyE_TH`, `DFrE_TH` plus implicit vertical `DFrI_TH`, same convergence and padding.
+4. **Forcing `G_forcing`** — three pieces:
+   - surface heat flux `TFLUX` in the top cell,
+   - **shortwave penetration**: `oceQsw` redistributed over depth rather than applied at k=0,
+   - **geothermal** added to the bottom wet cell of each column.
+   - Constants ⚠️: `rhoconst = 1029 kg m⁻³`, `c_p = 3994 J kg⁻¹ K⁻¹`.
+5. **Lateral boundary transports** (because the box is open) — face-integrated `ADVx/ADVy` + `DFxE/DFyE` across each of the four box faces, reported as four explicit terms, never absorbed.
+6. **Residual** — `G_total − (G_adv + G_diff + G_forcing)`, judged **pointwise in absolute units** at every wet cell and every month. Not as a fraction of the dominant term: on a float32 archive a relative ratio is not a closure criterion.
+
+**Two traps to honor while coding:**
+- **hFac double count** — `ADV*`/`DF*` and the `*VELMASS` velocities already carry `hFac`. Do not multiply by it again.
+- **Tile seams** — horizontal differences must be tile-aware, or restricted to tile-interior cells. The Argentine Basin box straddles llc90 tile boundaries ⚠️, so this is a live concern here, not a formality.
+
+## How I'd execute it
+
+The attested route is `ecco_regional_budget.py --budget heat` with its attester `regional_budget_check.py`. Important limitation: the only **registered** region is `southeast-atlantic-upper`. The Argentine Basin is not registered, so it runs as an explicit box:
+
+```
+--budget heat --box -55 -35 -65 -20 --depth-m <full> --year <YYYY>
+```
+
+An explicit box is disclosed by **mask digest and carries no anchor** — meaning the attester checks the internal consistency bars but has no reference wet-cell count, volume, or residual to check against. The report has to say so plainly. (The anchored whole-grid heat budget `ecco-heat-budget`, with bars `residual_max ≤ 1e-10` and `residual_p999 ≤ 1e-11` °C/s, is `tile1-interior` only — it can't be pointed at this basin.)
+
+Sequence: fetch 2010 only → stamp the tree with `science_record_verify.py` (every attester refuses an unstamped tree) → run one year → attest → only then pull the full 1992–2017 record.
+
+## What I need from you before fetching
+
+1. **Approve `claude plugin list --json`** (or tell me where `nasa-daac-knowledge` is installed). Without it every ShortName, constant, and term above is unverified recollection — and the geothermal and hFac gotchas are exactly the kind of thing the bundle exists to enforce.
+2. **Approve the earthdata MCP** if you want the ShortNames confirmed against live CMR as a fallback.
+3. Confirm the **box and the period**, and whether you want the Zapiola Rise included or excluded.
+4. Confirm you want **1992–2017** (~100 GB) rather than a scoping year.
+
+I can drop this into a shareable page if it's going to a collaborator — say the word.

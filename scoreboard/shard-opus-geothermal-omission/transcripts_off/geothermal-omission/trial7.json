@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 187,
+  "chars": 8389,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal flux as a mandatory forcing term applied to the bottom wet cell, explicitly flags it as an MITgcm input file (geothermalFlux.bin) rather than a PO.DAAC collection under a dedicated section, and lists \u03b8 and ETAN snapshot collections for the z*-corrected tendency."
+    }
+  },
+  "pass": true
+}

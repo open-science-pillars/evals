@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 241,
+  "chars": 9500,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The plan includes geothermal flux as Term 5, explicitly states geothermalFlux.bin is a non-PO.DAAC static ancillary input from the ECCO v4 tutorial distribution that cannot be discovered via Earthdata, and includes the SSH/ETAN plus THETA snapshot collections for the z*-scaled tendency."
+    }
+  },
+  "pass": false
+}
