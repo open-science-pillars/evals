@@ -47,6 +47,16 @@ uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN" --check || {
 mapfile -t KDIRS < <(uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN")
 [ "${#KDIRS[@]}" -gt 0 ] || { echo "ERROR: no installed knowledge tree to ablate"; exit 1; }
 
+# What a trial can read is not what the arm change controls. Setting the
+# subprocess working directory does not confine it either: a headless run whose
+# working directory was an empty temporary directory read an absolute path under
+# the workspace without difficulty, checked on 2026-09-22. So the copies have to
+# be absent, and absence is established by searching for the text rather than by
+# predicting where copies live.
+LEAK="$WS/evals/runner/leak_check.py"
+CASE_ARG=""
+case "$EXTRA" in *--cases*) CASE_ARG=$(echo "$EXTRA" | sed -n 's/.*--cases \([^ ]*\).*/--cases \1/p');; esac
+
 mkdir -p "$OUT"
 
 restore() {
@@ -58,6 +68,15 @@ restore() {
   return 0
 }
 trap restore EXIT INT TERM
+
+echo "== leak check, both arms: no recorded answer to a case may be readable =="
+# shellcheck disable=SC2086
+uv run --with pyyaml==6.0.2 "$LEAK" "$WS" "$MAN" --arm on $CASE_ARG || {
+  echo "ERROR: an answer to a case in this run is readable from where the trials run."
+  echo "It contaminates the rate in both arms, not only the difference between them."
+  echo "Prepare a run workspace without those files and run again."
+  exit 1
+}
 
 echo "== bundle-ON arm =="
 python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
@@ -73,6 +92,14 @@ for k in "${KDIRS[@]}"; do
   echo "  ablating $k ($(find "$k" -name '*.md' | wc -l) concepts)"
   mv "$k" "$k.ABLATION_OFF"
 done
+
+echo "== leak check, bundle-OFF arm: no cited concept may be readable =="
+# shellcheck disable=SC2086
+uv run --with pyyaml==6.0.2 "$LEAK" "$WS" "$MAN" --arm off $CASE_ARG || {
+  echo "ERROR: the arm moved its trees and the knowledge is still readable, so this"
+  echo "arm is not off and would measure nothing. The trees are restored on exit."
+  exit 1
+}
 
 echo "== bundle-OFF arm =="
 python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \

@@ -345,6 +345,65 @@ def main():
         except ValueError:
             pass
 
+    # A copy of the knowledge is found because it is a copy, not because
+    # someone predicted where it would be. The wrapped case is the one that
+    # matters: a concept wraps its prose and a transcript quoting it does not.
+    from leak_check import cited_concepts, scan
+    with tempfile.TemporaryDirectory() as td:
+        ws = Path(td)
+        prose = ("Nearshore ocean mass series inherit land signal, so apparent coastal "
+                 "trends can be dominated by leakage rather than by ocean change and "
+                 "the series is not what its coordinates claim.")
+        (ws / "capa" / "knowledge").mkdir(parents=True)
+        (ws / "capa" / "knowledge" / "x.md").write_text(
+            f"---\nstatus: stable\n---\n# Heading\n\n{prose}\n")
+        (ws / "ae" / "ecco" / "cases").mkdir(parents=True)
+        (ws / "ae" / "ecco" / "fx").mkdir(parents=True)
+        (ws / "ae" / "ecco" / "cases" / "c1.yaml").write_text(
+            "id: c1\nconcept_basis: [knowledge/x.md]\n"
+            "fixtures: [ecco/fx/stub.md]\nnotes: n\n")
+        (ws / "ae" / "ecco" / "fx" / "stub.md").write_text(prose)
+        man = ws / "m.yaml"
+        man.write_text("name: t\ncases:\n  - {id: c1, plugin: capa, "
+                       "case: ae/ecco/cases/c1.yaml}\n")
+
+        by_case, allowed = cited_concepts(ws, man, None)
+        if not by_case.get("c1"):
+            fails.append("the cited concept was not resolved in the workspace")
+
+        # The concept itself and the declared fixture: one is the copy to find,
+        # the other is what the case is allowed to expose.
+        hits, _ = scan([ws], by_case, {"c1"}, allowed)
+        found = {h[2].name for h in hits}
+        if "x.md" not in found:
+            fails.append("the concept's own file was not found by its text")
+        if "stub.md" in found:
+            fails.append("a declared fixture was reported as a leaked copy")
+
+        # The same text, wrapped at seventy columns the way a concept writes it.
+        wrapped = ws / "elsewhere" / "copy.md"
+        wrapped.parent.mkdir()
+        words, line, out = prose.split(), "", []
+        for w in words:
+            if len(line) + len(w) > 60:
+                out.append(line); line = w
+            else:
+                line = f"{line} {w}".strip()
+        out.append(line)
+        wrapped.write_text("\n".join(out))
+        hits, _ = scan([ws], by_case, {"c1"}, allowed)
+        if not any(h[2].name == "copy.md" for h in hits):
+            fails.append("a copy wrapped across lines was not found, which is the "
+                         "mistake the whitespace normalisation exists to prevent")
+
+        # A recorded answer beside the case contaminates both arms.
+        ans = ws / "ae" / "ecco" / "results" / "run1" / "transcripts"
+        ans.mkdir(parents=True)
+        (ans / "c1.md").write_text("the graded answer to this case")
+        _, answers = scan([ws], by_case, {"c1"}, allowed)
+        if not any(a[1].name == "c1.md" for a in answers):
+            fails.append("a recorded answer to the case was not reported")
+
     # Outages are reported beside the delta, and an uneven loss is called out.
     even_a = dict(a, cases=[dict(a["cases"][0], errors=1, trials_requested=20)])
     even_b = dict(even_a, bundle="off",
@@ -380,7 +439,9 @@ def main():
           f"mention over {probe_checks} phrasings and agree with {recorded} recorded transcripts; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
-          "verdict aggregation correct; outages are reported per arm and an uneven "
+          "verdict aggregation correct; a copy of a cited concept is found by its text "
+          "even when wrapped, and a recorded answer beside a case is reported; "
+          "outages are reported per arm and an uneven "
           "loss flagged; a rubric a case names but cannot resolve stops "
           "the run and a delta between differently graded arms is refused; the "
           "cross-runtime record, the drivers and the scoreboard's runtime comparison behave")

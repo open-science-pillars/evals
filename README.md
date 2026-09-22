@@ -159,4 +159,26 @@ knowledge outside that scope. A suite the arm cannot ablate stops rather than
 returning a number. The pilot that defect invalidated is withdrawn in place at
 `scoreboard/pilot/`.
 
+Deriving the scope was still a better guess about where copies live, and a
+re-pilot on 2026-09-22 showed the arm is not off even with three trees moved:
+the same knowledge sits in the workspace as ordinary checked-out files, and
+recorded passing answers to these exact cases sit beside them under `results/`
+and `fixtures/` directories. Setting the trial's working directory does not
+close this. A headless run whose working directory was an empty temporary
+directory read an absolute path under the workspace without difficulty, so
+confinement is not available through the launcher.
+
+`leak_check.py` is therefore not a guess. It takes text out of the concepts the
+cases cite and looks for that text on disk, so a copy is found because it is a
+copy. It collapses whitespace first, because a concept wraps its prose and a
+transcript quoting it does not, and a line-oriented search reports such a copy
+as absent. It gates both arms: the bundle-off arm may have no cited concept
+readable anywhere, and neither arm may have a recorded answer to a case in the
+run readable, because an answer contaminates the rate itself and not only the
+difference between the arms. Only the exact fixture files a case declares are
+allowed beside it.
+
+A run workspace is therefore prepared rather than cloned whole, and the check is
+what says it is prepared.
+
 License: Apache-2.0.
