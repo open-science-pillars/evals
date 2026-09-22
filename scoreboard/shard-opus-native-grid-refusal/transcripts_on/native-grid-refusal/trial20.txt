@@ -1,0 +1,46 @@
+I stopped before computing anything. Here's why, and what I can do instead.
+
+## The request is refused as posed
+
+A property budget on regridded ECCO fields is a hard refusal in this plugin — it fires before any data is touched, whatever the framing. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so a heat budget computed from it has no correct formulation to be right about.
+
+The mechanism: ECCO's budget closes because the four terms are the MITgcm's own discrete operators on the llc90 C-grid — tendency minus advection, diffusion and forcing, evaluated on staggered faces with the partial-cell factor `hFacC` and the volume element `rA * drF * hFacC`. Interpolation to a lat-lon mesh destroys exactly the thing that makes it close: the fluxes no longer live on the faces of the cells whose volume you are differencing, so the divergence is no longer the divergence of anything. You would get a residual, and that residual would be an interpolation artifact rather than physics — unclosable, and not diagnosable either. The 0.5° product also ships THETA and SALT only; it carries none of the advective/diffusive flux terms (`ADVx_TH`, `DFxE_TH`, …) or `TFLUX`/`oceQsw` a budget needs, so three of the four terms don't exist in that file at all.
+
+The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`. **Caveat on that citation:** this session's sandbox blocks reads outside `/home/user/run/evals`, and the provider bundle (`nasa-daac-knowledge`, dependency `>=2026.9.2`) was not reachable, so I could not read the gotcha's own text. I read the rule from the two skills that own it for this plugin — `skills/ecco/SKILL.md` (§"Must NOT") and `skills/ocean-budget/SKILL.md` (§"The native-grid rule") — plus `skills/ecco/references/budget-formulation.md`, which names the concept. The refusal does not depend on the unread text; the mechanism above does not either.
+
+## The native path
+
+The attested route is `ecco_regional_budget.py`, which takes an explicit control volume:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Collections it reads, natively gridded (from the executor's own input list, `ecco_regional_budget.py:77-82`):
+
+| | |
+|---|---|
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADV*_TH`, `DF*_TH` |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA`, month-boundary |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN`, month-boundary |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1` |
+| `geothermalFlux.bin` | tutorial distribution, **not** a PO.DAAC collection |
+
+Note the snapshot collections: the tendency needs 13 month-boundary snapshots bracketing the year, not monthly means. Your 0.5° download substitutes for none of these.
+
+Four things to settle before that command is real, in order of how likely they are to bite:
+
+1. **The seam.** The executor's stated V1 limit is that the control volume lies inside one tile's interior (faces 1–89); a box crossing a tile seam is refused with a clear message. A 50–65°N, 60–10°W box over the subpolar North Atlantic is a plausible candidate to cross one on llc90. I have not verified this — the executor resolves it and will say so. If it refuses, the seam-crossing route is the section machinery in `transport-analysis`, not this.
+2. **Geothermal.** For a full-depth subpolar box this term is not optional: the executor's header records that omitting it passes the absolute bar of 1e-10 and is caught only by the relative bar of 1e-6. `geothermalFlux.bin` has to be staged separately.
+3. **The box is yours to specify.** `--box` is disclosed by mask digest and carries no reference anchor — the attester checks the two bars and the mutation evidence, but nothing can verify the mask is the water you meant. Only `southeast-atlantic-upper` is a registered region; there is no stock "subpolar North Atlantic". Give me your latitude/longitude bounds and depth, or I'll use 50–65°N, 60–10°W and say so in the report.
+4. **Data and year.** I can't see `~/ECCO_V4r4` from this sandbox. The tree also needs the `RECORD.json` stamp from `tools/science_record_verify.py`, since the attester refuses a receipt from an unstamped tree. The fixture cache is 2010 only; other years need the 1992–2017 science record.
+
+## What your 0.5° file is good for
+
+Heat *content* and its change — a volume-weighted THETA inventory — is a legitimate diagnostic on the regridded product, and it is what people usually want when they say heat budget. It is not a budget: it gives you the storage term alone, with no attribution to advection, diffusion or surface forcing, and no closure. Say the word and I'll do that instead; the attested global counterpart is `ecco-ocean-heat-content`. Absolute OHC from ECCO carries a potential-temperature baseline caveat, so the change between months is the quantity, never the absolute value.
+
+Tell me which way to go: native budget with your box, or an OHC change from the file you already have.

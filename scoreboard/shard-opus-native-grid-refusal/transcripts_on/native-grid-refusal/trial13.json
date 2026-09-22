@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 182,
+  "chars": 5321,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses up front, cites the native-vs-regridded gotcha concept and explains the discretization/volume-element mechanism, names the full native collection set including the bracketing snapshots for tendency and the geothermal flux ancillary, and offers only non-budget uses of the 0.5\u00b0 file rather than any workaround budget."
+    }
+  },
+  "pass": true
+}

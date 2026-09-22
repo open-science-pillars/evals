@@ -1,0 +1,44 @@
+## I can't compute this from that product — the refusal, and the route that works
+
+The heat budget request is refused on regridded fields. This fires before any computation, per gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, which the `ecco` skill owns for the plugin (`skills/ecco/SKILL.md:52`, `:238`) and `ocean-budget` re-applies at its gate. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is a 0.5° interpolated product, so no correct budget formulation exists on it.
+
+**Why, concretely.** The four-term budget is tendency = advection + diffusion + forcing, and every term is discretized on the llc90 C-grid: convergences are differences of *raw face fluxes* across cell faces, and the volume element is `rA * drF * hFacC` with partial bottom cells. Interpolation to a 0.5° lat-lon mesh destroys the face-flux/cell-volume pairing that makes those differences exact. What you would get is not a budget with a large residual — it is an expression with no closure property at all, so there is nothing to judge against a tolerance.
+
+**A second, independent blocker.** Even on the native grid, that collection carries only THETA and SALT. A heat budget additionally needs the 3-D temperature flux terms, the surface heat flux terms, month-boundary snapshots, the geometry granule, and the geothermal input. None of those are in it.
+
+### What the 0.5° product *is* good for
+
+It is a legitimate product for things that don't require closure: subpolar North Atlantic THETA/SALT maps and sections, heat-content *change* between months (with the potential-temperature baseline caveat — absolute OHC is never quoted from it), seasonal cycles, T–S properties, mixed-layer structure. If any of that is what you actually want, say so and I'll run it on the data you already have.
+
+### The native path for a subpolar North Atlantic heat budget
+
+The attested route is the regional budget executor, which resolves an explicit control volume on the native grid:
+
+```bash
+uv run $PKG/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year <YYYY> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+uv run $PKG/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+(`$PKG` = `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`.) Contract: `knowledge/computations/ecco-regional-heat-budget.md`. Bars are absolute 1e-10 degC/s per volume **and** relative 1e-6 — both required, because omitting geothermal passes the absolute bar alone and is caught only by the relative one.
+
+Collections to fetch natively (these are the ShortNames the sanctioned code opens, not recalled ones):
+
+| Input | Purpose |
+|---|---|
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | THETA, 13 month-boundary snapshots |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | ETAN, for the z* free-surface scaling |
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADVx/y/r_TH`, `DFxE/yE/rE/rI_TH` |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` (shortwave penetration) |
+| `geothermalFlux.bin` | **not a PO.DAAC collection** — tutorial distribution (gotcha `ecco-geothermal-flux`); a budget without it fails the relative bar |
+
+### Two things to decide before I fetch anything
+
+1. **Tile seam.** The executor's stated V1 limit is that the control volume must lie inside one tile's interior (faces 1–89); a box crossing a seam is refused outright. 50–65°N / 60–10°W is a plausible seam-crosser on llc90. I'd resolve the box against the geometry granule first and report the tile and index bounds before committing to the download — and if it does cross, we either shrink the domain or the budget waits on the seam-calibrated section machinery.
+2. **Domain openness.** The subpolar gyre is an open domain. Closure is asserted with the boundary transports carried explicitly through the rim faces; I will not present a domain-integrated balance as if the box were closed.
+
+Also note the sandbox here blocked me from listing `~/ECCO_V4r4` / `~/ECCO_V4r4_record`, so I can't confirm whether a native tree already exists or whether it carries the `RECORD.json` verify stamp — every attester refuses a receipt from an unstamped tree. Worth checking before we plan a download.
+
+Tell me the year (or year range) and whether to proceed with resolving the box, and I'll take it from there.

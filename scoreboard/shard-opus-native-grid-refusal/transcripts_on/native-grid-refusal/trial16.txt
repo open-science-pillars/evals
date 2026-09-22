@@ -1,0 +1,41 @@
+## Refused: a heat budget cannot be computed from the 0.5° product
+
+I can't compute this from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`, and the reason isn't tooling — no correct budget formulation exists on that grid.
+
+**Governing concept:** `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — severity high, status stable, human-verified (human:PaulMRamirez, 2026-09-04). It names your exact collection as its second source.
+
+Two independent reasons, both from that concept:
+
+1. **The ingredients don't exist there.** A budget needs the 3D face fluxes (`ADV*_TH`, `DF*_TH`) and partial-cell geometry (`hFac`). A CMR sweep recorded in the concept (2026-07-04) found *no* 05DEG 3D flux collections — the `05DEG` collections carry state variables only. The formulation isn't assemblable from what you have.
+2. **Interpolation destroys the closure.** ECCO conserves as a property of the native llc90 formulation: face fluxes, `hFac`, and tile topology together satisfy the model equations exactly. Interpolation does not preserve flux divergences.
+
+The failure mode matters here: **nothing errors.** Per the concept's wrong-result section, a "heat budget" assembled from regridded fields returns residuals *of the same order as the physical terms*, and tendencies you'd attribute to mixing or forcing are interpolation artifacts. You'd get four plausible-looking numbers that are simply wrong. That's why this is a refusal rather than a caveat.
+
+Your downloaded data isn't wasted — the concept is explicit that regridded fields are the right tool for maps and pointwise comparison against gridded observations. It's the budget specifically that's off-limits.
+
+## The native path
+
+The attested route for a regional control volume is `ecco-regional-heat-budget` (`ocean-science/knowledge/computations/ecco-regional-heat-budget.md`, status stable). Collections to fetch, from the recipe's `inputs`:
+
+- `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX` (`ADV*_TH`, `DF*_TH`)
+- `ECCO_L4_HEAT_FLUX` (`TFLUX`, `oceQsw`)
+- `TEMP_SALINITY` and `SSH` **snapshot** collections bracketing the period
+- `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (geometry granule)
+- `geothermalFlux.bin` from the ECCO tutorial distribution
+
+That last one is a separate trap worth naming now: `knowledge/podaac/gotchas/ecco-geothermal-flux.md` (high, stable) — the geothermal term is a model *input*, so **no PO.DAAC collection carries it**. A budget built from PO.DAAC alone omits it silently. The regional computation measured this: omission lands at 1.24e-12 degC/s, *inside* the 1e-10 absolute bar, caught only by the second relative bar. Planning to fetch it separately is part of the data plan, not an afterthought.
+
+## Two things I need from you before running it
+
+**1. The period.** You didn't specify one, and the executor binds `year`.
+
+**2. The subpolar North Atlantic may hit a stated v1 limit.** Two issues:
+
+- Only `southeast-atlantic-upper` is a registered region, so SPNA needs an explicit `--box LAT0 LAT1 LON0 LON1 --depth-m`. The computation is clear that an explicit box is disclosed by mask digest and **carries no reference anchor** — it passes on the general contract only.
+- The computation states: *"the volume must lie within one tile interior; seam-crossing volumes are refused until the seam-calibrated section machinery lands."* A box around 50–65°N, 60–10°W sits near where the llc90 Atlantic tiles meet the Arctic cap. I'm not going to assert from memory which tile that lands in — the executor resolves it and refuses if it crosses a seam. But it's a live risk that could block the run, so you should know before fetching ~GBs.
+
+Give me a year and your preferred box bounds and depth, and I'll fetch the native collections through `load-ecco` (volume gate and all), run the sanctioned executor, run `regional_budget_check.py` on the receipt before quoting any number, and report all four terms against both bars — plus the resolved extent, since no oracle can check that a mask is the water you meant.
+
+If the box does cross a seam, your realistic options are a smaller sub-box inside one tile, or dropping to an unattested budget — which I'd report as unattested.
+
+**Available without any of this:** ocean heat content, temperature anomalies, and maps over the subpolar gyre straight from the 05DEG data you already have. Not a budget — no term decomposition, no closure — but if what you're really after is SPNA heat change rather than its mechanism, say so and I'll start there today.

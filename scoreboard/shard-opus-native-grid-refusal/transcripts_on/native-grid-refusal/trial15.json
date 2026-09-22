@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 142,
+  "chars": 5063,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept (with an honest caveat about not having read it) plus the geothermal gotcha, explains the non-conservative-interpolation mechanism, names the five native collections and the snapshot collections for tendency and z*, flags geothermal as an out-of-PO.DAAC ancillary, and offers no workaround budget on the 0.5\u00b0 fields (only a legitimate non-budget OHC-change diagnostic)."
+    }
+  },
+  "pass": true
+}

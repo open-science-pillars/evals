@@ -1,0 +1,43 @@
+## I can't compute that budget — the product can't support one
+
+This is a hard refusal in the budget workflow, not a limitation of the tooling, and it fires before any computation regardless of how the request is framed.
+
+**The governing concept:** `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — *"ECCO budgets and transports close only on the native llc90 grid"* — severity **high**, status **stable**, human-verified by the maintainer on 2026-09-04 (`stale_after: 2027-01-04`). Resolved in the `nasa-daac-knowledge` bundle at version `2026.9.5-6b0ef007a964`.
+
+Two things it says, both fatal here:
+
+1. **Mechanism.** ECCO's conservation is a property of the native formulation — face fluxes, partial-cell geometry (`hFac`), and tile topology together satisfy the model equations exactly. Interpolation to 0.5° does not preserve flux divergences. A heat budget assembled from regridded fields *"produces residuals of the same order as the physical terms; tendencies attributed to mixing or forcing are numerical artifacts of the interpolation. Nothing errors; the numbers are simply wrong."*
+2. **The ingredients don't exist at 0.5°.** A CMR sweep on 2026-07-04 found **no 05DEG 3D flux collections**. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries `THETA` and `SALT` only. There is no `ADVx_TH`, no `DFrI_TH`, no `hFacC` — so the four-term budget isn't merely inaccurate there, it isn't assemblable.
+
+The fields concept for your exact download agrees: `fields/ecco-v4r4/temp-salinity.md` lists `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` (DOI 10.5067/ECG5M-OTS44) as *"display and comparison, not budgets."* A draft validity domain, `validity-domains/no-budgets-on-interpolated.md`, projects the same rule as an exclusion over `ECCO_L4_*_05DEG_*` for the `budgets` claim class — advisory only until signed, so I cite it as supporting, not load-bearing.
+
+Your download is still the right product for SPNA maps, `THETA`/`SALT` sections, and pointwise comparison against gridded observations. It just can't carry a budget.
+
+## The native-grid path
+
+Five native collections, named as a set by `knowledge/podaac/recipes/ecco-heat-budget.md`:
+
+| ShortName | Supplies | DOI |
+|---|---|---|
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | ADVx/y/r_TH, DFxE/yE/rE/rI_TH | 10.5067/ECL5M-3TF44 |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | TFLUX, oceQsw | 10.5067/ECL5M-HEA44 |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | THETA snapshots (tendency bookends) | 10.5067/ECL5S-OTS44 |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | ETAN snapshots (z\* factor) | 10.5067/ECL5S-SSH44 |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | rA, drF, hFacC, Depth, Z, Zp1 | 10.5067/ECL5A-GRD44 |
+
+Note the snapshot collections — monthly means alone cannot form the tendency term. Plus one non-collection ancillary: **`geothermalFlux.bin`** from the ECCO v4 tutorial `misc/` directory. Per `gotchas/ecco-geothermal-flux.md`, no PO.DAAC collection carries it, and omitting it makes closure degrade with depth and fail outright at the seafloor. For the subpolar North Atlantic — a deep basin — that term matters if you go full-depth, and it's the first thing the auditor checks on a failing residual.
+
+For the SPNA specifically, the attested route is `ecco-regional-heat-budget` with an explicit box, since only `southeast-atlantic-upper` is a registered region:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <year> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three caveats on that, stated up front. An explicit box is disclosed by mask digest and **carries no anchor** — the attester's two-sided reference checks on wet-cell count, volume and residual-per-volume apply only to the registered configuration, so your run gets the recomputed bars but not the reference comparison, and the report has to say so. The SPNA is an **open domain**, so boundary transports across 45°N, 65°N and the Greenland–Scotland ridge travel explicitly rather than being folded into a domain-integrated closure. And I can't verify your data root: Bash is sandboxed to `/home/user/run/evals` (which holds an evals repo, no ECCO data), so I can't see whether `~/ECCO_V4r4` exists or carries the `RECORD.json` stamp the verify tool leaves — every attester refuses a receipt from an unstamped tree.
+
+**To proceed, I need from you:** the box bounds and depth range you want (I've penciled 45–65°N, 60–10°W), the year, and whether the native collections are downloaded anywhere. If they're not, I'd start with `load-ecco` for the volume gate — a year of the 3D flux collection is the large item.
+
+Concepts consulted: `gotchas/ecco-native-vs-regridded.md` (stable, human-verified), `fields/ecco-v4r4/temp-salinity.md` (stable), `validity-domains/no-budgets-on-interpolated.md` (draft — voiced as unverified), `knowledge/computations/ecco-heat-budget.md` (stable), `recipes/ecco-heat-budget.md`, `gotchas/ecco-geothermal-flux.md`.

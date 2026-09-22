@@ -1,0 +1,49 @@
+I can't compute that budget from the product you have, and the reason isn't a technicality — it's the gate the ECCO budget workflow applies before any computation.
+
+## The refusal
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° regridded product. Budgets on regridded ECCO fields are a hard refusal in this plugin — the one rule that fires without consulting anything (`skills/ecco/SKILL.md`, `skills/ocean-budget/SKILL.md`, citing gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`: budgets close only on the native llc90 grid). No correct budget formulation exists on the interpolated grid; regridding is a scalar interpolation that does not preserve the flux-divergence identity the closure rests on, and the volume element `rA * drF * hFacC` has no regridded counterpart.
+
+There's also a concrete check you can make on your own download that points the same way: that collection carries `THETA` and `SALT` and nothing else. Three of the four budget terms — advection, diffusion, forcing — are not in the file. A "budget" built from it would be a tendency plus three reconstructed guesses, and the residual would be absorbing the reconstruction error. That's exactly the failure mode the rule exists to prevent.
+
+## The native path
+
+The attested route for a regional heat budget over a control volume is `ecco-regional-heat-budget` (executor `skills/ocean-budget/scripts/ecco_regional_budget.py`, attester `regional_budget_check.py`). Collections it reads, from the executor itself:
+
+| role | collection |
+|---|---|
+| geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| tendency | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| tendency (free surface) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| geothermal | `geothermalFlux.bin` — tutorial distribution, **not** a PO.DAAC collection |
+
+Note the snapshot collections: tendencies need month-boundary snapshots, not monthly means. And the geothermal input is not on PO.DAAC — without it the run fails the relative bar (measured 2026-08-31: omitting it still passes the absolute 1e-10 bar, so only the relative bar catches it).
+
+Once staged and stamped:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Bars: absolute max monthly |residual|/volume ≤ 1e-10 degC/s, relative max monthly |residual|/largest term ≤ 1e-6. Both required.
+
+## Two things that will likely bite on this particular region
+
+**Tile seams.** The executor has a stated v1 limit: the control volume must lie inside one tile's interior (faces 1–89). An explicit box spanning tiles, or one whose resolved rectangle touches a tile edge, is refused by design (`resolve_box`, lines 134–158) — seam-crossing volumes need the seam-calibrated section machinery. The subpolar North Atlantic is a plausible candidate to hit this, but I can't confirm it without the geometry granule; the executor will tell you definitively on first run. If it refuses, the options are a sub-box that fits one tile, or reframing as a transport problem across sections (the `meridional-transport` skill).
+
+**No anchor on an explicit box.** Only the registered region `southeast-atlantic-upper` gets the two-sided attester checks on wet-cell count, volume and residual. An explicit box is disclosed by mask digest and carries no anchor — the report has to say so.
+
+Also: `--data-root` must carry the `RECORD.json` stamp from `tools/science_record_verify.py`, or the attester refuses the receipt outright. And 2010 is the fixture year; the 1992–2017 science record lives at `~/ECCO_V4r4_record`.
+
+## What your download is still good for
+
+The 0.5° product is fine for THETA/SALT maps, T–S structure, and mixed-layer work over the subpolar gyre — anything that doesn't depend on flux convergence. It's only budgets and transports that are off-limits. Flagging that as general method, not from a concept.
+
+One disclosure on sourcing: Bash here is confined to `/home/user/run/evals` and `claude plugin list --json` was declined, so I could not reach the `nasa-daac-knowledge` provider bundle root. Everything above is read from the `ocean-science` 0.9.0 bundle — `knowledge/computations/ecco-heat-budget.md` (status stable, four human-verified events, most recent 2026-09-20), `skills/ecco/references/budget-formulation.md`, and the executor source. The gotcha and the budget-formulation convention I'm citing by path via those pointers, not from the provider concepts themselves; if you can read that bundle, worth confirming their current text before you publish anything.
+
+Want me to set up the staging and verification step, or would a section-based transport framing suit the question better?

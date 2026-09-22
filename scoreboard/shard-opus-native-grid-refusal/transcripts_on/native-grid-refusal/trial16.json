@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 128,
+  "chars": 4473,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) with its wrong-result failure mode, offers no workaround on the 05DEG fields, and lays out the native-grid path naming the flux/heat/geometry collections, bracketing snapshots, and the geothermal ancillary trap."
+    }
+  },
+  "pass": true
+}

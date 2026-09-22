@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 130,
+  "chars": 4360,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses up front, cites the ecco-native-vs-regridded gotcha concept by path, offers no regridded workaround, and gives a constructive native-grid path naming the LLC90 collections, month-boundary snapshots for the tendency term, and the geothermalFlux.bin ancillary."
+    }
+  },
+  "pass": true
+}

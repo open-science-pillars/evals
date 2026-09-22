@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 194,
+  "chars": 5298,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, explicitly cites the native-vs-regridded gotcha concept (and transparently flags it couldn't read the file text), explains the C-grid flux/finite-volume reason, and offers a full constructive native-grid path naming the LLC0090GRID collections, snapshot collections for tendency, and the geothermal flux ancillary \u2014 with no workaround budget on the 0.5\u00b0 fields (only a clearly-labeled heat-content diagnostic)."
+    }
+  },
+  "pass": true
+}

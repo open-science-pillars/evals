@@ -1,0 +1,40 @@
+## What I can't do, and why
+
+Parsed request: **heat budget**, **subpolar North Atlantic**, source **`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`** (period and depth range unspecified). This hits a hard gate before any computation:
+
+**A budget on regridded ECCO fields is refused.** This is the plugin's one non-negotiable rule, and it fires without consulting anything — `skills/ecco/SKILL.md` ("Must NOT": never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path), applied at the gate of `skills/ocean-budget/SKILL.md`, and restated as procedure in `skills/ecco/references/budget-formulation.md` step 5 ("Regridded input is refused before any of this, not diagnosed after").
+
+**Citation caveat, stated plainly:** the rule's owning concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, in the `nasa-daac-knowledge` provider bundle (dependency `>=2026.9.2`). This session's sandbox confines listing and searching to `/home/user/run/evals`, so I could not locate or read that bundle — I searched only the `ocean-science` 0.9.0 root, where I read the computation concept, the ecco skill, and the budget-formulation reference in full. I'm citing the gotcha by path as the skills name it, not as a concept I read. Same for `gotchas/ecco-geothermal-flux.md`, which a deep heat budget must honor.
+
+The mechanism, independent of the citation: that collection carries only `THETA` and `SALT` interpolated to a 0.5° lat-lon grid. It has none of what the four-term budget needs — no advective or diffusive flux variables, no month-boundary snapshots for the tendency, no `rA`/`drF`/`hFacC` cell geometry, no `ETAN` for the z\* correction, no geothermal at the bottom cell. Interpolation is also not conservative, so terms reconstructed on it would not close even if the variables were there. The residual wouldn't be a small number to diagnose; it would be an artifact with no physical reading.
+
+I also found no ECCO data in the working directory (`/home/user/run/evals` is the eval harness repo), and the sandbox blocked me from checking `~/ECCO_V4r4`.
+
+## The native path
+
+Collections, read off the sanctioned executor `skills/ocean-budget/scripts/ecco_heat_budget.py`:
+
+| Purpose | Collection |
+|---|---|
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (one static granule) |
+| Advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency (13 month-boundary bookends) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| z\* correction (`ETAN`, 13 snapshots) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+
+Geothermal flux is **not** a PO.DAAC collection and must be supplied separately — omitting it drives deep-cell residuals orders of magnitude above tolerance (`knowledge/computations/ecco-heat-budget.md`, "Execution and attestation").
+
+Two things about your specific region:
+
+1. **The subpolar North Atlantic is not a registered region.** The attested whole-grid heat budget (`ecco-heat-budget`) only binds `tile1-interior`. Your route is the regional executor `ecco_regional_budget.py` with an explicit `--box LAT0 LAT1 LON0 LON1 --depth-m`, e.g. `--box 45 65 -60 -10`. An explicit box is disclosed by mask digest and **carries no anchor** — the attester recomputes the bars from the results and checks the mutation flags, but skips the two-sided reference checks it applies to `southeast-atlantic-upper`. That's a weaker attestation and the report has to say so.
+2. **It's an open domain.** Domain-integrated closure is asserted only on closed domains; a subpolar box carries its boundary transports explicitly rather than folding them into a residual.
+
+Pass bar for the pointwise heat budget, from `knowledge/computations/ecco-heat-budget.md` (status `stable`, four `human:PaulMRamirez` verified events, most recent 2026-09-20): `residual_max ≤ 1e-10` and `residual_p999 ≤ 1e-11` degC/s, absolute, every wet cell and month — 2× headroom over the 2026-07-04 baseline of max 4.95e-11, p99.9 7.3e-12.
+
+Prerequisite: the native tree needs the `RECORD.json` stamp from `tools/science_record_verify.py`. Every attester refuses a receipt from an unstamped tree.
+
+## What the 0.5° product is still good for
+
+Heat *content* and its change over the subpolar box is a legitimate diagnostic on regridded fields — it's an inventory, not a closed budget, so the conservation argument doesn't apply. I'd have to compute it unattested, though: the attested `ecco-ocean-heat-content` executor also reads native granules. It would come with the potential-temperature baseline caveat, and only the change between months is quotable, never the absolute value.
+
+**How do you want to proceed?** If you fetch the five native collections above plus geothermal and stamp the tree, tell me the year and the box and I'll run the regional executor and its attester and report the terms with the verdict. Or I can do the unattested OHC-change series on what you already have — say which.

@@ -1,0 +1,44 @@
+## I can't compute this from the product you have — and the reason is physical, not procedural
+
+A heat budget on `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is refused. This isn't a tooling limitation I can work around with a smarter script.
+
+**Mechanism** (`knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, stable, human-verified 2026-09-04, severity high): ECCO's conservation is a property of the *native* llc90 formulation — face fluxes, partial-cell geometry (hFac), and tile topology together satisfy the model equations exactly. The `05DEG` collections are interpolated for display and comparison. Interpolation does not preserve flux divergences.
+
+Two consequences, and the second is the fatal one:
+
+1. **The wrong-result mode is silent.** A budget assembled from regridded fields yields residuals *the same order as the physical terms*. Nothing errors. Tendencies you'd attribute to mixing or forcing would be interpolation artifacts. The formulation convention's traps table lists this as "closure fails everywhere, by construction."
+2. **The ingredients don't exist at 0.5°.** A heat budget needs `ADVx/y/r_TH`, `DFxE/yE/rE_TH`, `DFrI_TH` — a CMR sweep (2026-07-04) found **no 05DEG 3D flux collections**. The temperature-flux family concept states it plainly: "No interpolated variant exists; this family is native-grid only." Your product carries `THETA` and `SALT` and nothing else. There is no term set to assemble, let alone close.
+
+So there's no partial version of this I can hand you with a caveat attached. I'd be inventing three of the four terms.
+
+## The native path, with the exact collections
+
+The subpolar North Atlantic budget is entirely doable — it needs different granules. Required:
+
+| Purpose | ShortName | DOI |
+|---|---|---|
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | — |
+| Tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | 10.5067/ECL5S-OTS44 |
+| Advective + diffusive fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-3TF44 |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | 10.5067/ECL5M-HEA44 |
+
+Plus one thing that is **not** a PO.DAAC collection at all: the **geothermal flux** (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`, stable, human-verified). It's a static model input (`geothermalFlux.bin`, ECCO tutorial repo `misc/`) applied at the bottom wet cell. Omitting it fails deep and bottom cells by order 10–100 mW m⁻² equivalent while the surface still closes — and for the subpolar North Atlantic, where you likely want full depth over deep basins, that matters directly.
+
+**No native tree is on disk** — neither `~/ECCO_V4r4` (the 2010 fixture cache, ~2.5 GB) nor `~/ECCO_V4r4_record` (1992–2017) exists. So the fetch is the first step, followed by the verify-tool stamp; the attester refuses a receipt from an unstamped tree.
+
+Once staged, the attested route is the sanctioned regional executor, which takes an explicit box:
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <year> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two things to flag about that before you commit to it. An explicit box is disclosed by mask digest and **carries no reference anchor** — the two-sided checks on wet-cell count, volume, and residual-per-volume only apply to the registered `southeast-atlantic-upper` configuration, so your run gets the recomputed bars but not the anchored ones. And a subpolar box at 45–65°N is an **open domain**: domain-integrated closure is asserted only on closed domains, so the lateral heat transports across the box faces travel explicitly in the report rather than being folded into a residual.
+
+## What your downloaded product is good for
+
+The 05DEG data isn't wasted — it's the right product for maps of the subpolar temperature/salinity state, pointwise comparison against gridded observations, and heat-content-style integrals where you're not asserting term-by-term closure. Just not for a budget.
+
+Tell me your target year(s) and depth range and I'll stage the native fetch, or confirm the 45–65°N / 60–10°W box if that matches what you mean by subpolar.

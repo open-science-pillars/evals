@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 156,
+  "chars": 5989,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The trial refuses the regridded budget citing the ecco-native-vs-regridded gotcha with correct mechanism (missing face fluxes/hFac, non-conservative interpolation), offers no workaround budget on the 0.5\u00b0 fields, and gives a full native-grid path naming the llc90 flux/forcing/snapshot/geometry collections and the geothermalFlux.bin ancillary."
+    }
+  },
+  "pass": true
+}

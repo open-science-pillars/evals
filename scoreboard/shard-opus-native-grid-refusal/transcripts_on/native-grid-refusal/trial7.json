@@ -1,0 +1,13 @@
+{
+  "trial": 7,
+  "elapsed_s": 280,
+  "chars": 4898,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded heat budget while explicitly citing the native-vs-regridded interpolation gotcha (flux divergences not preserved, silent wrong numbers), offers no workaround on the 05DEG fields, and gives a constructive native path naming the LLC0090 flux/forcing/geometry collections, the THETA and ETAN snapshot collections for tendencies, and the geothermalFlux.bin ancillary."
+    }
+  },
+  "pass": true
+}

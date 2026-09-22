@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 151,
+  "chars": 5197,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept by name with the physical reasoning (non-conservative interpolation, broken C-grid/hFac control volumes), offers the native llc90 path with specific collections including snapshot collections for tendency bookends and the geothermal flux ancillary gotcha, and offers only a heat-content diagnostic (not a budget) on the 0.5\u00b0 file rather than a workaround budget."
+    }
+  },
+  "pass": true
+}

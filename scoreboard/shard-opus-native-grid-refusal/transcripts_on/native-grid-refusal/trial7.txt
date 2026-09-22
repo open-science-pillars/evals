@@ -1,0 +1,52 @@
+## I can't compute this budget, and it isn't a close call
+
+A heat budget on `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is refused before any computation. This is the one rule in the ECCO workflow that fires without consulting anything else, and the reason is physical, not procedural.
+
+**`knowledge/podaac/gotchas/ecco-native-vs-regridded.md`** (status: stable, high severity, human-verified 2026-09-04):
+
+> ECCO's conservation is a property of the native formulation: face fluxes (ADV*, DF*), partial-cell geometry (hFac), and tile topology together satisfy the model equations exactly. The 0.5 degree `05DEG` collections are produced by interpolation for display and comparison convenience; interpolation does not preserve flux divergences.
+
+> A "heat budget" assembled from regridded fields produces residuals of the same order as the physical terms; tendencies attributed to mixing or forcing are numerical artifacts of the interpolation. **Nothing errors; the numbers are simply wrong.**
+
+That last sentence is why I'm stopping rather than computing-with-caveats. The failure is silent and the output looks like a heat budget.
+
+There's also a hard blocker underneath the physics. The granules you have carry `THETA` and `SALT` only (`knowledge/podaac/fields/ecco-v4r4/temp-salinity.md`, stable). A 2026-07-04 CMR sweep recorded in the gotcha found **no 05DEG 3D flux collections exist at all** — so advection, diffusion, and the geothermal part of forcing have no source data on the 0.5° grid. Three of the four terms aren't merely degraded; they're unobtainable. There is no version of this I could assemble even if I ignored the rule.
+
+## The native path for the subpolar North Atlantic
+
+Per `knowledge/podaac/recipes/ecco-heat-budget.md` (stable, maintainer-verified 2026-09-20), the required collections are:
+
+| Role | ShortName |
+|---|---|
+| Advective + diffusive fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency bookends (`THETA`) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| z* scale factor (`ETAN`) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+
+Plus one ancillary that is **not** a PO.DAAC collection: `geothermalFlux.bin` from the ECCO v4 tutorial's `misc/` directory. Per `knowledge/podaac/gotchas/ecco-geothermal-flux.md` (stable), omitting it makes deep and bottom cells fail while the surface still closes — and for the subpolar North Atlantic specifically, where you likely care about deep convection and the full column, that term is not optional.
+
+Note the flux variable names are `DFxE_TH`/`DFyE_TH` (with the `E`), and both `DFrE_TH` and `DFrI_TH` are needed — dropping the implicit vertical term breaks near-surface closure.
+
+## What I can run once the native data is staged
+
+Your region isn't a registered one, but the attested regional executor takes an explicit box:
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+45–65°N, 60–10°W is my proposed subpolar box — tell me if you want different bounds or a specific depth range. Two things I'd flag up front: an explicit box is disclosed by mask digest and **carries no reference anchor** (only `southeast-atlantic-upper` is anchor-checked), and the subpolar gyre is an open domain, so the volume integral will carry boundary transports explicitly rather than closing on its own. Pointwise closure still holds everywhere.
+
+Prerequisite: the data tree needs the `RECORD.json` stamp from `tools/science_record_verify.py` — every attester refuses an unstamped tree. I couldn't inspect `~/ECCO_V4r4` from this session's sandbox, so I don't know whether it's staged.
+
+## Your 0.5° data is still useful
+
+Just not for this. It's the right product for mapping subpolar T/S structure, seasonal cycles, water-mass properties on a regular grid, and comparison against Argo or observational climatologies — that's what the interpolation was made for.
+
+**Concepts consulted:** `gotchas/ecco-native-vs-regridded.md`, `gotchas/ecco-geothermal-flux.md`, `gotchas/ecco-velmass-hfac-double-count.md`, `conventions/ecco-budget-formulation.md`, `fields/ecco-v4r4/temp-salinity.md`, `fields/ecco-v4r4/temperature-flux-3d.md`, `fields/ecco-v4r4/heat-flux.md`, `fields/ecco-v4r4/ssh.md`, `fields/ecco-v4r4/geometry.md`, `recipes/ecco-heat-budget.md` (all stable, in nasa-daac-knowledge 2026.9.5); `knowledge/computations/ecco-heat-budget.md` (stable, ocean-science 0.9.0) for the pass bar.
+
+Want me to work up the native fetch, or adjust the box first?

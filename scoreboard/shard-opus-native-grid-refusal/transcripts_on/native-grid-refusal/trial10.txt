@@ -1,0 +1,55 @@
+I can't run this budget, and the reason is a hard rule rather than a preference. Here's the parse, the refusal, and the native path.
+
+## What you asked for
+
+| | |
+|---|---|
+| Property | Heat |
+| Domain | Subpolar North Atlantic (unspecified box — I'd assume ~45–65°N, 60–10°W) |
+| Period | Unspecified |
+| Depth range | Unspecified |
+| Source | `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` (regridded, 0.5°) |
+
+## Refused: no heat budget exists on regridded ECCO fields
+
+This is the native-grid rule, and it fires before any computation whatever the framing — `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (budgets close only on the native llc90 grid), owned for this plugin by the `ecco` skill and applied at `ocean-budget`'s gate. Two independent reasons it can't be worked around:
+
+**1. The budget terms aren't in that file.** The four terms are tendency − (advection + diffusion + forcing). `TEMP_SALINITY` carries only `THETA` and `SALT`. The advective and diffusive convergences (`ADV*_TH`, `DF*_TH`) and the surface forcing (`TFLUX`, `oceQsw`) live in separate collections that have no 0.5° regridded counterpart. There is nothing to difference against a tendency.
+
+**2. Even with them, the formulation would be wrong.** ECCO's budget closes because the terms are raw face fluxes on staggered C-grid cells whose volumes are `rA × drF × hFacC`. Interpolation to a 0.5° lat-lon mesh is a scalar operation: it breaks the correspondence between a cell and the faces that bound it, discards the partial-cell `hFac` geometry, and does not conserve. Tendency and flux convergence land on different control volumes, so the residual you'd get would be an interpolation artifact of unbounded size, not a physical imbalance. That's why the refusal is categorical rather than a tolerance question.
+
+## The native path
+
+The attested route for a regional heat budget is `ecco-regional-heat-budget` (`knowledge/computations/`, via `skills/ocean-budget/scripts/ecco_regional_budget.py`, attester `regional_budget_check.py`). Collections it reads, all native llc90:
+
+```
+ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4   ADV*_TH, DF*_TH
+ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4                   TFLUX, oceQsw
+ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4              THETA  (13 bookends)
+ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4                        ETAN   (13 bookends)
+ECCO_L4_GEOMETRY_LLC0090GRID_V4R4                            rA, drF, hFacC, Zp1
+geothermalFlux.bin                                           tutorial distribution, NOT a PO.DAAC collection
+```
+
+That last one matters here: `knowledge/podaac/gotchas/ecco-geothermal-flux.md` — a subpolar box reaching the bottom without the geothermal term fails the relative bar (the executor proves this by re-running a geothermal-omitted mutation and requiring it to fail). Also `knowledge/podaac/gotchas/ecco-velmass-hfac-double-count.md`: the MASS velocities already carry `hFac`.
+
+Then, once the tree is staged and stamped:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 60 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+## Three things to settle before that runs
+
+- **Data.** No stamped native tree is present — neither `~/ECCO_V4r4/RECORD.json` nor a science-record tree. The native granules need fetching under an Earthdata Login and then one pass of `science_record_verify.py --stamp`; every attester refuses a receipt from an unstamped tree.
+- **The tile seam.** The explicit-box tier resolves to a rectangle inside *one* tile's interior and refuses a volume crossing a seam by design (`resolve_box`, lines 134–155). The llc90 Arctic cap takes over the high-latitude Atlantic, so a box reaching to 65°N will likely be refused; capping near 57–60°N, or splitting the domain, is the probable fix. I can only confirm the exact cutoff once the geometry granule is local.
+- **Parameters.** The executor binds one calendar year per run, and `subpolar North Atlantic` isn't a registered region — an explicit box is disclosed by mask digest and carries no reference anchor, which the report has to say. Tell me the year(s) and depth and I'll bind them.
+
+## What the 0.5° product *is* good for
+
+It will support a heat *content* diagnostic for the subpolar gyre — volume-integrated `THETA` and its change over time, with the potential-temperature baseline caveat — which answers "how much did it warm" without claiming to attribute that warming to advection, diffusion and forcing. Say the word and I'll do that on the file you already have.
+
+One disclosure: the provider bundle (`nasa-daac-knowledge`) isn't directly readable from this session's path policy, so I cite `ecco-native-vs-regridded`, `ecco-geothermal-flux` and `ecco-velmass-hfac-double-count` by bundle path as the `ecco` skill and `references/budget-formulation.md` name them, rather than from the concept text itself. The attested heat computation (`knowledge/computations/ecco-heat-budget.md`, status stable, maintainer-signed 2026-09-20) I did read in full.

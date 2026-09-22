@@ -1,0 +1,46 @@
+## I can't compute this from that product — and the reason isn't a technicality
+
+The `ocean-budget` workflow's first gate is a hard refusal: **no budget is computed on regridded ECCO fields, under any framing.** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so the request stops here.
+
+Two independent reasons, so this doesn't read as rule-lawyering:
+
+1. **No correct formulation exists on the interpolated grid.** ECCO's budgets close to machine precision because the llc90 discretization is finite-volume: the flux divergence across a cell's faces is *exactly* the tendency of that cell's content, using `rA * drF * hFacC` as the volume element. Interpolation to a lat–lon mesh breaks that identity — the regridded cells aren't the control volumes the fluxes were computed across, and there are no partial-cell factors. The residual stops being machine precision and becomes an interpolation artifact you can't distinguish from a missing physical term. This is the gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, cited by the ecco skill's budget-formulation reference.
+2. **The terms simply aren't in that collection.** It carries `THETA` and `SALT` monthly means. A heat budget needs the advective and diffusive flux fields, the surface forcing fields, and month-boundary *snapshots* for the tendency. None of them are in the 0.5° product, and none can be reconstructed from monthly-mean T alone.
+
+Your download isn't wasted — it's the right product for T/S maps, climatologies, sections and water-mass plots. It just can't carry a budget.
+
+## The native path, with the exact inputs
+
+The sanctioned regional budget executor names its own inputs (`skills/ocean-budget/scripts/ecco_regional_budget.py:109`), so this list is read from the code, not from memory:
+
+| Purpose | Collection |
+|---|---|
+| Advection + diffusion (`ADV*_TH`, `DF*_TH`) | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency (`THETA` snapshots) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Free-surface scaling (`ETAN` snapshots) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Geothermal at bottom cells | `geothermalFlux.bin` — **not a PO.DAAC collection**, it ships with the ECCO tutorial distribution |
+
+The geothermal term is the one people drop. Per the executor's own mutation evidence, omitting it still passes the absolute bar of 1e-10 degC/s and is caught only by the relative bar of 1e-6 — so a budget missing it can look closed.
+
+Then the attested run is two commands:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+## Three things to know before you fetch
+
+- **A subpolar North Atlantic box will probably be refused as specified.** The executor's v1 limit is that the control volume must lie inside a single llc90 tile's interior, faces 1–89; a box spanning a tile seam is refused by design (`ecco_regional_budget.py:142`). The subpolar gyre sits near a tile boundary on llc90, so 50–65°N, 60–10°W is likely to trip that. I can't resolve it without the geometry granule in hand — the executor will say definitively, naming the tiles. If it does refuse, the options are sub-boxes each within one tile, or the seam-calibrated section machinery in `meridional-transport` for the boundary transports.
+- **An explicit box carries no anchor.** The attester's two-sided checks on wet-cell count, volume and residual exist only for the registered reference configuration; an explicit box is disclosed by mask digest and geometry hash instead. The report has to say so.
+- **Nothing is attestable until the tree is stamped.** I found no native ECCO data root reachable from this session and no NetCDF files in `/home/user/run/evals`. After fetching, the tree needs its `RECORD.json` stamp from `tools/science_record_verify.py` — every attester refuses a receipt from an unstamped tree.
+
+Pass bars, from `knowledge/computations/ecco-heat-budget.md` (status stable, maintainer-verified): 1e-10 degC/s absolute per volume, 1e-6 relative to the largest term.
+
+Want me to write out the `earthaccess` fetch for those five collections plus the geothermal file, and pick sub-boxes that stay inside one tile?
+
+*Concepts consulted: `knowledge/computations/ecco-heat-budget.md` (read in full), the ecco skill's `references/budget-formulation.md`, and the sanctioned executor. I could not read the provider bundle's own copies of `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` and `conventions/ecco-budget-formulation.md` — `nasa-daac-knowledge` is enabled in settings, but this session's sandbox blocks directory listing outside the working directory and `claude plugin list --json` wasn't approved, so I couldn't resolve its install path. The refusal above doesn't depend on reading them; the specific formulation constants would.*

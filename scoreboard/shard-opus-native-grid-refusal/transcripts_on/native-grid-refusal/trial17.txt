@@ -1,0 +1,49 @@
+I can't compute it from that product. Refusing before any computation, per the rule both the `ocean-budget` and `ecco` skills carry as a hard gate.
+
+## Why
+
+A heat budget on regridded ECCO fields is refused outright — gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, cited by `skills/ocean-budget/SKILL.md` and `skills/ecco/SKILL.md` as the one rule that fires without consulting anything. Concretely, for `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`:
+
+- It carries interpolated `THETA` and `SALT` and nothing else. Three of the four budget terms — advective convergence (`ADVx/y/r_TH`), diffusive convergence (`DFxE/DFyE/DFrE/DFrI_TH`), and forcing (`TFLUX`, `oceQsw`, geothermal) — have no counterpart in it at all.
+- It has no `rA`, `drF`, `hFacC`, `Depth`, `Zp1`, so there is no volume element `rA·drF·hFacC` and no partial-cell geometry.
+- It has no month-boundary snapshots, so even the tendency term can't be formed (a monthly-mean difference is not the tendency).
+- Interpolation doesn't commute with the divergence operator. Even if you regridded the flux collections too, the convergences would no longer sum to the tendency, and the residual would be an interpolation artifact rather than a physical diagnostic. There is no correct formulation to write down here — this isn't a tolerance you could loosen.
+
+## Concepts consulted
+
+| Concept | Status | Read in full |
+|---|---|---|
+| `knowledge/computations/ecco-heat-budget.md` | stable, human-verified (4 events, latest 2026-09-20) | yes |
+| `skills/ecco/references/budget-formulation.md` | procedure | yes |
+| `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` | — | **no** — the provider bundle (`nasa-daac-knowledge`) is outside this session's allowed directory, so I could not open the file. I'm citing it as the two skills name it, not quoting it. The refusal doesn't depend on reading it; the others do. |
+| `knowledge/podaac/conventions/ecco-budget-formulation.md` | — | no, same reason |
+
+## The native path
+
+The subpolar North Atlantic as a control volume is the **attested regional budget**, `ecco-regional-heat-budget`. It takes an explicit box, which is what you need since only `southeast-atlantic-upper` is registered:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two things to know about that route: an explicit box is disclosed by mask digest and carries **no reference anchor** (the two-sided wet-cell/volume/residual checks only apply to `southeast-atlantic-upper`), and the domain is open, so boundary transports are reported explicitly rather than absorbed.
+
+The native collections the sanctioned executor reads (from `ecco_heat_budget.py:58-85`, so these are exact, not remembered):
+
+- `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` — one static granule
+- `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` — 13 month-boundary snapshots
+- `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` — `ETAN`, for the z* scale factor
+- `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4`
+- `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` — `TFLUX`, `oceQsw`
+- `geothermalFlux.bin` — **not a PO.DAAC collection**, staged into the data root separately. Dropping it drives bottom-cell residuals orders of magnitude above tolerance, which matters for a subpolar box that reaches the seafloor.
+
+## What I need from you
+
+1. **Depth range** for the box, and confirm 45–65°N, 60–10°W or give me your own bounds.
+2. **Year(s).** The 2010 fixture cache is one year; the 1992–2017 science record lives at `~/ECCO_V4r4_record`.
+3. **Whether the native tree exists and is stamped.** The sandbox blocked me from listing `~/ECCO_V4r4`, so I couldn't check. Every attester refuses a receipt from a tree without the `RECORD.json` stamp that `tools/science_record_verify.py` leaves — if it's not stamped, that's a one-time step after the first fetch.
+
+Give me those and I'll run the executor, run the attester before quoting any number, and report all four terms with the residual against the bar the computation owns.

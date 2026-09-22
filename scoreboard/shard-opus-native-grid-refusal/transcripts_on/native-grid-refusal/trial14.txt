@@ -1,0 +1,43 @@
+## I can't compute a budget from that product — and it isn't a data-quality quibble
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the regridded (0.5°, lat-lon) ECCO product. A property budget on regridded ECCO fields is a hard refusal in this plugin, and it fires before anything else is consulted:
+
+> "Never compute any budget on regridded fields, under any framing." — `skills/ocean-budget/SKILL.md` ("The native-grid rule", 🔴 non-negotiable), owned for the plugin by `skills/ecco/SKILL.md` and resting on gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`.
+
+The reason is structural, not precision. ECCO closes budgets because the MITgcm's own discrete operators are satisfied exactly on the llc90 C-grid: the tendency, the raw face fluxes through cell faces, and the forcing are the model's own terms. Interpolation to 0.5° destroys the discrete divergence — the face fluxes no longer bound the cells they're attributed to, and the volume element `rA * drF * hFacC` doesn't exist there. There's no correct budget formulation on that grid to compute, so a number produced from it would be a residual of interpolation error, not a heat budget. The 0.5° product is fine for what it's for: maps, T/S climatology, heat *content* (not the budget terms).
+
+Also, two practical notes: I don't see the 0.5° files anywhere under `/home/user/run/evals`, and neither native tree (`~/ECCO_V4r4`, `~/ECCO_V4r4_record`) is present, so nothing is staged locally yet either way.
+
+## The native path, which is attested
+
+A regional heat budget over a control volume has a sanctioned, attested computation: `knowledge/computations/ecco-regional-heat-budget.md` (status **stable**), executor `skills/ocean-budget/scripts/ecco_regional_budget.py`, attester `skills/ocean-budget/scripts/regional_budget_check.py`. It closes the budget across three *independent* collections (snapshot tendency, raw rim face fluxes, surface forcing + geothermal) against two bars — absolute ≤1e-10 °C/s and relative-to-largest-term ≤1e-6 — and writes mutation evidence into every receipt.
+
+**Native collections to fetch** (from the executor's declared inputs, `ecco_regional_budget.py:76-82`):
+
+| Purpose | Collection |
+|---|---|
+| Rim transport | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency (θ) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Tendency (z\* scaling) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Geothermal | `geothermalFlux.bin` — **not a PO.DAAC collection**; ships with the ECCO v4 tutorial distribution |
+
+Then, once the tree carries its `RECORD.json` stamp from the verify tool:
+
+```bash
+uv run $PLUGIN/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $PLUGIN/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+## Three things that will shape what you actually get
+
+**1. The subpolar box will probably be refused by the v1 seam limit.** The executor resolves an explicit box to an index rectangle on *one* tile, interior faces 1–89, and refuses anything spanning a tile seam or touching a tile edge (`ecco_regional_budget.py:140-155`; the concept states this as a v1 limit). A 45–65N, 60W–10W box on llc90 very likely spans the northern Atlantic tile and the Arctic cap face. I can only confirm that once the geometry granule is on disk. If it does span, the options are a sub-box that fits one tile interior, or the pointwise budget (`ecco-heat-budget`, closure at every wet cell — which holds on any spatial subset) instead of a volume-integrated one.
+
+**2. Geothermal is not optional here.** A subpolar box deep enough to matter has many bottom cells. The concept records the measurement: omitting geothermal lands at 1.24e-12, *inside* the absolute bar, caught only by the relative bar. A budget built from PO.DAAC collections alone omits it silently.
+
+**3. I need two decisions from you**: the depth range (I used 1000 m as a placeholder — full-depth changes the geothermal weight substantially), and the period. The 2010 fixture cache is ~2.5 GB; the 1992–2017 science record is much larger.
+
+Want me to go get the native granules? That's a credentialed Earthdata Login step, so I'd need you to confirm before I start the fetch.

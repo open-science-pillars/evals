@@ -1,0 +1,44 @@
+## I can't compute this one, and the reason is worth a minute
+
+The plugin's budget skill has one rule that fires before anything else gets consulted:
+
+> **The native-grid rule (🔴, non-negotiable)** — A budget request on regridded fields is REFUSED: no correct budget formulation exists there … This rule fires before any computation, whatever the framing of the request.
+> — `skills/ocean-budget/SKILL.md`
+
+The `ecco` skill owns the same refusal for the whole plugin ("Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path"). `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so a heat budget from it is out regardless of how the domain or period is framed.
+
+This isn't bureaucratic. Interpolation to a lat-lon mesh breaks the discrete flux-divergence identity that makes ECCO budgets close: the regridded cells aren't the control volumes the fluxes were computed across, so tendency minus (advection + diffusion + forcing) no longer has to sum to zero. Any residual you got would be regridding error, and you'd have no way to separate it from a real physical imbalance.
+
+**Two independent blockers, beyond the rule itself.** I read the sanctioned executor (`skills/ocean-budget/scripts/ecco_heat_budget.py`) to see exactly what the four terms consume:
+
+- **The flux and forcing terms don't exist in your file.** The budget needs `ADVx_TH/ADVy_TH/ADVr_TH` and `DFxE_TH/DFyE_TH/DFrE_TH/DFrI_TH` (3D temperature flux), `TFLUX` and `oceQsw` (surface heat flux, with shortwave penetration split out), plus the `geothermalFlux.bin` ancillary at the bottom wet cell. A T/S product has none of them — there's nothing to approximate from.
+- **Wrong cadence even for the T/S part.** The tendency term is built from **13 month-boundary snapshots** bracketing the year, with the z\* scale factor `1 + ETAN/Depth` applied before differencing. You have monthly *means*. The native counterpart you'd actually need is `..._SNAPSHOT_V4R4`, not `..._MONTHLY_...`.
+
+## The native path
+
+The attested computation is `knowledge/computations/ecco-heat-budget.md` (`status: stable`, pass bar `residual_max ≤ 1e-10`, `residual_p999 ≤ 1e-11` degC/s). Collections to fetch:
+
+| Collection | Supplies |
+|---|---|
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1` (one static granule) |
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | advection + diffusion |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` bookends |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` bookends |
+| `geothermalFlux.bin` | bottom-cell geothermal (ancillary, not a CMR collection) |
+
+**For your region specifically:** the whole-grid executor only knows `tile1-interior`, but the regional executor (`ecco_regional_budget.py`) takes an explicit box — `--budget heat --box 45 65 -60 -10 --depth-m <depth> --year <YYYY>`. That reaches the subpolar North Atlantic directly. Caveat from the skill: an explicit box "is disclosed by mask digest and carries no anchor," meaning it gets no reference-configuration cross-check the way `southeast-atlantic-upper` does — the residual bars still apply, but the wet-cell/volume anchoring doesn't.
+
+## What your 0.5° download *is* good for
+
+It's the right product for a **heat content inventory** — ∫ρc_pΘ dV over the subpolar gyre, its seasonal cycle and trend — plus T-S structure and water-mass work. That's a volume integral, not a flux-convergence identity, so regridding costs you accuracy but doesn't invalidate the method. It would be unattested (the sanctioned `ecco-ocean-heat-content` executor reads native granules), and it should carry the caveat that 0.5° interpolation isn't volume-conserving.
+
+## To proceed I need from you
+
+1. **Which do you want** — the attested native budget, or the unattested heat-content inventory from what you already have?
+2. **Year or period.** The 2010 fixture cache is ~2.5 GB; the full 1992–2017 science record is much larger. The tree also needs the `RECORD.json` stamp from `tools/science_record_verify.py`, or the attester refuses the receipt.
+3. **Confirm the box and depth range.** I used 45–65°N, 60–10°W as a placeholder; and full-depth vs. 0–700 m changes whether geothermal matters.
+
+One note: I couldn't locate your download — nothing matching `*ECCO*` under `/home/user/run/evals`, and this session's sandbox blocks directory listing outside it. Tell me the path when you answer.
+
+Also, in the interest of not overclaiming: I read the skill files, the computation concept, and the executor source directly. The `ecco-native-vs-regridded` gotcha concept itself lives in the separately-installed `nasa-daac-knowledge` bundle, which I couldn't reach to quote — the rule above is from the two skill files, which both state it in the same terms.

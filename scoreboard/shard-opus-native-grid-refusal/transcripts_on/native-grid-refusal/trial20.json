@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 170,
+  "chars": 5451,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the ecco-native-vs-regridded gotcha with a correct C-grid/staggered-flux mechanism, and offers the native-grid path naming the llc90 collections including the month-boundary snapshots for the tendency and the geothermal ancillary, while the OHC alternative is explicitly framed as storage-only rather than a workaround budget."
+    }
+  },
+  "pass": true
+}

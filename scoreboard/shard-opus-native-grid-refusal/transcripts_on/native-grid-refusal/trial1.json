@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 333,
+  "chars": 5432,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The trial refuses the regridded budget citing the ecco-native-vs-regridded gotcha concept with its physical rationale, and offers a constructive native path naming the LLC0090GRID flux/forcing/geometry collections, snapshot collections for the tendency term, and the geothermalFlux.bin ancillary input, while the only fallback offered is explicitly labeled a heat-content inventory rather than a budget."
+    }
+  },
+  "pass": true
+}

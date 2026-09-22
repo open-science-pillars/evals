@@ -1,0 +1,47 @@
+I can't do this one as asked, and the reason is a hard rule rather than a judgment call. Here's what applies, then the path that does work.
+
+## The refusal
+
+A heat budget on `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is refused because that's a regridded product. The rule is owned by the `ecco` skill and enforced at the `ocean-budget` gate, and it fires before any computation, whatever the framing:
+
+> "Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)" — `skills/ecco/SKILL.md`, citing gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`
+
+The mechanism, concretely: ECCO's budget closes to machine precision because the four terms are evaluated on the same C-grid cells the MITgcm integrated — tendency from month-boundary snapshots, advective/diffusive convergence from raw face fluxes across cell faces, forcing at those cells, with the volume element `rA * drF * hFacC`. Interpolation to a 0.5° lat-lon mesh destroys all of that: the cell faces no longer bound the cells, partial-cell `hFacC` is gone, the flux collections (`ADV*_TH`, `DF*_TH`) aren't in that collection at all, and there are no snapshots to bracket the tendency. There is no correct budget formulation on the regridded fields — not a less accurate one, none. Anything I computed would be a difference of interpolated quantities with a residual the size of the terms, and the honest move is not to produce it.
+
+Two disclosures on the consult, per `core:consult-knowledge`:
+
+- I read the refusal rule and the formulation procedure in the ocean-science bundle (`skills/ecco/SKILL.md`, `skills/ecco/references/budget-formulation.md`, `knowledge/computations/ecco-heat-budget.md`). I could **not** read the provider concept `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` itself — the sandbox blocks directory listing outside `/home/user/run/evals`, so I couldn't resolve the `nasa-daac-knowledge` install path, and `claude plugin list --json` needs approval. I'm citing it by bundle path as the two skills that own the refusal do, not from having read it.
+- I also couldn't locate your download. Nothing ECCO-shaped is under `/home/user/run/evals`, and I can't search your home directory from here. That doesn't change the answer — the refusal is about which product it is, not where it sits.
+
+## The native path
+
+The attested route for a regional heat budget is `ecco-regional-heat-budget`. Collections it reads (from the sanctioned executor, `skills/ocean-budget/scripts/ecco_regional_budget.py:109-116`):
+
+| Purpose | Collection |
+|---|---|
+| Advection + diffusion (`ADV*_TH`, `DF*_TH`) | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency (`THETA` snapshots) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Free-surface scaling (`ETAN` snapshots) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Geothermal at bottom cells | `geothermalFlux.bin` — **not a PO.DAAC collection**, ships with the ECCO v4 tutorial distribution |
+
+Then, for a subpolar North Atlantic box:
+
+```bash
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Four things to know before you run it:
+
+1. **Missing prerequisites.** There's no stamped data tree here (`~/ECCO_V4r4/RECORD.json` doesn't exist). You need the fixture cache or the science record fetched with earthaccess under an Earthdata Login, then stamped once with `tools/science_record_verify.py` — the attester refuses a receipt from an unstamped tree by construction. Plus the geothermal binary above; without it the run fails the relative bar.
+2. **The box may be refused.** The explicit tier resolves to an index rectangle on **one** tile, interior faces 1–89. A subpolar North Atlantic box plausibly runs into the tile-3 edge or the Arctic cap seam, in which case the executor exits with the spanned tiles named. That's a design refusal, not a bug — seam-crossing volumes need the section machinery. Narrowing the box south or west is the workaround.
+3. **No anchor.** An explicit box is disclosed by mask digest only; the attester's two-sided checks on wet-cell count and volume exist only for the registered `southeast-atlantic-upper` reference. Your run gets the two residual bars (absolute ≤ 1e-10 °C/s per volume, relative ≤ 1e-6) and the mutation evidence, but no reference-configuration anchor — the report has to say so.
+4. **Open domain.** 50–65°N is not a closed basin, so the lateral rim transports are a first-order term and get reported explicitly, never folded into a residual.
+
+I'll run it if you point me at a stamped data root, or tell me which year you want and I'll set up the fetch.
+
+One thing the 0.5° product *is* right for: a heat-content inventory or its seasonal/interannual anomaly over the subpolar gyre — an integral of `THETA`, not a term-by-term budget. Say the word if that's closer to what you actually need.

@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 153,
+  "chars": 5600,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget outright, cites the ecco-native-vs-regridded gotcha as the binding reason with a correct physical explanation (flux-form C-grid divergence identity broken by interpolation), offers no workaround budget on the 0.5\u00b0 fields, and lays out a constructive native-llc90 path naming the required native flux/forcing field sets and their absence from the regridded collection, month-boundary snapshots for the tendency, and the geothermal bottom flux as a required non-PO.DAAC ancillary term."
+    }
+  },
+  "pass": true
+}

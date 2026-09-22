@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 125,
+  "chars": 4889,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the native-grid rule and the ecco-native-vs-regridded gotcha with the correct physical reason (interpolation breaks the discrete flux-divergence identity), and offers a full native path naming the flux/heat-flux/geometry collections, the SNAPSHOT collections for the tendency term, and the geothermalFlux.bin ancillary \u2014 with no workaround budget attempted on the 0.5\u00b0 fields (the suggested heat-content inventory is a volume integral, explicitly not a budget, and caveated)."
+    }
+  },
+  "pass": true
+}

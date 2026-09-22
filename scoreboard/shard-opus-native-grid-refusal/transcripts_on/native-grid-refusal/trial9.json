@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 136,
+  "chars": 4495,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget citing the native-vs-regridded gotcha with concrete C-grid/face-flux reasoning, offers no workaround on the 0.5\u00b0 fields, and gives a constructive native path naming the required collections including snapshots and the geothermal ancillary."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,51 @@
+I can't compute this from the 0.5° product, and the reason isn't a technicality — I'll lay it out and give you the route that does work.
+
+## Refusal: no heat budget on regridded ECCO fields
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the interpolated product. A budget request on regridded fields is refused outright — it's the one rule in this plugin that fires before any consultation, owned by the `ecco` skill and enforced at the `ocean-budget` gate, citing gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` ("budgets close only on the native llc90 grid").
+
+Two independent reasons, both fatal:
+
+1. **No correct formulation exists there.** ECCO's budget closes because the archived terms are the model's own flux-form quantities on the Arakawa C-grid: face-normal advective and diffusive fluxes whose discrete divergence exactly balances the tendency, cell by cell. Interpolation to a 0.5° lat-lon mesh breaks that discrete identity. Whatever you compute afterwards has a residual set by the regridding error, not by physics, and there is no way to tell the two apart.
+2. **Three of the four terms aren't in the file.** That collection carries THETA and SALT monthly means. It has no `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`, no surface forcing (`TFLUX`, `oceQsw`), and no month-boundary snapshots for the tendency. You could form a finite-difference tendency and nothing else — that's a heat *content change*, not a budget.
+
+I won't produce a four-term table with the residual folded into a diffusion or forcing term; that's the failure mode this rule exists to prevent.
+
+## The native path
+
+The budget you want has an attested computation: `knowledge/computations/ecco-heat-budget.md` (status `stable`, human-verified by the maintainer 2026-09-20). Its pass bar is pointwise and absolute — `residual_max` ≤ 1e-10 °C/s, `residual_p999` ≤ 1e-11 °C/s, every wet cell, every month. Baseline measurement (2010, `tile1-interior`, 3,341,772 cell-months): max 4.95e-11, p99.9 7.3e-12, median 5.7e-14 °C/s. That's machine-precision closure, and it's the standard your subpolar result should be held to.
+
+For a **subpolar North Atlantic control volume specifically**, the whole-grid computation won't do it — it binds `region` with `tile1-interior` as the only registered value. You want the regional executor, which takes an explicit box:
+
+```bash
+R=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things you should know before that run:
+
+- **An explicit box carries no anchor.** The attester's two-sided checks on wet-cell count, volume and residual-per-volume are calibrated only on the reference configuration (`southeast-atlantic-upper`, 2010). A custom subpolar box is disclosed by mask digest and the report has to say it's unanchored.
+- **The subpolar gyre is an open domain.** Domain-integrated closure is asserted only on closed domains; here the boundary transports through 50°N, 65°N and the box's east/west faces travel in the result explicitly, not absorbed.
+- **Geothermal.** If you want full depth rather than 0–1000 m, the geothermal bottom flux is a required term and its input is *not* a PO.DAAC collection (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`). Dropping it drives deep-cell residuals orders of magnitude above tolerance.
+
+## What I need from you
+
+- **Data.** I found no ECCO files under `/home/user/run/evals`, and this session's sandbox blocks me from listing or searching outside it, so I can't confirm where your 0.5° download lives or whether a native tree exists at `~/ECCO_V4r4`. The executors need native granules there, plus the `RECORD.json` stamp from the provider's verify tool — every attester refuses a receipt from an unstamped tree.
+- **Approvals.** Three calls were blocked this turn: `claude plugin list --json`, the executor's `--help`, and the Earthdata `get_collections` lookup. I'd want the last one to verify the native ShortNames against the fields concepts rather than quote them from memory.
+- **Scope.** Year or year range, the box you actually mean by "subpolar" (I used 50–65°N, 60–10°W as a placeholder), and depth range.
+
+## Concepts consulted
+
+| Concept | Status | What it bound |
+|---|---|---|
+| `knowledge/computations/ecco-heat-budget.md` | stable, human-verified | pass bar, sanctioned code, attester |
+| `skills/ecco/references/budget-formulation.md` | procedure | term set, order of operations |
+| `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` | cited, **not readable here** | the refusal |
+| `knowledge/podaac/conventions/ecco-budget-formulation.md` | cited, **not readable here** | formulation authority |
+
+Searched: the running `ocean-science` 0.9.0 and `core` 0.6.0 roots. The PO.DAAC provider bundle (`nasa-daac-knowledge`) was **not** reachable — I couldn't read the installer record to locate it, so the three `knowledge/podaac/...` concepts above are cited from the skill references that name them, not read in full. Before an actual run I'd read the convention concept end to end; its traps table is the authority for the term definitions and constants, and I won't reconstruct those from memory.
+
+Your 0.5° product isn't wasted — it's the right file for subpolar T/S maps, heat content change, and T-S water-mass work. It just can't carry a budget.

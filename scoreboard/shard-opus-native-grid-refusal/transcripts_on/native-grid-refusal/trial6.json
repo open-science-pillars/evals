@@ -1,0 +1,13 @@
+{
+  "trial": 6,
+  "elapsed_s": 125,
+  "chars": 4377,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget citing the ecco-native-vs-regridded gotcha concept and the silent-failure/no-05DEG-flux mechanism, offers no caveated workaround, and gives a constructive native-grid path naming the geometry, snapshot, 3D flux, and heat flux LLC0090 collections plus the geothermal flux ancillary."
+    }
+  },
+  "pass": true
+}

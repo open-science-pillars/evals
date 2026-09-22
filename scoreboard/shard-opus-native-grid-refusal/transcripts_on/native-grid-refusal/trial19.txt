@@ -1,0 +1,40 @@
+I stopped before computing. Here's why, and what to do instead.
+
+## The request is refused as posed
+
+A heat budget cannot be computed from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`, or from any regridded ECCO field. This is a hard refusal in the ECCO skill and the ocean-budget workflow, and it fires before any computation regardless of framing:
+
+> `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid.
+
+Cited by `skills/ecco/SKILL.md` ("Never compute budgets or transports on regridded ECCO fields") and `skills/ocean-budget/SKILL.md` ("A budget request on regridded fields is REFUSED: no correct budget formulation exists there").
+
+**The mechanism.** ECCO's budgets close to machine precision because MITgcm's discrete terms are exact on the C-grid: the tendency in a cell equals the sum of face fluxes through that cell's staggered faces, over the volume element `rA * drF * hFacC`. Regridding to 0.5° interpolates cell-centered scalars onto a new mesh and throws away the face geometry, the partial-cell `hFac` factors, and the flux/volume correspondence. There is no term set on that grid that sums to zero — any "residual" you got would measure interpolation error, not physics, and it would be large enough to swamp the signal you're after. On top of that, the T/S collection carries no flux or advection variables at all, so three of the four terms could only be reconstructed from gradients, which is a different (and non-closing) calculation.
+
+Two further problems specific to your product: it has no month-boundary snapshots (the tendency term needs them, not monthly means), and no geothermal input (`knowledge/podaac/gotchas/ecco-geothermal-flux.md` — not a PO.DAAC collection at all, and its omission is measurable at 1.24e-12 degC/s, inside the absolute bar and caught only by the relative one).
+
+## The native path
+
+There is an attested regional heat budget for exactly this shape of question: `knowledge/computations/ecco-regional-heat-budget.md` (status stable, human-verified 2026-09-20). It closes over a control volume by comparing three independent collections — tendency from temperature and SSH snapshots, transport from raw face fluxes in the 3D flux collection at the volume boundary, forcing from the surface flux collection plus geothermal at bottom wet cells.
+
+```bash
+uv run "$CLAUDE_PLUGIN_ROOT"/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 6000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run "$CLAUDE_PLUGIN_ROOT"/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Pass bar is two-sided: per-volume residual ≤ 1e-10 degC/s **and** ≤ 1e-6 relative to the largest regional term. Every receipt carries mutation evidence (four sabotages, each required to fail a bar).
+
+### Three things to settle before that runs
+
+1. **You need the native granules.** I checked — neither `~/ECCO_V4r4` (2010 fixture, ~2.5 GB) nor `~/ECCO_V4r4_record` (1992–2017) exists here, and the tree must additionally carry the `RECORD.json` stamp from `tools/science_record_verify.py` or the attester refuses the receipt outright. The required collections are the LLC90 geometry granule plus the native monthly, snapshot, 3D-flux and surface-flux families; I'd resolve those ShortNames through the fields concepts via `load-ecco` rather than quote them from memory. Say the word and I'll run the volume-gated fetch.
+
+2. **The subpolar gyre may cross a tile seam.** The executor's stated v1 limit is that the control volume lie within one tile interior; seam-crossing volumes are refused until the seam-calibrated section machinery lands. 50–65°N / 60–10°W is a plausible candidate for that refusal on the llc90 layout — the run will tell us definitively rather than me guessing. If it refuses, the fallback is a budget over a sub-box that does sit in one tile interior, reported as such.
+
+3. **The box is yours to confirm.** I used 50–65°N, 60–10°W, full depth. An explicit box carries no registered anchor — it's disclosed by mask digest, wet-cell count and volume in the receipt, because no oracle can verify a mask is the water you meant. Adjust the bounds if you have a specific gyre definition in mind, and pick the year (or I can run a span).
+
+## What your 0.5° product is good for
+
+Don't re-download it — it's the right product for heat *content* and its change, T/S structure, water-mass and mixed-layer work, and comparison against Argo. Just not for a closed budget. If what you actually want is "how much did the subpolar North Atlantic warm and why," I can give you the OHC change from what you have now, and pursue the closed budget on the native grid in parallel.
+
+Two disclosures on how I got here: my shell couldn't list outside `/home/user/run/evals`, so I never saw your downloaded files directly — that doesn't change the answer, since the refusal follows from the collection name. And `claude plugin list --json` was declined, so I couldn't locate the installed `nasa-daac-knowledge` provider bundle; I read the gotcha's path and role as cited by the ocean-science skills and computation concepts, not the gotcha text itself.

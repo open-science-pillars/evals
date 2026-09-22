@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 163,
+  "chars": 5225,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the specific gotcha concept (ecco-native-vs-regridded) plus the geothermal gotcha, explains the C-grid/hFac flux-closure mechanism, notes the missing month-boundary snapshots for the tendency term, and offers a constructive native-grid path with named collections and the attested executor \u2014 with no workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

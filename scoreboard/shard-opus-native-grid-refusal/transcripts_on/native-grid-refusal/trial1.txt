@@ -1,0 +1,58 @@
+I've now read the governing concepts in full. Here's where this lands.
+
+## The request is refused, and the reason is physical, not procedural
+
+**`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` cannot produce a heat budget.** Not "will be approximate" — there is no correct formulation on it.
+
+`knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (status **stable**, severity high, human-verified by the maintainer 2026-09-04, current until 2027-01-04):
+
+> "ECCO's conservation is a property of the native formulation: face fluxes (ADV\*, DF\*), partial-cell geometry (hFac), and tile topology together satisfy the model equations exactly. The 0.5 degree `05DEG` collections are produced by interpolation for display and comparison convenience; interpolation does not preserve flux divergences..."
+
+Two independent blockers, either one fatal:
+
+1. **The ingredients don't exist at 0.5°.** The concept records a CMR sweep (2026-07-04) that "found no 05DEG 3D flux collections." The `05DEG` family carries state variables only — `THETA` and `SALT`, per `knowledge/podaac/fields/ecco-v4r4/temp-salinity.md`. The advective term needs `ADVx_TH`/`ADVy_TH`/`ADVr_TH`; the diffusive term needs `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`. None are published on the interpolated grid. Three of the four terms are simply unavailable.
+2. **Even with them, interpolation destroys the closure.** The failure is silent: "residuals of the same order as the physical terms; tendencies attributed to mixing or forcing are numerical artifacts of the interpolation. **Nothing errors; the numbers are simply wrong.**" The formulation traps table scores this case "closure fails everywhere, by construction."
+
+The `05DEG` collection is the right product for maps, sections, and pointwise comparison against gridded observations (Argo, WOA). It is the wrong product for any conserved quantity.
+
+## The native path, with exact collections
+
+From `knowledge/podaac/recipes/ecco-heat-budget.md` (stable, three human verifications):
+
+| Term | Collection |
+|---|---|
+| Advection | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Diffusion | same collection (`DFrI_TH` included — the implicit part is required) |
+| Forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (`TFLUX`, `oceQsw`) |
+| Tendency | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` + `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` (`ETAN`, for the z\* factor) |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (`rA`, `drF`, `hFacC`, `Depth`) |
+| Geothermal | `geothermalFlux.bin` — **a model input, not a PO.DAAC collection**; fetched from the ECCO tutorial misc directory |
+
+Flagging that last row early because it bites: for a subpolar North Atlantic budget you'll be integrating to the seafloor over the Irminger and Labrador basins, and omitting geothermal makes closure "degrade with depth and fail at the seafloor," sitting three orders above the residual bar. It is the first thing the auditor checks on a heat-budget failure.
+
+Note also that snapshots — not monthly means — bookend the tendency, and the `05DEG` family has no snapshot variant at all.
+
+## What I'd run instead, once you have the native data
+
+Your region is a box, so the attested route is the **regional** budget, not the whole-grid one:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three caveats I'd rather you hear now than in the report:
+
+- An explicit `--box` "is disclosed by mask digest and **carries no anchor**" — only `southeast-atlantic-upper` is a registered, reference-checked region. Your subpolar box gets the attester's recomputed bars and mutation checks, but not the two-sided reference-configuration check.
+- The subpolar gyre is an **open domain**. Pointwise closure holds on any subset, but a domain-integrated budget "holds only on closed domains with boundary transports accounted." The Denmark Strait / Iceland-Scotland / ~45°N inflow transports have to be carried explicitly as boundary terms, not folded into a residual. I'd pair this with the `meridional-transport` skill for those sections.
+- The data tree needs the `RECORD.json` stamp from `science_record_verify.py`; every attester refuses an unstamped tree.
+
+## Two things I need from you
+
+**Where is the download?** My shell is sandboxed to `/home/user/run/evals` and nothing matching `*ECCO*` is under it. So I can't confirm what you actually have — if the tree also contains native `LLC0090GRID` granules, say so and the budget may be runnable today.
+
+**Period and depth range.** I assumed ~45–65°N, 60–10°W above; confirm or correct, and tell me whether you want full-depth or a layer (e.g. 0–700 m).
+
+If native data isn't an option and the 0.5° product is all you'll have, the honest substitute is a **heat content inventory change** — ∂/∂t of volume-integrated θ over your box — which tells you the basin warmed or cooled but attributes nothing to advection, mixing, or air-sea flux. I'll compute that and label it as an inventory, not a budget, if you want it. I won't dress it up as the four-term decomposition you asked for.

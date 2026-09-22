@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 152,
+  "chars": 4463,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget citing the native-grid rule and the ecco-native-vs-regridded gotcha with structural reasoning (discrete divergence/C-grid operators), offers no workaround on the 0.5\u00b0 fields, and gives a constructive native path naming the llc90 collections including snapshot tendency and the geothermalFlux.bin ancillary."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,55 @@
+plugins in scope: ocean-science, core, nasa-daac-knowledge
+  ocean-science: 45 concepts  /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+  core: 12 concepts  /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+  nasa-daac-knowledge: 243 concepts  /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+every cited concept is inside a tree this arm removes
+== release locks, checked before anything moves ==
+  ocean-science: current
+  core: current
+  nasa-daac-knowledge: current
+wrote /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/release-locks.json
+== bundle-ON arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+checked against the frozen fingerprints: no copy of a cited concept and no recorded answer to the 1 cases is readable under /
+ocean-science 0.9.0: sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04 (unchecked) on claude-code (2.1.278 (Claude Code))
+  native-grid-refusal trial 2: PASS (156s, 5989 chars)
+  native-grid-refusal trial 3: PASS (153s, 5600 chars)
+  native-grid-refusal trial 4: PASS (176s, 5218 chars)
+  native-grid-refusal trial 6: PASS (125s, 4377 chars)
+  native-grid-refusal trial 5: PASS (157s, 5343 chars)
+  native-grid-refusal trial 1: PASS (333s, 5432 chars)
+  native-grid-refusal trial 9: PASS (136s, 4495 chars)
+  native-grid-refusal trial 7: PASS (280s, 4898 chars)
+  native-grid-refusal trial 10: PASS (151s, 5197 chars)
+  native-grid-refusal trial 8: PASS (194s, 5298 chars)
+  native-grid-refusal trial 11: PASS (125s, 4889 chars)
+  native-grid-refusal trial 12: PASS (141s, 5145 chars)
+  native-grid-refusal trial 14: PASS (152s, 4463 chars)
+  native-grid-refusal trial 13: PASS (182s, 5321 chars)
+  native-grid-refusal trial 16: PASS (128s, 4473 chars)
+  native-grid-refusal trial 15: PASS (142s, 5063 chars)
+  native-grid-refusal trial 17: PASS (130s, 4360 chars)
+  native-grid-refusal trial 19: PASS (163s, 5225 chars)
+  native-grid-refusal trial 20: PASS (170s, 5451 chars)
+  native-grid-refusal trial 18: PASS (311s, 5119 chars)
+native-grid-refusal: 20/20 valid (rate 1.0, 0 errors) CI [0.839, 1.0] -> PASS
+wrote /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/results_on.json
+put back 4 directories
+== bundle-OFF arm ==
+set aside /home/user/run/agent-evals/ecco/cases
+set aside /home/user/run/ocean-science/knowledge
+set aside /home/user/run/core/knowledge
+set aside /home/user/run/nasa-daac-knowledge/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/core/0.6.0/knowledge
+set aside /root/.claude/plugins/cache/open-science-pillars/nasa-daac-knowledge/2026.9.5-6b0ef007a964/knowledge
+ERROR: the bundle-off arm can still read the knowledge it is supposed to have removed:
+  native-grid-refusal: nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md is readable at /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/transcripts_on/native-grid-refusal/trial1.txt
+  native-grid-refusal: nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md is readable at /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/transcripts_on/native-grid-refusal/trial18.txt
+  native-grid-refusal: nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md is readable at /home/user/run/evals/scoreboard/shard-opus-native-grid-refusal/transcripts_on/native-grid-refusal/trial7.txt
+the trials would read what this run is supposed to have taken away, so no trial is run
+put back 7 directories
+ERROR: the bundle-OFF arm failed

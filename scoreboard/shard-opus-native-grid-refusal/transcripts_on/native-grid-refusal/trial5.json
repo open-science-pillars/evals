@@ -1,0 +1,13 @@
+{
+  "trial": 5,
+  "elapsed_s": 157,
+  "chars": 5343,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept and the mechanism (lost C-grid faces, hFacC, missing ADV*_TH/DF*_TH flux collections, no snapshots), names the native LLC90 collections including snapshot products for the tendency and the geothermal flux ancillary, and offers no workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

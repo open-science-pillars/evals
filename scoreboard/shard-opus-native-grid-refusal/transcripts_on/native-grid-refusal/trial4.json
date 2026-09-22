@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 176,
+  "chars": 5218,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, explicitly cites the native-vs-regridded gotcha concept with the finite-volume/hFacC rationale, offers no workaround on the 0.5\u00b0 fields, and gives a constructive native path naming the llc90 collections including snapshots for the tendency and the geothermal ancillary file."
+    }
+  },
+  "pass": true
+}
