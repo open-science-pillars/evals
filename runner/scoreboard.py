@@ -17,6 +17,18 @@ def load(p):
     return json.loads(Path(p).read_text())
 
 
+def mismatched_rubrics(on, off):
+    """Cases the two arms did not grade by the same text.
+
+    The pre-registration commits to grading trap-hit by the same rubric per
+    case in both arms. A delta between a case graded one way and the same case
+    graded another is a difference in the grader, and nothing renders it.
+    """
+    off_by_id = {c["id"]: c for c in off["cases"]}
+    return [c["id"] for c in on["cases"]
+            if c["id"] in off_by_id and c.get("rubric") != off_by_id[c["id"]].get("rubric")]
+
+
 def rows(on, off=None):
     off_by_id = {c["id"]: c for c in off["cases"]} if off else {}
     for c in on["cases"]:
@@ -52,6 +64,12 @@ def comparison(on, off):
 
 
 def render(on, off=None):
+    if off is not None:
+        differ = mismatched_rubrics(on, off)
+        if differ:
+            raise SystemExit("these arms did not grade the same cases by the same "
+                             "rubric, so their delta is a difference in the grader: "
+                             + ", ".join(differ))
     kind = comparison(on, off)
     col_a = f"{kind[1]}: rate (95% CI)" if kind else "rate (95% CI)"
     head = (f"<tr><th>case</th><th>type</th><th>{col_a}</th>"

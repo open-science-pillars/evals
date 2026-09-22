@@ -81,9 +81,14 @@ def merge(docs):
             if cid not in totals:
                 totals[cid] = {"passes": 0, "trials": 0, "errors": 0,
                                "threshold": case.get("threshold", 0.8),
-                               "type": case.get("type"), "shards": []}
+                               "type": case.get("type"), "shards": [],
+                               "rubric": case.get("rubric")}
                 order.append(cid)
             acc = totals[cid]
+            if case.get("rubric") != acc["rubric"]:
+                raise SystemExit(f"{cid} was graded by {acc['rubric']!r} in "
+                                 f"{acc['shards'][0]} and by {case.get('rubric')!r} in "
+                                 f"{path}; these are not the same case and are not merged")
             acc["passes"] += case.get("passes", 0)
             acc["trials"] += case.get("trials", 0)
             acc["errors"] += case.get("errors", 0)
@@ -93,7 +98,8 @@ def merge(docs):
     for cid in order:
         acc = totals[cid]
         row = verdict(acc["passes"], acc["trials"], acc["threshold"])
-        row.update(id=cid, type=acc["type"], errors=acc["errors"], shards=acc["shards"])
+        row.update(id=cid, type=acc["type"], errors=acc["errors"], shards=acc["shards"],
+                   rubric=acc["rubric"])
         cases.append(row)
 
     out = dict(first)

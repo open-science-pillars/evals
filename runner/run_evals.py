@@ -130,6 +130,52 @@ def is_error_transcript(t):
     return any(m in low for m in ERROR_MARKERS) and len(t) < 400
 
 
+# The rubric spec that means "the case's own notes are the rubric". Spelled
+# out rather than inferred from a lookup that missed.
+RUBRIC_FROM_NOTES = "notes"
+
+
+def resolve_rubric(case, ws):
+    """The text that grades this case, and a record of where it came from.
+
+    Three forms, and a name that resolves to nothing is not one of them. A
+    value holding whitespace is the rubric itself, written inline. The exact
+    word `notes` is the case's own notes field, which already states pass and
+    fail intent. Anything else is a path under the plugin's evals directory
+    and has to exist.
+
+    Until 2026-09-22 a path that did not exist fell through to the notes in
+    silence. Nine cases named rubric documents that have never existed
+    anywhere in the workspace, including all seven of the ablation's, so the
+    grader in force was never the grader the case named and no results file
+    said which text had graded it. The pre-registration commits to grading
+    both arms by the same rubric per case and to freezing the grader before
+    the second arm runs; neither is checkable against a record that does not
+    hold the rubric. Raises ValueError so a caller can collect every case's
+    problem instead of stopping at the first.
+    """
+    spec = ""
+    for g in case.get("graders", []):
+        if "rubric" in g:
+            spec = str(g["rubric"])
+    if not spec.strip():
+        return None, None
+    if any(c.isspace() for c in spec.strip()):
+        return spec, "inline"
+    if spec.strip() == RUBRIC_FROM_NOTES:
+        notes = (case.get("notes") or "").strip()
+        if not notes:
+            raise ValueError(f"{case['id']}: its rubric is `{RUBRIC_FROM_NOTES}` "
+                             "and the case has no notes to grade against")
+        return f"Grade this trial against the eval case's intent:\n{notes}", "notes"
+    rp = ws / case["_plugin"] / "evals" / spec.strip()
+    if not rp.is_file():
+        raise ValueError(f"{case['id']}: names the rubric {spec.strip()}, which is not "
+                         f"at {rp}. Write it, or say `rubric: {RUBRIC_FROM_NOTES}` to "
+                         "grade against the case's own notes.")
+    return rp.read_text(), str(rp)
+
+
 def grade(case, transcript, ws, no_judge=False, model="claude-fable-5"):
     """A trial passes iff every present grader agrees.
 
@@ -146,18 +192,9 @@ def grade(case, transcript, ws, no_judge=False, model="claude-fable-5"):
                 results["programmatic"] = p
                 ok = ok and p
         if "rubric" in g and not no_judge:
-            # A dedicated rubric file overrides; a case may also carry the
-            # rubric text inline (a value with whitespace is text, not a
-            # path); otherwise the case's own `notes` field is the rubric
-            # (it already states pass/fail intent).
-            spec = g["rubric"]
-            rp = ws / case["_plugin"] / "evals" / spec
-            if spec.strip() and not any(c.isspace() for c in spec.strip()) and rp.exists():
-                rubric = rp.read_text()
-            elif any(c.isspace() for c in spec.strip()):
-                rubric = spec
-            else:
-                rubric = f"Grade this trial against the eval case's intent:\n{case.get('notes', '')}"
+            # Resolved once per case before any trial runs, so a case cannot
+            # discover mid-arm that the text grading it is not the text it names.
+            rubric = case["_rubric"]
             j = judge_trial(rubric, transcript, model=model)
             results["rubric"] = j
             if j.get("grade") == "ERROR":
@@ -216,7 +253,27 @@ def main():
     only = set(filter(None, args.cases.split(",")))
     troot = Path(args.transcripts) if args.transcripts else None
 
-    plugins = [e["plugin"] for e in man["cases"] if not only or e["id"] in only]
+    selected = [e for e in man["cases"] if not only or e["id"] in only]
+    plugins = [e["plugin"] for e in selected]
+
+    # Every selected case's rubric is resolved before the first trial runs. A
+    # case naming a rubric that resolves to nothing stops the run here instead
+    # of being graded quietly by something else, and the text that grades a
+    # case is fixed before any trial sees it.
+    rubrics, unresolved = {}, []
+    for entry in selected:
+        pre = yaml.safe_load((ws / entry["case"]).read_text())
+        pre["_plugin"] = entry["plugin"]
+        try:
+            rubrics[entry["id"]] = resolve_rubric(pre, ws)
+        except ValueError as exc:
+            unresolved.append(str(exc))
+    if unresolved:
+        print("ERROR: a case names a rubric that does not resolve, so the grader in "
+              "force would not be the grader the case names:")
+        for u in unresolved:
+            print("  " + u)
+        raise SystemExit(1)
     record = build_record(ws, plugins, args.runtime, args.runtime_version, args.model,
                           judge_model, man["name"], args.trials, check_lock=not args.no_lock_check)
     out = {"manifest": man["name"], "model": args.model, "bundle": args.bundle,
@@ -227,11 +284,10 @@ def main():
         current = {True: "current", False: "STALE", None: "unchecked"}[cap["release_lock_current"]]
         print(f"{name} {cap['version']}: {lock} ({current}) on {args.runtime} "
               f"({record['runtime']['version'] or 'version unknown'})", flush=True)
-    for entry in man["cases"]:
-        if only and entry["id"] not in only:
-            continue
+    for entry in selected:
         case = yaml.safe_load((ws / entry["case"]).read_text())
         case["_plugin"] = entry["plugin"]
+        case["_rubric"], rubric_source = rubrics[entry["id"]]
         max_turns = entry.get("max_turns", 20)
         tdir = troot / entry["id"] if troot else None
         def one_trial(n):
@@ -288,6 +344,9 @@ def main():
         v["errors"] = errors
         v["trials_requested"] = args.trials
         v["max_turns"] = max_turns
+        # Which text graded this case, so a reader can check the arms were
+        # graded alike without rerunning either of them.
+        v["rubric"] = rubric_source
         v["trial_detail"] = trials
         out["cases"].append(v)
         flag = " (ALL TRIALS ERRORED)" if valid == 0 else ""
