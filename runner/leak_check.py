@@ -40,6 +40,7 @@ hashes and never has a word of the knowledge on disk.
 import argparse
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -169,29 +170,51 @@ def cited_concepts(ws: Path, manifest: Path, only: set[str] | None):
     return found, allowed
 
 
+# Kernel and device trees, which hold no file a trial reads and whose entries
+# raise on stat. Skipped by absolute path rather than by name, because a
+# directory called `run` is the run workspace and must not be skipped.
+SKIP_ABS = {Path("/proc"), Path("/sys"), Path("/dev")}
+
+
 def walk(roots: list[Path]):
-    """Every readable text file under the roots, once each."""
+    """Every readable text file under the roots, once each.
+
+    Walks rather than globs, so a skipped directory is never descended into and
+    a directory the process cannot read is passed over instead of ending the
+    scan. On 2026-09-22 a shard died here on /proc/1/cwd, because is_file does
+    not swallow a permission error.
+
+    The default root is the filesystem. A trial reads absolute paths, so any
+    narrower root is a guess about where copies live, and the narrower default
+    of the workspace and the home directory is what let a second checkout of
+    the eval repository, holding recorded answers, go unexamined in the first
+    shard that ran.
+    """
     seen = set()
     for root in roots:
         if not root.exists():
             continue
-        for path in root.rglob("*"):
-            if any(part in SKIP_DIRS for part in path.parts):
-                continue
-            if not path.is_file() or path.is_symlink():
-                continue
-            if path.suffix.lower() not in TEXT_SUFFIXES:
-                continue
-            try:
-                if path.stat().st_size > MAX_BYTES:
+        for dirpath, dirnames, filenames in os.walk(root, onerror=lambda _: None,
+                                                    followlinks=False):
+            here = Path(dirpath)
+            dirnames[:] = [d for d in dirnames
+                           if d not in SKIP_DIRS and (here / d) not in SKIP_ABS]
+            for name in filenames:
+                path = here / name
+                if path.suffix.lower() not in TEXT_SUFFIXES:
                     continue
-                real = path.resolve()
-                if real in seen:
+                try:
+                    if path.is_symlink():
+                        continue
+                    if path.stat().st_size > MAX_BYTES:
+                        continue
+                    real = path.resolve()
+                    if real in seen:
+                        continue
+                    seen.add(real)
+                    yield path, normalise(path.read_text(errors="ignore"))
+                except OSError:
                     continue
-                seen.add(real)
-                yield path, normalise(path.read_text(errors="ignore"))
-            except OSError:
-                continue
 
 
 def scan(roots: list[Path], by_case: dict[str, list[Path]], case_ids: set[str],
@@ -251,8 +274,9 @@ def main() -> int:
                                            "against concepts read from the workspace")
     ap.add_argument("--cases", default="", help="comma-separated subset")
     ap.add_argument("--root", action="append", default=[],
-                    help="extra directory to search, repeatable (default: the "
-                         "workspace, the home directory and the plugin cache)")
+                    help="directory to search, repeatable. The default is the "
+                         "whole filesystem, because a trial reads absolute paths "
+                         "and any narrower root is a guess about where copies are.")
     args = ap.parse_args()
 
     ws, manifest = Path(args.workspace).resolve(), Path(args.manifest).resolve()
@@ -263,7 +287,7 @@ def main() -> int:
         print("ERROR: --arm is required unless --freeze is given")
         return 2
 
-    roots = [Path(r).resolve() for r in args.root] or [ws, Path.home()]
+    roots = [Path(r).resolve() for r in args.root] or [Path("/")]
 
     if args.fingerprints:
         # Frozen mode reads no case and no concept, which is the point: it runs

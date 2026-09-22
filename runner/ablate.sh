@@ -135,7 +135,7 @@ python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
     exit 1
   }
 
-restore; trap - EXIT INT TERM
+check_restored; trap - EXIT INT TERM
 
 # A run that kept no transcript is not the pre-registered run, so say so
 # rather than let it pass quietly into the scoreboard.
