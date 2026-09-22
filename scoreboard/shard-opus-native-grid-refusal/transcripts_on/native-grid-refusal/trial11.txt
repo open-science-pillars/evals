@@ -1,0 +1,31 @@
+## Refused: this budget can't be computed on the 0.5° product
+
+The native-grid rule fires before any computation, whatever the framing:
+
+> Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)
+> — `skills/ecco/SKILL.md`, Must NOT; same gate in `skills/ocean-budget/SKILL.md`
+
+The governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (budgets close only on the native llc90 grid), cited as a mandatory pre-check by `skills/ecco/references/budget-formulation.md:26-32`. The reason is structural, not a tolerance question: `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries interpolated THETA and SALT only. It has no advective or diffusive flux variables (`ADVx_TH`, `DFrI_TH`, …), no month-boundary snapshots for the tendency, and no `hFacC`/`rA`/`drF` cell geometry — and the interpolation does not conserve, so the flux divergences that would close the budget no longer correspond to the volumes they act on. There is no correct four-term formulation to write there. Step 5 of `references/budget-formulation.md` is explicit: *"Regridded input is refused before any of this, not diagnosed after."*
+
+Two side notes: I found no ECCO granules under `/home/user/run/evals` — if the 0.5° files are elsewhere, that doesn't change the refusal, but tell me where they are if you want me to inspect them. And the product itself is fine for what it's built for (maps, T/S sections, quick inspection); it's budgets and transports specifically that are refused.
+
+## The native path, which I can actually run
+
+A regional heat budget over a lat/lon box is an attested computation in this package — `ecco-regional-heat-budget` (`knowledge/computations/`), executor `skills/ocean-budget/scripts/ecco_regional_budget.py`, attester `regional_budget_check.py`. It takes an explicit box, so the subpolar North Atlantic is in scope:
+
+```bash
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <year> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+What that needs, and what I need from you:
+
+- **Native granules.** Geometry is `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (signed in `skills/ecco/SKILL.md`); the monthly means, the month-boundary snapshots, and the 3D temperature-flux and surface-heat-flux collections resolve through the fields concepts under `knowledge/podaac/fields/ecco-v4r4/` via the load-ecco gate. I won't quote those ShortNames from memory — my CMR lookup was denied, so grant the earthdata connector (or the `~/ECCO_V4r4` path) and I'll resolve them against the signed concepts rather than guess. I also couldn't confirm whether a data root already exists here; both `ls` probes were blocked outside the working directory.
+- **Box, depth range, year.** I've penciled in 45–65°N, 60–10°W — confirm or correct. The fixture cache covers 2010; the science record covers 1992–2017. Depth matters: **if the box reaches the sea floor, the geothermal term applies**, and its input is not a PO.DAAC collection (`gotchas/ecco-geothermal-flux.md`) — that omission is the first thing the auditor checks on a failed heat residual.
+- **The tree must be stamped.** Every attester refuses a receipt from a tree without the `RECORD.json` stamp from `tools/science_record_verify.py`.
+
+One caveat on the result you'd get: the two-sided anchor checks (wet-cell count, volume, residual per volume) only apply to the executor's reference configuration. An explicit box is disclosed by mask digest and carries **no anchor** — the attester still recomputes both pass bars from the results, but the report has to say the box is unanchored, and I will.
+
+Say the word on box, depth, and year, plus where the native data lives, and I'll run it and report all four terms with the attester's verdict and run id.

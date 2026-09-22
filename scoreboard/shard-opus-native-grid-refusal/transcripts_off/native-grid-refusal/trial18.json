@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 92,
+  "chars": 4465,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses up front, cites the ecco-native-vs-regridded gotcha with the C-grid closure rationale, lists the native LLC90 collections including the snapshot collections for tendency bookends and flags geothermal flux as a separate ancillary, and offers only an explicitly-labeled non-budget OHC diagnostic rather than a workaround budget on regridded fields."
+    }
+  },
+  "pass": true
+}

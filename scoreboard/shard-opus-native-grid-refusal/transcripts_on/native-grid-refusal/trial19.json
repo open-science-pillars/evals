@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 99,
+  "chars": 4372,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget citing the ecco-native-vs-regridded gotcha with correct physical reasoning, offers the attested native-grid path with collections/snapshots for tendency and geothermal ancillary named, and confines the 0.5\u00b0 product to an explicitly unclosed heat-content diagnostic rather than a workaround budget."
+    }
+  },
+  "pass": true
+}

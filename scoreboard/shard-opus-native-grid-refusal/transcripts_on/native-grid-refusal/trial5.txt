@@ -1,0 +1,43 @@
+## Parse
+
+- **Property:** heat (four-term budget: tendency = advection + diffusion + forcing)
+- **Domain:** subpolar North Atlantic
+- **Source you have:** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` — the 0.5° regridded interpolation
+- **Period / depth:** not specified
+
+## I can't compute this budget from that product — and it isn't a technicality
+
+The native-grid rule fires before anything else. It's the one hard refusal the `ecco` skill owns for the plugin (`skills/ecco/SKILL.md:52`, "Must NOT" at :237), and `ocean-budget` applies it at its gate (`skills/ocean-budget/SKILL.md`, "The native-grid rule (🔴, non-negotiable)"). Both name the concept `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` as the authority.
+
+Two independent reasons, and the second one is fatal on its own:
+
+1. **Closure is a property of the discrete operators, not of the temperature field.** ECCO's budget closes to machine precision because the MITgcm flux-divergence operators on the LLC90 Arakawa C-grid, with partial-cell `hFacC`, exactly satisfy the discrete conservation law. Interpolating THETA to a 0.5° lat-lon mesh destroys that relationship — the divergence of an interpolated field is not the interpolation of the divergence. The residual you'd get is interpolation error, and you'd be reading it as physics.
+
+2. **The terms simply aren't in the file.** That collection carries THETA and SALT only. A heat budget needs the advective and diffusive temperature fluxes (`ADVx_TH`/`ADVy_TH`/`ADVr_TH`, `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`), the surface forcing (`TFLUX`, `oceQsw` for shortwave penetration), month-boundary **snapshots** for the tendency bookends, `ETAN` for the z\* correction, the geometry granule for `rA·drF·hFacC`, and the geothermal flux at the bottom cell. Monthly means of T alone give you one term out of four. Whatever came out would be the tendency with the residual absorbed into it — which the skill forbids outright.
+
+So this product gives you *heat content*, not a *heat budget*. Those are different deliverables.
+
+## The native path I'd run instead
+
+There's an attested regional budget executor that takes an explicit control volume — the right fit for a subpolar box:
+
+```bash
+uv run $PKG/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $PKG/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+(`$PKG` = `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`)
+
+Two things I'd tell you up front about that run:
+
+- **An explicit `--box` carries no anchor.** The attester two-sided-checks wet-cell count, volume and residual-per-volume only on its reference configuration (`southeast-atlantic-upper`, 2010). A subpolar box is disclosed by mask digest instead, and the report has to say so. You still get a real PASS/FAIL on the residual bars and the mutation evidence.
+- **Subpolar North Atlantic is an open domain.** Domain-integrated closure is asserted only on closed domains, so the lateral transports across 50°N, 65°N and the two meridional faces travel in the report explicitly rather than being folded into a residual.
+
+## What I need from you
+
+1. **Native granules.** The executors read a stamped tree at `~/ECCO_V4r4` (2010 fixture, ~2.5 GB) or `~/ECCO_V4r4_record` (1992–2017). I couldn't check whether either exists — directory listing outside the project is blocked in this session, and the shell denied the probe. If neither is there, I'll pull the native collections through `load-ecco` (volume gate and all) and stamp the tree with `science_record_verify.py` before any run; I'll verify the exact ShortNames against the `fields/ecco-v4r4/` concepts rather than typing them from memory.
+2. **Box and depth.** I've penciled in 50–65°N, 60–10°W; say if you want Labrador/Irminger split out, or a different depth (upper 1000 m vs full column — full column brings the geothermal term into play, which is the first thing the auditor checks on a failed deep heat budget).
+3. **Year.** 2010 if you're on the fixture cache; anything in 1992–2017 on the science record.
+
+If what you actually want is **heat content and its seasonal-to-interannual variability** in the subpolar gyre, the 0.5° product you already have is fine for that, and I can start on it now — it's a legitimate use of the regridded fields, just not a budget. Say which one you're after.

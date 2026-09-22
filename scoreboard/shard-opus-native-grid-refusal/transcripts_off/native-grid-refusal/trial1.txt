@@ -1,0 +1,35 @@
+## Refused: this budget cannot be computed on that product
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. A property budget on regridded ECCO fields is a hard refusal in this plugin — it fires at the gate, before any computation, whatever the framing of the request.
+
+**Why** (`knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid, cited by `skills/ecco/references/budget-formulation.md:29` and enforced by `skills/ocean-budget/SKILL.md:19-26`): the four-term formulation is defined on the C-grid cell and its faces. Interpolation to 0.5° breaks the discrete divergence — the advective and diffusive convergences no longer sum to the tendency for any cell — so there is no correct budget formulation on that grid. The residual you'd get back would not be a physical imbalance, it would be a regridding artifact, and it would not shrink with care.
+
+A second, independent blocker: that collection carries only `THETA` and `SALT`. It has no advective flux, no diffusive flux and no surface forcing variables, so three of the four terms don't exist in it at all. Nothing recoverable by working harder on the file you have.
+
+## The native path
+
+The subpolar North Atlantic is an open domain, so this is the regional (control-volume) budget, not the whole-grid closure. `ecco-regional-heat-budget` accepts an explicit box, which is your case — there is no registered region for the subpolar gyre (`southeast-atlantic-upper` is the only one), so the run is disclosed by mask digest and carries no reference anchor. Boundary transports are reported explicitly rather than folded into a residual.
+
+```bash
+R=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <year> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+I have **not** run this. Three things are needed first, and I'd rather name them than guess:
+
+1. **Your box and period.** The `--box 50 65 -60 -10` above is a placeholder for "subpolar North Atlantic" — tell me the bounds and depth range you want, and the year. The executor's `year` defaults to 2010.
+2. **Native granules at a stamped `--data-root`.** The attester refuses a receipt from a tree without the `RECORD.json` stamp from `tools/science_record_verify.py`. Geometry is `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (`skills/ecco/SKILL.md:90`); the monthly, snapshot and 3D-flux collections the heat budget needs are named by the computation concept and resolved through `load-ecco` — see the gap below.
+3. **Tool approval.** Bash is sandboxed to `/home/user/run/evals` in this session, so I can't run the plugin scripts, inspect `~/ECCO_V4r4`, or reach CMR (the earthdata connector's `get_collections` was denied) without you granting it.
+
+## Gap you should know about
+
+I could not read the knowledge bundles. Every path under `knowledge/` returned "File does not exist" in both installed roots — `ocean-science 0.9.0` (`/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`) and `nasa-daac-knowledge 2026.9.5-6b0ef007a964` — while `skills/`, `verification/`, `README.md` and `.claude-plugin/plugin.json` under the same roots read fine. `claude plugin list` and directory listing outside the working directory are both blocked here, so I can't confirm whether the directories are genuinely absent from the installed packages or just unreadable.
+
+What that means for this answer: the native-grid rule itself is unaffected (it is invariant and fires without consulting anything, and I read it in the skill files directly). But I did **not** read `knowledge/computations/ecco-heat-budget.md`, `knowledge/podaac/conventions/ecco-budget-formulation.md`, `knowledge/podaac/gotchas/ecco-geothermal-flux.md`, or the `fields/ecco-v4r4/` concepts. So I'm not quoting you a pass bar, a term set, or the exact input collection list — the pass bars I saw in `SKILL.md` and `verification/ocean_budget.py` are the skill's restatement, not the owning concept, and the attester is the authority on them at run time anyway. The geothermal term is the first thing the auditor checks on a deep heat-budget failure and its input is not a PO.DAAC collection; that ancillary needs sourcing before a deep box will close.
+
+Worth reporting to whoever packaged this install — a budget run needs those concepts readable.
+
+Tell me the box, depth and year, and grant Bash, and I'll run the attested executor and its attester and report all four terms with the verdict and run id.

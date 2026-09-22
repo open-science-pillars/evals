@@ -1,0 +1,37 @@
+I can't compute that budget from the file you have, and the reason is a hard rule in this plugin rather than a preference. Here's what I checked and what the working path is.
+
+## The refusal
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the regridded (interpolated) product. A budget on regridded ECCO fields is refused outright — the `ocean-budget` skill applies it at its gate and the `ecco` skill owns it for the plugin, citing `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` (budgets close only on the native llc90 grid). The rule fires before any computation, under any framing of the request.
+
+The mechanism, as the budget-formulation reference (`skills/ecco/references/budget-formulation.md`) and the computation concepts lay it out: ECCO's dynamical consistency is a property of the *discrete* MITgcm operators on llc90. Closure comes from raw face fluxes on the C-grid staggering, the `rA · drF · hFacC` volume element with its partial cells, and month-boundary snapshots for the tendency. Interpolation to 0.5° destroys all of that — the flux/divergence relationship no longer telescopes, partial-cell geometry is gone, and the 0.5° product ships T and S only, so three of the four terms have no source at all. There is no correct formulation to write there, so there is nothing to diagnose afterward; it's refused up front, not attempted and audited.
+
+Worth being explicit: the failure mode isn't a loud one. A budget assembled from regridded fields produces plausible-looking terms and a residual you could mistake for a physical imbalance.
+
+**Your 0.5° file is still the right tool** for heat *content* and its change, T/S maps and sections, climatologies and anomalies, and comparisons against gridded observational products. Just not for a term-by-term budget.
+
+## The native path
+
+The plugin has an attested regional budget, `ecco-regional-heat-budget` (`knowledge/computations/ecco-regional-heat-budget.md`, status stable, human-verified through ocean-science PR #66). It closes over a control volume by comparing three independent collections — so agreement is evidence, not arithmetic — with two required bars (absolute residual per volume ≤ 1e-10 °C/s *and* residual relative to the largest term ≤ 1e-6) and mutation evidence in every receipt.
+
+Collections to fetch, from the executor's stated inputs:
+
+| collection | variables |
+|---|---|
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADV*_TH`, `DF*_TH` |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | geometry (one static granule) |
+
+Plus `geothermalFlux.bin`, which is **not** a PO.DAAC collection — it comes from the ECCO v4 tutorial distribution (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`). Don't skip it: the concept records that omitting geothermal lands at 1.24e-12, *inside* the absolute bar, and is caught only by the relative bar. That's the measured reason one bar isn't a criterion.
+
+## Two things to settle before I run it
+
+**1. The one-tile-interior limit.** The v1 executor requires the control volume to lie within a single llc90 tile's interior (faces 1–89); a box crossing a tile seam is refused with an explicit message, pending the seam-calibrated section machinery. A subpolar North Atlantic box (roughly 50–65°N, 60–10°W) is exactly the kind that may straddle a seam on llc90. I'd resolve your box against the geometry granule first and tell you what it gives — I'd rather find that out from the grid than guess at it here.
+
+**2. The data tree.** The executor reads native granules from `--data-root` and every attester refuses a receipt from a tree without the `RECORD.json` stamp, so the fetch needs a one-time `science_record_verify.py --stamp` pass afterward. I couldn't check whether you already have `~/ECCO_V4r4` or `~/ECCO_V4r4_record` staged — this session's file access is scoped to `/home/user/run/evals`, which holds no ECCO data.
+
+Tell me your exact box, depth range, and year(s), and whether the native granules are already staged, and I'll resolve the volume, run the sanctioned executor, attest the receipt, and report all four terms with the residual against both bars.
+
+If what you actually want is heat content change over the subpolar gyre rather than a closed budget, say so — that's a different computation, it has its own attested route (`ecco-ocean-heat-content`), and the 0.5° file is legitimate input for an unattested version of it.

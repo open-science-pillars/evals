@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 146,
+  "chars": 4545,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-grid rule and the mechanism (face fluxes/hFacC destroyed by interpolation), names the required native collections including snapshots for tendency and the geothermalFlux.bin ancillary gotcha, and offers no workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

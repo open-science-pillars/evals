@@ -1,0 +1,40 @@
+I can't compute this budget from that product, and the reason is structural rather than a preference.
+
+## Refused: heat budget on regridded fields
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. ECCO budgets close because the MITgcm's own discrete terms are exactly satisfied on the native LLC90 grid — the tendency, advection, diffusion and forcing terms are the model's finite-volume fluxes across actual cell faces. Interpolation to a lat-lon mesh destroys that: the cell faces, the partial-cell `hFacC` factors and the flux-divergence relationship no longer correspond to anything, so no correct budget formulation exists on it. A residual computed there is an interpolation artifact, and there is no way to tell it apart from a missing physical term.
+
+This is a hard gate in the `ocean-budget` skill ("Never compute any budget on regridded fields, under any framing") and is owned for the plugin by the `ecco` skill's refusal. Both name the governing concept as `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`.
+
+**Disclosure on my consultation:** I read the refusal from the installed skill sources in `ocean-science` 0.9.0, not from the concept itself. The PO.DAAC provider bundle (`nasa-daac-knowledge`) ships as a separate plugin and this session's shell is restricted to `/home/user/run/evals`, so I could not list plugin directories to resolve the concept's actual path, and `claude plugin list` needs approval. If you approve one shell call I'll read the concept and cite it as found. Also note: I searched the working directory and found no ECCO files there at all — it contains the eval-harness repo (`manifests/`, `runner/`, `scoreboard/`), so wherever the 0.5° download lives, it isn't here.
+
+## The native path
+
+The plugin has an attested regional budget that takes an explicit geographic box — this is the right route for a subpolar North Atlantic control volume:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Collections to fetch (read from the executor's input list, `ecco_regional_budget.py:77-82,109-116`):
+
+| Role | Collection |
+|---|---|
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (TFLUX, oceQsw) |
+| Tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` (THETA) |
+| Free-surface scaling | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` (ETAN) |
+
+Three things will bite on this specific region, so plan for them:
+
+1. **Tile seam.** The executor's V1 limit is that the control volume must lie inside one tile's interior; `resolve_box` refuses a box spanning tiles outright (`ecco_regional_budget.py:142-146`). A 50–65°N, 60–10°W box very plausibly crosses an LLC90 seam. If it does, the options are a sub-box within one tile, or the unattested manual route through `knowledge/podaac/conventions/ecco-budget-formulation.md` with seam-aware differences.
+2. **Geothermal.** `geothermalFlux.bin` comes from the ECCO tutorial distribution and is *not* a PO.DAAC collection. The executor's docstring records that omitting it still passes the absolute bar of 1e-10 and is caught only by the relative bar of 1e-6 — so a budget missing it looks fine on the wrong test. If you take the box to the bottom rather than 1000 m, this term is mandatory.
+3. **Open domain.** The subpolar gyre is not closed. Boundary transports across the rim carry explicitly; they are not a residual to absorb.
+
+The executor also needs `~/ECCO_V4r4` (or `~/ECCO_V4r4_record` for 1992–2017) carrying the `RECORD.json` stamp from the provider's verify tool — the attester refuses a receipt from an unstamped tree. I couldn't check whether that tree exists here, for the same sandbox reason.
+
+Tell me the depth range and year(s) you want and whether to use the fixture or the full record, and I'll resolve the box against the tiles first so we find out immediately whether the attested route is available or we're going manual.

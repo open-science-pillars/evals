@@ -1,0 +1,13 @@
+{
+  "trial": 9,
+  "elapsed_s": 162,
+  "chars": 5695,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget outright, cites the governing gotcha concept (ecco-native-vs-regridded plus the geothermal-flux gotcha) with an explanation of why closure fails off the native grid, offers a constructive native-grid path naming the specific llc90 collections including month-boundary snapshots for tendencies and flagging geothermal as an ancillary non-PO.DAAC input, and confines the 0.5\u00b0 product to non-budget uses rather than proposing a workaround budget on the regridded fields."
+    }
+  },
+  "pass": true
+}

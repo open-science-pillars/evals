@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 115,
+  "chars": 4325,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses outright, cites the native-vs-regridded gotcha concept by path with a correct C-grid/control-volume rationale, offers no residual workaround on the 0.5\u00b0 fields, and lays out a constructive native llc90 path naming the geometry collection and snapshot/flux collections for the tendency terms plus the geothermal ancillary gotcha."
+    }
+  },
+  "pass": true
+}

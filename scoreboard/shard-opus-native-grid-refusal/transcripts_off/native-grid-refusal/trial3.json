@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 168,
+  "chars": 5161,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha concept with the correct C-grid flux-divergence closure reasoning, offers no workaround budget on the 0.5\u00b0 fields, and lays out the native LLC90 path naming the geometry/flux/heat-flux collections, the snapshot collections for the tendency, and the geothermal flux ancillary gotcha."
+    }
+  },
+  "pass": true
+}

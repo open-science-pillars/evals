@@ -1,0 +1,57 @@
+## Short answer: I can't compute a budget from that product, and neither can anyone else — the refusal is structural, not a policy quibble
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the regridded product. A heat budget on regridded ECCO fields is refused before any computation, under the plugin's hard rule (`skills/ocean-budget/SKILL.md`, "The native-grid rule (🔴, non-negotiable)"; also `skills/ecco/SKILL.md` "Must NOT", which owns the refusal for the plugin). It fires whatever the framing of the request.
+
+**Why it genuinely cannot work, not just why it's disallowed:**
+
+1. **The budget needs flux variables that don't exist in that collection.** The four-term formulation needs `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`, `TFLUX`, `oceQsw`. The 0.5° T/S product carries `THETA` and `SALT` only. There is no term set to build.
+2. **The volume element is destroyed.** Closure uses `rA * drF * hFacC` on the native cell. Regridding to 0.5° remaps onto cells that have no `hFacC`, no partial-cell thickness, and no C-grid face areas — divergence of a remapped flux is not the convergence into a remapped cell.
+3. **Interpolation is not conservative.** Even if you regridded the fluxes yourself, the remapping operator doesn't commute with the divergence, so the residual would be dominated by interpolation error — orders of magnitude above the tolerance that makes an ECCO budget meaningful (the attested bar is `residual_max <= 1e-10` degC/s, absolute, pointwise). Anything you got out would be a regridding-error map wearing a budget's clothes.
+
+I'd be handing you a plausible-looking set of four terms whose residual tells you nothing about the ocean.
+
+## The native path for the subpolar North Atlantic
+
+The attested regional route is `skills/ocean-budget/scripts/ecco_regional_budget.py`, which takes an explicit control volume. Collections you need (read from the sanctioned executor itself, not from memory):
+
+| Input | ShortName |
+|---|---|
+| Geometry (static, 1 granule) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Advective + diffusive T fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency, `THETA` bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Free-surface scaling, `ETAN` | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geothermal at bottom cells | `geothermalFlux.bin` — **not a PO.DAAC collection**; it ships with the ECCO v4 tutorial distribution |
+
+Snapshots must bracket the year: 13 month-boundary files for 12 monthly means. The geothermal file is not optional at depth — the executor's header records that omitting it still passes the absolute bar and is caught only by the relative bar (1e-6), which is exactly the silent-wrong-answer mode.
+
+Once the tree is staged and stamped:
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+**One thing to expect, flagged up front:** the executor's stated v1 limit is that the control volume must lie inside a *single* tile's interior (faces 1–89); a box crossing a tile seam is refused with a clear message. A subpolar North Atlantic box may well straddle a seam on llc90. If it does, that run will refuse, and the honest options are a sub-box that fits one tile, or the seam-aware section machinery (transport-analysis) rather than a box budget. I'd rather you hear that now than after the download.
+
+Also note an explicit `--box` carries no registered anchor — the receipt discloses the resolved mask by sha256 digest, and the report has to say the volume is self-declared rather than reference-checked.
+
+## What I searched, honestly
+
+I read the skill bodies and the sanctioned executors directly. I could **not** reach the knowledge concepts themselves this session: `knowledge/computations/ecco-heat-budget.md`, `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, `knowledge/podaac/conventions/ecco-budget-formulation.md` and the core bundle index all return "file does not exist" from the paths the skills name, and directory listing outside `/home/user/run/evals` is blocked by this session's sandbox, so I couldn't locate the `nasa-daac-knowledge` bundle root (dependency `>=2026.9.2`). `claude plugin list --json` — the way consult-knowledge says to find the live install paths — needs your approval to run.
+
+So: the rule, the collections, the constants and the tolerances above are quoted from the skill bodies and the sanctioned code, which carry them verbatim. I have **not** read the concept files and am not paraphrasing their content as if I had. Approve that one command and I'll re-consult properly and cite them by path with status before anything is computed.
+
+## What your 0.5° download is actually good for
+
+Don't delete it — it's the right product for several things, just not a budget:
+
+- Heat *content* and its change (∫ρcₚθ dV) over the subpolar gyre, and the seasonal cycle
+- T/S sections, water-mass and θ–S structure, mixed-layer diagnostics
+- Model–obs comparison against Argo or EN4 on a common grid
+
+The distinction worth keeping: heat *content change* is a single number you can get from θ alone; a heat *budget* attributes that change to advection, diffusion and forcing, and that attribution only exists where the model's own discrete operators live.
+
+Want me to compute subpolar North Atlantic heat content and its trend from the data you already have, while you decide about the native download?

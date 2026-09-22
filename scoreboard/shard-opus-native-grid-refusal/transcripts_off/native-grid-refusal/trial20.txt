@@ -1,0 +1,47 @@
+## I can't compute a budget from that product — and this is a hard refusal, not a preference
+
+**Request as parsed:** heat budget, subpolar North Atlantic, from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` (regridded 0.5° lat-lon, monthly).
+
+The `ocean-budget` workflow refuses any property budget on regridded ECCO fields, citing gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`. The rule fires before any computation, whatever the framing.
+
+**Why, concretely.** The ECCO heat budget is a finite-volume identity on the LLC90 C-grid: the tendency equals the convergence of advective and diffusive face fluxes plus forcing, cell by cell, with partial cells carried in `hFacC` and the volume element `rA·drF·hFacC`. Interpolating to 0.5° destroys the flux-divergence identity that makes it close — there is no correct budget formulation on that grid. Independently of that, the 0.5° product carries only the state fields (`THETA`, `SALT`). Three of the four terms simply are not in the file you have: no `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`, no `TFLUX`/`oceQsw`, and no month-boundary snapshots for the tendency. Anything I produced from it would be a heat-content difference with a residual absorbed into it, presented as a budget.
+
+## The native path
+
+The attested regional route is `ecco_regional_budget.py` (contract `ecco-regional-heat-budget`, attester `regional_budget_check.py`). Collections it needs, as the sanctioned code reads them:
+
+| Purpose | Collection |
+|---|---|
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Advective + diffusive θ fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency, 13 month-boundary snapshots | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| `ETAN` for the z* scale factor, snapshots | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+
+One input is **not** a PO.DAAC collection: `geothermalFlux.bin`, read from the data root and applied at the bottom wet cell (gotcha `knowledge/podaac/gotchas/ecco-geothermal-flux.md`). Omitting it is the first thing the auditor checks on a failing heat budget. It has to be staged into the tree alongside the granules.
+
+Two things about the subpolar North Atlantic specifically:
+
+- The only *registered* region is `southeast-atlantic-upper`. A subpolar box (say `--box 45 65 -60 -10 --depth-m ...`) runs as an explicit box: disclosed by mask digest, carrying no reference anchor, so the attester recomputes the bars from the results but cannot check it against a reference configuration. The report has to say that.
+- It is an **open** domain. Domain-integrated closure is asserted only on closed domains, so the lateral boundary transports across the box faces travel explicitly in the result rather than being folded into a residual.
+
+Once a native tree is staged and stamped:
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+(`$ROOT` = `/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0`. The attester refuses a receipt from a tree without the `RECORD.json` stamp the verify tool leaves, so that runs once after the fetch.)
+
+## What I could not check from here
+
+Bash in this session is confined to `/home/user/run/evals`, so I could not locate your downloaded 0.5° files, nor check whether a native tree already exists at `~/ECCO_V4r4` or `~/ECCO_V4r4_record`. `claude plugin list` was not permitted either, and the `knowledge/` trees — the ocean-science `computations/` directory and the PO.DAAC bundle — were not readable from this sandbox. So I am citing the native-grid rule and the geothermal input by the paths the `ocean-budget` and `ecco` skills name and as the sanctioned executor implements them, not from the concept text itself. The pass bars would come from the receipt and attester at run time, not from me.
+
+## What your 0.5° product is good for
+
+It's the right product for heat *content* and its change over the subpolar gyre, T/S structure and water-mass work, and maps — none of which are budgets. I can do a volume-weighted θ inventory and its seasonal-to-interannual change from what you have, clearly labelled as unattested and as a content series rather than a closed budget.
+
+Two questions to move: which **period** do you want (the attested executor binds a calendar year; 2010 is the fixture year, 1992–2017 is the science record), and do you want me to lay out the native staging, or start with the heat-content series from the 0.5° product while that's fetched?

@@ -1,0 +1,48 @@
+I can't compute this one, and the reason isn't a technicality — let me show you what the skill gate says and then the path that does work.
+
+## Request as parsed
+
+- **Property:** heat
+- **Domain:** subpolar North Atlantic (open domain)
+- **Source offered:** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` — the 0.5° interpolated product
+- **Period / depth:** not specified
+
+## Refused: a budget on regridded fields
+
+`ocean-budget` refuses this before any computation, citing `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid. The `ecco` skill owns the same refusal as an invariant ("Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path"), and `skills/ecco/references/budget-formulation.md` step 5 is explicit that regridded input is refused *before* the formulation is applied, not diagnosed afterward.
+
+Two independent reasons it can't be rescued:
+
+**The formulation doesn't survive interpolation.** ECCO's heat budget closes to machine precision because the flux terms are the model's own face-normal fluxes on the Arakawa C-grid, and the volume element is `rA * drF * hFacC` with partial bottom cells. Interpolation to a 0.5° lat-lon mesh is not conservative and does not commute with the divergence operator, so the discrete convergence you'd compute on the regridded field is not the convergence the model integrated. The dynamical consistency that makes ECCO worth using for a budget is exactly the property destroyed by the regridding.
+
+**The terms aren't in the file anyway.** That collection carries the state variables `THETA` and `SALT` as monthly means. A heat budget needs four terms, and three of them live in other collections entirely — the advective and diffusive temperature fluxes, the surface forcing (`TFLUX` with the `oceQsw` shortwave penetration handled separately), and month-boundary *snapshots* for the tendency. Monthly means cannot give you a tendency with the correct bookends. Anything computed from this file alone would be one term presented as a budget, with the other three absorbed into a residual — which the skill also forbids.
+
+## What that product is good for
+
+Regional mean T/S, T/S sections and maps, stratification and water-mass framing over the subpolar gyre, and a heat *content* change if you want one — all fine on the regridded grid. It's the budget specifically, and transports, that are off-limits.
+
+## The native path
+
+The attested regional route handles exactly your case — a box control volume. The executor takes an explicit box instead of a registered region:
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year <YYYY> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Four things to know before you commit to that:
+
+- **Inputs.** Native llc90 collections, not the 0.5°: the geometry granule (`ECCO_L4_GEOMETRY_LLC0090GRID_V4R4`) for `rA`/`drF`/`hFacC`/`Depth`, plus native monthly `THETA`, the temperature snapshots, the 3-D temperature flux collection, and the surface heat flux collection. I'd resolve those ShortNames through the fields concepts via `load-ecco` rather than typing them from memory — I couldn't verify them against CMR in this session (the connector call wasn't approved).
+- **Open domain.** A subpolar box isn't closed, so the lateral boundary transports travel in the report explicitly; domain-integrated closure is only asserted on closed domains.
+- **Geothermal.** If your box reaches the bottom, the geothermal flux term is required and is *not* a PO.DAAC collection (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`) — it's the first thing the auditor checks on a failing deep heat budget.
+- **An explicit box carries no anchor.** The attester's two-sided reference checks only apply to the registered `southeast-atlantic-upper` configuration; your box is disclosed by mask digest, and I'd report it that way.
+
+A caveat on scope: the executor binds `year`, and the local fixture cache is 2010 (~2.5 GB). A multi-year subpolar budget means staging the science record over 1992–2017 at `~/ECCO_V4r4_record`, and either tree needs the `RECORD.json` stamp from the provider's verify tool or every attester refuses the receipt.
+
+## Concepts consulted
+
+Read in full: `skills/ocean-budget/SKILL.md`, `skills/ecco/SKILL.md`, `skills/ecco/references/budget-formulation.md`, `core:consult-knowledge`. I could **not** read the PO.DAAC provider bundle concepts themselves — filesystem access in this session is confined to `/home/user/run/evals` for search, and the `nasa-daac-knowledge` bundle root isn't resolvable by Read without a glob. So the gotcha and convention paths above are cited as the ocean-science skills name them, and I haven't quoted any number, tolerance, or ShortName from them. Before an actual run I'd want those concepts open.
+
+Want me to set up the native run? Tell me the year (or year range), the depth range for the box, and whether 50–65°N, 60–10°W is the box you want, and I'll stage the granules and run the sanctioned executor and attester end to end.

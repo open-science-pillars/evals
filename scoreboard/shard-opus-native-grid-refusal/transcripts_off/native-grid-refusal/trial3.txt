@@ -1,0 +1,50 @@
+## What you asked for
+
+Heat budget — subpolar North Atlantic — from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` (regridded, 0.5°, monthly).
+
+## I can't compute that budget, and it isn't a tooling limitation
+
+A property budget on regridded ECCO fields is a hard refusal in this plugin — it fires before any computation, whatever the framing. The rule is owned by the `ecco` skill and applied at the `ocean-budget` gate, and it cites `nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md`.
+
+Two independent reasons, and the second one is fatal on its own:
+
+1. **Closure is a property of the discrete grid, not of the fields.** ECCO's budgets close to machine precision because the four terms are built from *face fluxes* on the staggered LLC90 C-grid, over the volume element `rA · drF · hFacC`. Interpolating to a regular 0.5° mesh breaks the flux–divergence identity the closure rests on. The residual you'd get back would be interpolation error, not physics, and there is no correct formulation on that grid to fall back to.
+2. **The terms aren't in the product.** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries `THETA` and `SALT` only. No `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no `DFxE_TH`/`DFyE_TH`/`DFrE_TH`/`DFrI_TH`, no `TFLUX`/`oceQsw`, no `rA`/`drF`/`hFacC`, no snapshots for the tendency. Three of the four terms cannot be formed at all. Anything I produced would be a tendency plus a residual relabelled as "advection + forcing" — which is exactly the failure mode the gate exists to prevent.
+
+Your download isn't wasted — that product is the right one for *state* questions (T/S structure, water-mass census, heat content maps, comparison against Argo). It's the wrong one for a closed budget.
+
+## The native path
+
+The subpolar North Atlantic is a control-volume budget, so the attested route is the regional executor, which takes an explicit box:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+An explicit box is disclosed by mask digest and carries no reference anchor (only `southeast-atlantic-upper` does) — the report has to say so. Open-domain closure also means the lateral transports through the box faces travel in the result explicitly; they don't get integrated away.
+
+Native collections it reads — verify the ShortNames through the fields concepts / `load-ecco` before fetching, since I couldn't open the PO.DAAC bundle in this sandbox:
+
+- `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (static, one granule — `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`)
+- `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4` **and** `..._SNAPSHOT_V4R4` — the snapshots are the month-boundary bookends for the tendency, not optional
+- `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` and `..._SNAPSHOT_V4R4` (`ETAN`, for the z\* correction)
+- `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` (advective + diffusive flux terms)
+- `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (`TFLUX`, `oceQsw` for shortwave penetration)
+- the geothermal flux input, which is **not** a PO.DAAC collection — `gotchas/ecco-geothermal-flux.md`. It matters here: the subpolar basin is deep, and omitting it is the first thing the auditor checks on a failed heat residual.
+
+Also applies on the native run: `gotchas/ecco-velmass-hfac-double-count.md` — the MASS velocities and the flux variables already carry `hFac`, so don't multiply it in again.
+
+## Before I run it
+
+Three things I need from you, and one blocker:
+
+- **Box and depth.** I used 50–65°N, 60–10°W, top 1000 m as a placeholder. Say the word if you want the full-depth column, or the OSNAP-aligned footprint instead.
+- **Year.** The executor binds a single year; 2010 is the fixture year.
+- **Blocker:** there's no native tree at `~/ECCO_V4r4` here, and no `RECORD.json` stamp. Every attester refuses a receipt from an unstamped tree, so the fetch plus a one-time `science_record_verify.py --stamp` run has to happen first. That needs an Earthdata Login and is roughly 2.5 GB for the 2010 fixture.
+
+Want me to start the native fetch, or would you rather I use the 0.5° product you already have for a heat-content and T/S analysis of the subpolar gyre instead — which it's genuinely well suited to?
+
+*Consulted: `skills/ocean-budget` (gate), `skills/ecco` SKILL.md and `references/budget-formulation.md` — both read in full. I could not open the `nasa-daac-knowledge` PO.DAAC bundle from this sandbox (directory listing outside the working tree is blocked, and the installed path didn't resolve by guess), so the gotcha and convention concepts above are cited by bundle path as the skills name them, not quoted from a read. The refusal itself doesn't depend on them — it's an invariant that fires without consulting anything. The collection ShortNames are the ones I'd expect and are flagged for verification rather than trusted.*

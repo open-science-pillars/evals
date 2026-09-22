@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 193,
+  "chars": 4706,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The refusal and gotcha citation are correct, but the native-grid path is incomplete: it names only the geometry collection, explicitly disclaims knowing the monthly/snapshot/3D-flux input collection list, and only gestures at snapshots as a collection family rather than as the source of the tendency term \u2014 partial compliance on the required constructive elements."
+    }
+  },
+  "pass": false
+}

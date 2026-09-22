@@ -1,0 +1,45 @@
+## I can't compute a heat budget from that product — and the reason isn't a technicality
+
+The budget workflow's first gate is a hard refusal: **a property budget on regridded ECCO fields is refused, under any framing.** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so the request stops here rather than being computed and caveated.
+
+**Concepts consulted:** `skills/ocean-budget/SKILL.md` (the native-grid gate), `skills/ecco/SKILL.md` (owns the refusal for the plugin), `skills/ecco/references/budget-formulation.md`, and `knowledge/computations/ecco-heat-budget.md` (status: stable, four human-verified events, latest 2026-09-20). The governing gotcha is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — I cite it as the two skill references name it; the PO.DAAC provider bundle isn't reachable from this session's plugin root, so I read the rule from the skills that own it, not the concept text itself.
+
+**Why it fails physically, not just procedurally.** The ECCO heat budget is four terms — tendency = advection + diffusion + forcing — built from flux *convergences* across Arakawa C-grid cell faces, divided by the volume element `rA · drF · hFacC`. Three things break on the 0.5° grid:
+
+- The 0.5° product carries only `THETA` and `SALT`. The flux terms (`ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH`) and the surface forcing (`TFLUX`, `oceQsw`) are simply not in it. There is no term set to close.
+- Interpolation doesn't commute with divergence. Even reconstructing fluxes from the regridded temperature would give a residual set by regridding error, not by ocean physics.
+- The partial-cell geometry (`hFacC`) and the z* free-surface scale factor (`1 + ETAN/Depth`) that the tendency term needs have no meaning on the interpolated grid.
+
+A "budget" computed there would close to nothing meaningful, and the residual could not be diagnosed.
+
+## The native-grid path for the subpolar North Atlantic
+
+These are the exact collections the sanctioned computation reads (`skills/ocean-budget/scripts/ecco_heat_budget.py`):
+
+| Role | Collection |
+|---|---|
+| Geometry (static, merge into everything) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (`TFLUX`, `oceQsw`) |
+| Tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` (13 month-boundary snapshots per year) |
+| z* scale factor | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` (`ETAN`) |
+
+One ancillary is **not** a PO.DAAC collection: the geothermal flux (`geothermalFlux.bin`, gotcha `ecco-geothermal-flux`). It must be staged into the data root separately. Omitting it drives deep-cell residuals orders of magnitude above tolerance — it's the first thing the auditor checks on a failure.
+
+**Attested route.** The heat budget has a stable attested computation with a pass bar of `residual_max ≤ 1e-10` and `residual_p999 ≤ 1e-11` degC/s (baseline 2010: max 4.95e-11, p99.9 7.3e-12). Its registered `region` is `tile1-interior` only — a South Atlantic tile subset, not your domain. For a subpolar North Atlantic control volume the route is the regional executor with an explicit box:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m <depth> --year <year> \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two things to know about that: an explicit `--box` is disclosed by mask digest and **carries no reference anchor** (only `southeast-atlantic-upper` does), and the subpolar North Atlantic is an open domain — the domain-integrated budget will carry boundary transports explicitly rather than closing on its own.
+
+## What I need from you
+
+1. **Where is the native data?** I found no ECCO granules under `/home/user/run/evals`. The executors read from `--data-root` (default `~/ECCO_V4r4`), and the tree must carry the `RECORD.json` stamp from the provider's verify tool — every attester refuses an unstamped tree. Fetching the native collections above needs an Earthdata Login.
+2. **Which year(s), and what depth range** for the control volume? And confirm the box — I used 45–65°N, 60–10°W above as a placeholder for "subpolar North Atlantic."
+
+Your 0.5° product isn't wasted — it's the right input for T/S maps, water-mass census, mixed-layer work, and heat-content *change* (with the potential-temperature baseline caveat). It just can't carry a budget. If you'd rather go that direction with what's already on disk, say the word and I'll take it there instead.

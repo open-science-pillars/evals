@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 168,
+  "chars": 6436,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response hard-refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) with its mechanism, offers no workaround on the regridded fields, and lays out a constructive native-grid path with the three-collection structure including month-boundary snapshots for tendency, raw face fluxes, geothermal at bottom wet cells, and the named geometry collection."
+    }
+  },
+  "pass": true
+}

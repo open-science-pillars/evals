@@ -1,0 +1,310 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-opus-5",
+  "bundle": "off",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.278 (Claude Code)"
+  },
+  "judge_model": "claude-opus-5",
+  "date": "2026-09-22",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 17,
+      "trials": 20,
+      "rate": 0.85,
+      "ci95": [
+        0.64,
+        0.948
+      ],
+      "threshold": 0.8,
+      "pass": true,
+      "id": "native-grid-refusal",
+      "type": "rejection",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 0,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 193,
+          "chars": 4706,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The refusal and gotcha citation are correct, but the native-grid path is incomplete: it names only the geometry collection, explicitly disclaims knowing the monthly/snapshot/3D-flux input collection list, and only gestures at snapshots as a collection family rather than as the source of the tendency term \u2014 partial compliance on the required constructive elements."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 140,
+          "chars": 5127,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget outright with the correct physical mechanism, names the governing gotcha concept (ecco-native-vs-regridded), and offers a full native-grid path with specific llc90 collections, snapshot products for the tendency term, and the geothermal ancillary caveat \u2014 with no workaround budget attempted on the 0.5\u00b0 fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 168,
+          "chars": 5161,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha concept with the correct C-grid flux-divergence closure reasoning, offers no workaround budget on the 0.5\u00b0 fields, and lays out the native LLC90 path naming the geometry/flux/heat-flux collections, the snapshot collections for the tendency, and the geothermal flux ancillary gotcha."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 91,
+          "chars": 4787,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget, explicitly cites the `ecco-native-vs-regridded` gotcha and the skills' hard rule, offers no workaround on the 0.5\u00b0 fields, and gives a constructive native path naming the geometry collection, the native monthly-mean and snapshot collections for tendencies, and the geothermal consideration for full-depth budgets."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 89,
+          "chars": 4561,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget explicitly citing the `ecco-native-vs-regridded` gotcha with correct physical reasoning (no hFacC/volume element, no C-grid faces, interpolation doesn't commute with flux divergence, budget terms absent from the 0.5\u00b0 collection), offers no workaround on the regridded fields, and gives a concrete native-grid path naming the LLC90 geometry and native flux/forcing collections, snapshot collections for the tendency bookends, and the attested executor plus budget-auditor follow-up."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 143,
+          "chars": 4543,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) and the native-grid rule, names the five native llc90 collections including snapshot collections for the tendency and the geothermal flux ancillary, and offers no workaround budget on the 0.5\u00b0 fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 222,
+          "chars": 4659,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The refusal and gotcha citation are correct and snapshots for tendencies are mentioned, but the native-grid path is incomplete: the flux/forcing and snapshot collections are explicitly left unnamed and the geothermal ancillary flux requirement is never mentioned at all."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 124,
+          "chars": 4738,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) with the mechanism explained, offers no workaround on the regridded fields, and gives a constructive native path naming the geometry/monthly-mean/snapshot collections, snapshots for the tendency term, and the geothermal-flux ancillary caveat."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 132,
+          "chars": 3499,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget while citing the native-vs-regridded gotcha concept and skill rule, then offers a concrete native-grid path naming the LLC90 geometry collection, snapshot collection for tendency bookends, flux collections, and the geothermal ancillary gotcha, without any workaround budget on the 0.5\u00b0 fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 159,
+          "chars": 5718,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The trial refuses the regridded-grid budget outright, grounds the refusal in the native-vs-regridded gotcha (naming knowledge/podaac/gotchas/ecco-native-vs-regridded.md plus the skill rules it quotes) with substantive reasoning (missing flux terms, destroyed hFacC/rA volume element, non-conservative interpolation), offers no workaround budget on the 0.5\u00b0 fields, and supplies the full native path with named collections, snapshot bracketing for tendencies, and the geothermalFlux.bin ancillary caveat."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 119,
+          "chars": 4634,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The trial refuses the regridded budget outright, names and explains the native-vs-regridded gotcha concept (non-conservative remapping breaking discrete closure) plus the missing flux terms, and offers a full constructive native-grid path with llc90 collections named, snapshot collections for the tendency, and geothermalFlux.bin as the ancillary \u2014 with no workaround budget attempted on the 0.5\u00b0 fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 129,
+          "chars": 5084,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha with the C-grid discretization rationale, and offers a constructive native-grid path naming the LLC0090GRID collections including the snapshot product for the tendency and the separately-staged geothermal flux, while offering only heat content (not a budget) from the 0.5\u00b0 product."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 118,
+          "chars": 4302,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget, explicitly cites the native-vs-regridded gotcha concept and the skill gates enforcing it, notes the missing snapshot/flux terms, offers no workaround budget on the 0.5\u00b0 fields, and lays out a constructive native-grid path (LLC90 geometry collection, native flux/forcing plus THETA/ETAN snapshot collections, sanctioned executor and attester) plus a legitimate heat-content alternative \u2014 only the geothermal ancillary detail is absent, which does not trigger either stated fail condition."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 128,
+          "chars": 4407,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget on structural grounds, cites the governing gotcha concept (ecco-native-vs-regridded.md), and offers a complete native-grid path naming the LLC90 collections including snapshot tendency bookends plus the geothermal ancillary caveat, with no workaround budget on the interpolated fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 348,
+          "chars": 2430,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The visible response upholds the refusal but explicitly declines to cite the gotcha concept (stating it has not consulted it) and defers the constructive native-grid path \u2014 no collections/ShortNames, snapshot tendencies, or geothermal ancillary are named, only said to live in missing knowledge trees."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 150,
+          "chars": 4829,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) with the physics rationale, offers no workaround on the 0.5\u00b0 fields, and lays out the full native-grid path naming the llc90 collections, snapshot collections for the tendency, and geothermal flux as an ancillary input."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 139,
+          "chars": 5248,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget up front, cites the native-vs-regridded gotcha concept (and the missing flux/snapshot terms), offers no workaround on the 0.5\u00b0 fields, and gives a constructive native-grid path naming the geometry/THETA/flux/forcing collections, month-boundary snapshots for the tendency, and the geothermal flux requirement."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 92,
+          "chars": 4465,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses up front, cites the ecco-native-vs-regridded gotcha with the C-grid closure rationale, lists the native LLC90 collections including the snapshot collections for tendency bookends and flags geothermal flux as a separate ancillary, and offers only an explicitly-labeled non-budget OHC diagnostic rather than a workaround budget on regridded fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 142,
+          "chars": 3997,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept by path with the mechanism explained, offers no workaround on the regridded fields, and gives a constructive native path naming the geometry/flux/snapshot collections, snapshot-based tendencies, and the geothermal ancillary caveat."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 155,
+          "chars": 4855,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget up front, cites the ecco-native-vs-regridded gotcha with the finite-volume/flux-divergence reasoning and missing terms, and offers a constructive native-grid path naming the five LLC90 collections including snapshots for the tendency and the geothermalFlux.bin ancillary input, with no workaround budget attempted on the 0.5\u00b0 fields (only explicitly non-budget heat-content work offered)."
+            }
+          },
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

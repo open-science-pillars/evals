@@ -1,0 +1,49 @@
+## I can't compute a budget from that product — and the reason is not a technicality
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. A property budget on regridded ECCO fields is a hard refusal in this plugin, and it fires before any computation regardless of how the request is framed:
+
+> "Never compute any budget on regridded fields, under any framing. (Hard refusal: invariant, universal; the one rule that fires without consulting anything.)"
+> — `skills/ocean-budget/SKILL.md`, restated at `skills/ecco/SKILL.md` ("Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path")
+
+Both skills name the governing concept as `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`. **I was not able to read that concept's text in this session** — the provider bundle (`nasa-daac-knowledge`) ships outside the working directory, directory listing there is blocked by the sandbox, and `claude plugin list --json` (the sanctioned way to resolve bundle roots per `core:consult-knowledge`) needs approval I don't have. So I'm citing the refusal from the two skill files I did read in full, not paraphrasing the gotcha.
+
+The physical reason, as general method rather than quoted concept: the four-term budget is tendency = advection + diffusion + forcing, evaluated as flux divergences across C-grid cell faces on the volume element `rA * drF * hFacC`. The 0.5° product carries interpolated THETA and SALT and nothing else — no `ADVx/y/r_TH`, no `DFxE/yE/rE_TH`, no month-boundary snapshots, no `hFacC`. Horizontal interpolation also does not commute with the divergence operator, so even a reconstructed divergence would not be the model's. There is no correct formulation to apply, and any residual you got back would be an interpolation artifact you'd have no way to distinguish from a physical imbalance.
+
+## The native path for a subpolar North Atlantic heat budget
+
+The attested route is `ecco-regional-budget` (`skills/ocean-budget/scripts/ecco_regional_budget.py` + attester `regional_budget_check.py`), which takes an explicit box:
+
+```bash
+uv run $PLUGIN/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m <depth> --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $PLUGIN/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things about that call you should decide before I run it:
+
+- **An explicit box carries no anchor.** Only `southeast-atlantic-upper` is a registered region with two-sided reference checks. A custom SPNA box is disclosed by mask digest only, and the report has to say so.
+- **The SPNA is an open domain.** Closure is asserted only on closed domains; the lateral transports across 50°N, 65°N and the eastern/western faces travel as explicit boundary terms, not folded into a residual.
+- **If the box reaches the bottom, the geothermal term is required.** It ships as `geothermalFlux.bin` from the ECCO tutorial distribution — it is *not* a PO.DAAC collection, and a dropped geothermal term is the first thing the auditor checks because it drives deep-cell residuals orders above tolerance.
+
+The native inputs (exact ShortNames, from the bundle's 2010 fixture manifest `knowledge/references/retrieval/fixtures-2010-manifest.json`, ~3.1 GB total):
+
+| purpose | collection |
+|---|---|
+| geometry (merge with everything) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` (13 snapshots) |
+| state | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4` |
+| advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| z* volume tendency | `ECCO_L4_OCEAN_3D_VOLUME_FLUX_LLC0090GRID_MONTHLY_V4R4`, `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` + `..._SNAPSHOT_V4R4` |
+| surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| bottom forcing | `geothermalFlux.bin` (tutorial distribution, not PO.DAAC) |
+
+Pass bar, from the computation concept `knowledge/computations/ecco-heat-budget.md` (status `stable`, four `human:PaulMRamirez` verified events, most recent 2026-09-20): `residual_max ≤ 1e-10` and `residual_p999 ≤ 1e-11` degC/s, 2× headroom over the measured baseline max of 4.95e-11. The attester also refuses any receipt whose tree lacks the `RECORD.json` stamp from `tools/science_record_verify.py`.
+
+## What I need from you
+
+1. **Do you have native granules?** I couldn't check — the sandbox blocks listing outside `/home/user/run/evals`. If `~/ECCO_V4r4` (2010 fixture) or `~/ECCO_V4r4_record` (1992–2017) exists and is stamped, I can run this now.
+2. **Year and depth range** — the fixture cache is 2010 only; the science record covers 1992–2017.
+3. **Box bounds** — I used 50–65°N, 60–10°W above as a placeholder; tell me yours.
+
+No budget was computed, so there is nothing for `budget-auditor` to audit yet. Your 0.5° product stays perfectly good for the things it was regridded for — T/S maps, sections, heat-content-style integrals — just not for a term-by-term budget.

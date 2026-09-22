@@ -1,0 +1,55 @@
+## I can't compute a heat budget from that product — and it isn't a limitation I can work around
+
+The `ocean-budget` skill I'm bound to carries one hard refusal that fires before any computation, regardless of how the request is framed:
+
+> Never compute any budget on regridded fields, under any framing.
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. The refusal cites `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid. The physical reason: ECCO's budget closure is a property of the *discretization*. The four terms are defined on the Arakawa C-grid staggering, with advective and diffusive fluxes living on cell faces and the tendency on cell centers. Interpolation to a regular lat-lon mesh destroys the discrete divergence identity that makes the terms sum to zero — the residual you'd get back wouldn't be physics, it'd be the interpolation error, and there is no correct formulation on that grid to fall back to.
+
+There's also a second, more mundane blocker: that collection carries THETA and SALT only. The advective flux terms (`ADVx_TH`, `ADVy_TH`, `ADVr_TH`), the diffusive terms (`DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH`) and the surface forcing (`TFLUX`, `oceQsw`) aren't in it at all. Even without the refusal, three of the four budget terms have no input.
+
+**Note on your files:** my sandbox confines search to `/home/user/run/evals`, and I found no NetCDF or ECCO files there. I couldn't verify where the download actually lives, and `claude plugin list` wasn't approved, so I also couldn't open the PO.DAAC bundle concepts directly — I'm citing the gotcha by the path the `ecco` and `ocean-budget` skills name, having read those two skill files and the sanctioned executor rather than the concept itself.
+
+## The native path, which does work
+
+There's an attested regional budget executor that handles exactly your case — a control volume on the native grid, with heat, salt or volume under one contract.
+
+**Collections to fetch** (all `LLC0090GRID`, from the executor's own input list at `ecco_regional_budget.py:76-80`):
+
+| Collection | Provides |
+|---|---|
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | `ADV*_TH`, `DF*_TH` |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | `TFLUX`, `oceQsw` |
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | `THETA` (13 month-boundary snapshots) |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | `ETAN` (free-surface scaling) |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1` |
+
+Plus `geothermalFlux.bin`, which is **not** a PO.DAAC collection (gotcha `ecco-geothermal-flux`) and has to be staged separately — the executor reads it straight from `--data-root`. Skipping it is the classic silent failure: the regional attester measured that omitting geothermal still passes the absolute bar of 1e-10 and is caught only by the relative bar of 1e-6.
+
+Snapshots, not monthly means, for the tendency — that's what makes closure exact.
+
+Then, for a subpolar North Atlantic box:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/subpolar-heat-receipt.json
+
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/subpolar-heat-receipt.json
+```
+
+Two things to expect on that box. The executor's v1 limit is that the control volume must lie within **one tile's interior** (faces 1–89); a subpolar box reaching to 65°N may cross an llc90 tile seam, in which case it refuses with a clear message and you'd trim the northern edge. And an explicit `--box` carries no registered anchor — it's disclosed by wet-mask digest and the attester can't check that the mask is the water you meant, so the resolved lat/lon extent, wet-cell count and volume in the receipt are yours to eyeball.
+
+Before any of that, the data tree needs the `RECORD.json` stamp from the provider's verify tool, or every attester refuses the receipt on principle:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/tools/science_record_verify.py \
+  --manifest /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/knowledge/references/retrieval/fixtures-2010-manifest.json \
+  --data-root ~/ECCO_V4r4 --checksum all --exact --stamp
+```
+
+## What your 0.5° product is good for
+
+It's the right product for regional mean temperature and salinity time series, heat *content* (not budget) integrals, T–S structure, and mixed-layer work — anything that doesn't need the discrete flux divergence to close. If a heat content time series for the subpolar gyre would serve your purpose, I can do that from what you already have, no refusal involved. Tell me the box and depth range and I'll run it.
+
+Which way do you want to go — fetch the native granules for the real budget, or the content integral from the data in hand?

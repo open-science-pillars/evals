@@ -1,0 +1,44 @@
+## I can't compute this budget, and the reason isn't a technicality
+
+The `ocean-budget` workflow has one gate that fires before anything else: **a property budget on regridded ECCO fields is refused**. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so a heat budget on it is exactly what that rule covers.
+
+The mechanism, not just the rule: ECCO's budget closes to machine precision because the four terms are the MITgcm's own discrete operators on the LLC90 C-grid — tendency from bracketing snapshots, advective and diffusive fluxes read as raw face fluxes on cell faces, forcing at the surface plus geothermal at bottom cells, all on the volume element `rA × drF × hFacC`. Interpolation to a regular 0.5° mesh destroys every piece of that: the cell faces the fluxes were defined on no longer exist, the partial-cell `hFacC` factors are gone, and the advective flux collections aren't even distributed on the regridded grid. Whatever residual you computed there would be an interpolation artifact, and there's no tolerance that makes it meaningful. This is the gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, cited by both the `ecco` and `ocean-budget` skills as a hard refusal.
+
+**Disclosure on my consultation:** I read the refusal in the skills that own it (`skills/ecco/SKILL.md`, `skills/ocean-budget/SKILL.md`) and the attested computation concept `knowledge/computations/ecco-heat-budget.md` (status `stable`, maintainer-signed). I could **not** read the provider gotcha's own text — it lives in the `nasa-daac-knowledge` bundle, and this sandbox blocks listing outside `/home/user/run/evals` while `claude plugin list --json` wasn't approved. So I'm citing that concept by path, not quoting it. The refusal doesn't depend on it; per the skills it fires without consulting anything.
+
+I also couldn't see your download — only `/home/user/run/evals` is readable here (it holds the evals repo, no ECCO data). Tell me where the files are if you want me to inspect them.
+
+## The native path for the subpolar North Atlantic
+
+There's a sanctioned, attested executor for exactly this shape of question — a regional heat budget over a control volume, with an explicit geographic box:
+
+```bash
+uv run $PLUGIN_ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $PLUGIN_ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Collections it needs, all native LLC90:
+
+| role | collection |
+|---|---|
+| advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (TFLUX, oceQsw) |
+| tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` + `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| geothermal | `geothermalFlux.bin` — **not a PO.DAAC collection**, it ships with the ECCO tutorial distribution |
+
+Three things that will bite on this particular region, worth knowing before you fetch 2.5 GB:
+
+1. **Tile seams.** The executor resolves an explicit box onto *one* LLC90 tile and refuses a box spanning tiles or touching a tile edge by design — cross-seam rims need section machinery that isn't in this version. A 50–65N, 60–10W box may or may not land cleanly; the executor decides from the geometry granule, and I can't predict it for you. That's the first thing to test, and it's cheap once geometry is downloaded.
+2. **Geothermal is mandatory if you go to the bottom.** A full-depth subpolar box has plenty of bottom cells. Omitting geothermal still passes the absolute bar (1e-10 °C/s) and is caught *only* by the relative bar (1e-6) — which is why the executor reruns a geothermal-omitted mutation and refuses to write a receipt if that sabotage passes.
+3. **Open domain.** The subpolar gyre is not a closed basin; the lateral boundary transports are a reported term, not something to fold into a residual.
+
+The data root must also carry the `RECORD.json` stamp from the provider's verify tool — the attester refuses a receipt from an unstamped tree.
+
+## What your 0.5° product is still good for
+
+It's the right product for describing the state: T/S maps, sections, seasonal cycles, a heat-content inventory for the region. What it can't do is close a budget, so it can't tell you *why* the subpolar North Atlantic warmed or cooled — which is presumably what you're after.
+
+Want me to go get the native granules and run it? I'll need your Earthdata Login, and tell me the year (or range), depth, and box you want — the numbers above are my guess at "subpolar North Atlantic," not yours.

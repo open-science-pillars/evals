@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 128,
+  "chars": 4407,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget on structural grounds, cites the governing gotcha concept (ecco-native-vs-regridded.md), and offers a complete native-grid path naming the LLC90 collections including snapshot tendency bookends plus the geothermal ancillary caveat, with no workaround budget on the interpolated fields."
+    }
+  },
+  "pass": true
+}

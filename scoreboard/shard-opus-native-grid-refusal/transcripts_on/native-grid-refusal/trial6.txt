@@ -1,0 +1,49 @@
+## First, the data isn't where you think it is
+
+I can only read `/home/user/run/evals` in this session, and there is no ECCO data in it — no `.nc`, no `.zarr`, nothing. What's there is the Open Science Pillars eval-harness repo (`runner/`, `manifests/`, `scoreboard/`). So I have nothing to compute from regardless. Worth checking whether your download landed outside the session's allowed working directory.
+
+But there's a more fundamental problem, and it would apply even if the files were sitting right here.
+
+## I can't compute a heat budget from that product
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the interpolated product, and a budget on regridded ECCO fields is a hard refusal in this plugin — it fires before any computation, whatever the framing. It's stated identically in two places I read:
+
+- `skills/ecco/SKILL.md` — "Never compute budgets or transports on regridded ECCO fields; refuse and offer the native-grid path. (Hard refusal: invariant, universal, fires without consulting anything.)"
+- `skills/ocean-budget/SKILL.md` — "A budget request on regridded fields is REFUSED: no correct budget formulation exists there."
+
+Both name the governing concept as `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`. **I could not read that concept file itself** — the `nasa-daac-knowledge` bundle's install path isn't reachable or listable from this session, so I'm citing it as the skills name it, not as something I read. Flagging that rather than papering over it.
+
+### Why the rule exists
+
+Two independent reasons, and the second one alone is fatal:
+
+**1. The closure identity is a property of the discretization, not the physics.** ECCO budgets close to ~1e-11 °C/s because MITgcm's finite-volume operators satisfy an *exact discrete* telescoping identity on the native LLC90 C-grid: cell heat tendency equals the sum of fluxes through its six faces plus sources. Bilinear interpolation to a 0.5° lat-lon mesh is not a conservative remap of the divergence operator. The interpolated field satisfies no discrete divergence identity at all, so the residual stops being machine-precision and becomes the same order as the terms you're trying to separate.
+
+**2. Three of the four terms simply aren't in the file.** The 0.5° product carries state variables — `THETA` and `SALT` — and nothing else. There are no `ADVx/y/r_TH` or `DFxE/yE/rE_TH` flux terms, no `TFLUX`/`oceQsw` surface forcing, no month-boundary snapshots for the tendency, and no `rA`/`drF`/`hFacC` native geometry for the volume element. You cannot construct advection, diffusion, or forcing from it by any means. A "budget" from this product would be a tendency term and three fabricated numbers.
+
+On top of that, the geothermal flux term isn't a PO.DAAC collection in *any* form — it comes from the ECCO input files. The regional budget concept records a measured case where omitting it lands at 1.24e-12, *inside* the absolute bar, caught only by the relative bar. That's how quietly a missing term hides.
+
+## The native-grid path
+
+The attested route is `ecco-regional-heat-budget` (`knowledge/computations/ecco-regional-heat-budget.md`, status `stable`, last human-verified 2026-09-20). It closes over a control volume by comparing three independent collections — tendency from T and SSH snapshots, transport from raw face fluxes at the volume boundary, forcing from surface fluxes plus geothermal at bottom wet cells.
+
+```bash
+uv run <ocean-science-root>/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run <ocean-science-root>/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+You'd need the native collection families — geometry (`ECCO_L4_GEOMETRY_LLC0090GRID_V4R4`), native monthly T/S, T/S and SSH snapshots, the 3D temperature flux collection, and the surface heat flux collection. **I tried to verify the exact ShortNames against CMR and the permission wasn't granted**, so resolve them through the fields concepts under `knowledge/podaac/fields/ecco-v4r4/` rather than trusting my spelling of them.
+
+### Two gates you will hit, in order
+
+**The tile seam.** The computation's stated v1 limit is that the control volume must lie within one tile interior — seam-crossing volumes are *refused* until the seam-calibrated section machinery lands. The subpolar North Atlantic at roughly 50–65°N, 60–10°W is a strong candidate to straddle an LLC90 tile boundary. I can't confirm without the geometry granule, but expect to meet this, and expect an explicit box (not a registered region — only `southeast-atlantic-upper` is registered) to carry no reference anchor and be disclosed by mask digest only.
+
+**The data stamp.** Every attester refuses a receipt from an unstamped tree. After fetching, you run `tools/science_record_verify.py` once with `--stamp` to leave the `RECORD.json` the attester checks.
+
+## What the 0.5° product is genuinely good for
+
+Don't throw it away — it's the right product for subpolar North Atlantic heat *content* and its tendency (area-weighted, with the potential-temperature baseline caveat), T–S water-mass census, and comparison against Argo or EN4. Those are inventory and diagnostic questions, not budget questions, and interpolation doesn't disqualify them.
+
+If you want, I can set up the heat content time series and its trend from the 0.5° file once you tell me where it actually lives — that I can do honestly from what you downloaded. The budget itself needs the native granules.

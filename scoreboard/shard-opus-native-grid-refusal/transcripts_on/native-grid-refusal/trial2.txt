@@ -1,0 +1,36 @@
+## I can't compute this budget from that product — and the reason is worth a minute
+
+The `ocean-budget` workflow has a hard gate that fires before any computation:
+
+> A budget request on regridded fields is REFUSED: no correct budget formulation exists there (gotcha `ecco-native-vs-regridded`), and the refusal always offers the native path.
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so it's inside that rule. The mechanism: ECCO's budget closes because the four terms — tendency, advection, diffusion, forcing — are computed from the model's own C-grid flux variables on the llc90 grid, where flux divergence over the volume element `rA * drF * hFacC` is exact by construction. Interpolation to a regular 0.5° lat-lon mesh discards the staggered flux fields and the partial-cell geometry that made the terms consistent. What you'd get is not a budget with a large residual — it's a residual with no physical interpretation, because the advective convergence you'd reconstruct from interpolated `THETA` is not the advection the model actually applied. That's why this is a refusal rather than a caveat.
+
+The product is still the right choice for other things — regional temperature/salinity anomalies, heat content evolution, water-mass structure, map figures. Just not for closing terms.
+
+**A note on sourcing.** I read the rule and the pass bars directly in `skills/ocean-budget/SKILL.md`, `skills/ecco/SKILL.md` (which owns the refusal for the plugin), `skills/ecco/references/budget-formulation.md`, and `knowledge/computations/ecco-heat-budget.md` (status `stable`, four maintainer-verified events). I could **not** read the provider bundle text itself — `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` lives in the separately-installed `nasa-daac-knowledge` bundle, and I couldn't resolve its install path (`claude plugin list --json` needs approval here, and the plugin cache isn't listable from this sandbox). So I'm citing that gotcha by path as the three skills cite it, not from its own text. If you approve that command I'll read the concept and quote its mechanism and severity directly.
+
+## The native path, concretely
+
+Your region isn't one of the registered regions (`tile1-interior` for the whole-grid budget, `southeast-atlantic-upper` for the regional one), but the regional executor takes an explicit control volume, which is exactly the subpolar North Atlantic case:
+
+```bash
+uv run $ROOT/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 45 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run $ROOT/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things that shape the result, from the concepts:
+
+- **An explicit box is an open domain.** It's disclosed by mask digest and carries no reference anchor, so the attester checks the mutation oracles and the recomputed bars but not the two-sided reference numbers it has for `southeast-atlantic-upper`. Boundary transports get reported explicitly rather than folded into a residual.
+- **Geothermal flux** is the first thing the auditor checks on a failing heat budget, and it isn't a PO.DAAC collection — it's a separate input. That matters if you want the full-depth budget rather than an upper-ocean box.
+- **Depth and year are yours to set.** I used 1000 m and 2010 as placeholders; the 2010 fixture cache is the small one (~2.5 GB), while 1992–2017 needs the science record tree at `~/ECCO_V4r4_record`.
+
+## What I need from you
+
+1. **Confirm the domain** — 45–65°N, 60–10°W, 0–1000 m is a reasonable subpolar box, but tell me if you want the Labrador/Irminger seas specifically, or full depth.
+2. **Period** — single year, or the full record?
+3. **Do you have the native tree?** I couldn't check `~/ECCO_V4r4` from this sandbox. The attesters refuse any receipt from a tree without the `RECORD.json` stamp the verify tool leaves, so if it's not staged and stamped yet that's the first step.
+
+Say the word and I'll run it — or if you'd rather work with the 0.5° data you already have, I'm glad to do regional heat content and its trend from it instead, reported as heat content rather than as a budget.

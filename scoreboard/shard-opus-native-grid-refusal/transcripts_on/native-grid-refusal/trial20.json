@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 167,
+  "chars": 6028,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the native-vs-regridded gotcha concept and the discrete-operator mechanism, notes the missing flux/snapshot terms, and offers a full native-grid path with named collections, snapshot collections for tendency, and the geothermal ancillary \u2014 with no workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

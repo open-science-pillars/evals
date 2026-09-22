@@ -1,0 +1,45 @@
+I can't compute this one as asked, and the reason is a hard rule rather than a preference. Here's what I found and the path that does work.
+
+## Refused: a budget on regridded fields
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product. The `ocean-budget` workflow refuses a budget on regridded ECCO fields before any computation, whatever the framing — the rule is owned by the `ecco` skill for the whole plugin and restated at the `ocean-budget` gate (`skills/ocean-budget/SKILL.md`, "The native-grid rule (🔴, non-negotiable)"; `skills/ecco/SKILL.md`, "Must NOT").
+
+The mechanism, briefly: closure is a property of the discrete MITgcm operators on the llc90 C-grid. The terms are raw face fluxes (`ADVx_TH`, `ADVy_TH`, `ADVr_TH`, `DFxE_TH`, `DFyE_TH`, `DFrE_TH`, `DFrI_TH`) on cell faces, with a volume element `rA * drF * hFacC` that carries partial cells. Interpolation to 0.5° destroys the face-flux/volume correspondence, and the regridded product ships temperature and salinity only — no flux terms, no snapshots, no `hFacC`. There is no correct formulation to apply, so a number computed there would be a residual of convenience, not a budget.
+
+Two things the 0.5° product *is* right for: heat content and its change, T/S maps and sections, water-mass census, model-obs comparison. Those need no face fluxes.
+
+## The native path for the subpolar North Atlantic
+
+Collections required (from the sanctioned executors, `skills/ocean-budget/scripts/ecco_heat_budget.py:82-85` and `ecco_regional_budget.py:109-116`):
+
+| Purpose | ShortName |
+|---|---|
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Advective + diffusive flux terms | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency, `THETA` bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Tendency, `ETAN` for z* scaling | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+
+Plus `geothermalFlux.bin` — **not a PO.DAAC collection**, it comes from the ECCO v4 tutorial distribution (gotcha `ecco-geothermal-flux`). Omitting it passes the absolute bar and is caught only by the relative bar (`ecco_regional_budget.py:20-22`), so a deep subpolar budget without it will look fine and be wrong.
+
+Neither `~/ECCO_V4r4` nor `~/ECCO_V4r4_record` exists here, so the native granules still need fetching (earthaccess, Earthdata Login), then stamping with `tools/science_record_verify.py` — every attester refuses a receipt from an unstamped tree.
+
+For your region the attested route is `ecco_regional_budget.py` with an explicit control volume:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year <YYYY> \
+  --data-root ~/ECCO_V4r4_record --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Two caveats on that, both real: the v1 executor requires the volume to lie inside **one tile's interior** (faces 1–89) and refuses a seam-crossing box — a 50–65°N Atlantic box may straddle the tile 2 / Arctic-cap boundary, which only box resolution will tell. And an explicit box carries no reference anchor, so the attester checks the bars and the mutation evidence but not a registered wet-cell count; the mask is disclosed by sha256 digest and the report has to say so.
+
+Bars, from the concept that owns them (`knowledge/computations/ecco-heat-budget.md`, `status: stable`, human-verified by the maintainer 2026-09-20): `residual_max` ≤ 1e-10 °C/s and `residual_p999` ≤ 1e-11 °C/s, with baseline measured max 4.95e-11. The regional contract adds a relative bar of 1e-6. One discrepancy worth flagging: that concept's body carries a placement note saying it "sits at `status: draft`", while the frontmatter says `stable` and carries the later maintainer signature — I read it as stable per the frontmatter, but the note is stale and worth an issue.
+
+## What I need from you
+
+- **Which year(s)?** The heat executor binds a single calendar year (12 monthly means bracketed by 13 snapshots).
+- **Depth range** for the control volume — full depth puts geothermal squarely in play; an upper-ocean box makes it negligible, and the executor's mutation check is applicability-aware about exactly that.
+
+Say the word and I'll fetch and stamp the native tree, resolve the box against the tile geometry, and run the attested budget with the auditor on the result.

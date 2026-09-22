@@ -1,0 +1,47 @@
+## I can't compute this budget from that product — and the reason isn't a technicality
+
+The budget workflow refuses a property budget on regridded ECCO fields before any computation, whatever the framing. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product, so it's inside that refusal.
+
+The mechanism: ECCO's budgets close to machine precision because the flux terms, the volume element (`rA * drF * hFacC`) and the tendency all come from the same discrete MITgcm operator on the llc90 grid. Interpolation to a regular 0.5° mesh breaks that correspondence — the regridded cell has no consistent volume element, the interpolated fluxes no longer telescope across cell faces, and partial bottom cells (`hFacC`) are gone. There is no correct budget formulation on that grid to fall back on, so what you'd get is a residual of unknown size that reflects the regridding rather than the ocean. It would look like a closed budget with a "small" residual and quietly not be one.
+
+Two independent blockers, worth separating: even on the native grid, that collection carries only THETA and SALT monthly means. A heat budget also needs the 3D advective/diffusive temperature fluxes, the surface heat flux collection, and month-boundary **snapshots** for the tendency. Monthly means can't give you the tendency term at all.
+
+**Citation status, stated honestly:** the governing concept is `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`. I could not open the PO.DAAC bundle from this session — the sandbox blocks directory listing outside `/home/user/run/evals`, and `claude plugin list` needs approval, so I couldn't resolve the `nasa-daac-knowledge` install path. I'm relaying the rule as the `ecco` and `ocean-budget` skills state it (both name that concept as the authority) rather than quoting the concept text. If you approve `claude plugin list --json` I'll read it and quote it directly.
+
+## The native path
+
+There's an attested regional budget for exactly this shape of question — a control volume, heat, one year:
+
+```bash
+R=/root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0
+
+uv run $R/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 3000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+
+uv run $R/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Collections it reads from `--data-root` (all native llc90, all V4R4):
+
+| role | collection |
+|---|---|
+| advective + diffusive heat flux | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| tendency (THETA snapshots) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| free-surface scaling (ETAN snapshots) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+
+Three things to decide before that command is right for you:
+
+1. **Tile seam.** The explicit-box tier resolves onto **one** llc90 tile and refuses a box that spans tiles. A 50–65°N, 60–10°W box very likely crosses a seam, so expect a refusal on the first try. The fix is either a narrower volume that lands on a single tile (Irminger and Labrador as separate control volumes, for instance) or the seam-calibrated section machinery — which is a different workflow, not a flag on this one. Tell me how you'd rather scope it.
+2. **Geothermal.** Your domain is deep and full of bottom cells, so the geothermal term is genuinely active here — omitting it passes the absolute bar and is caught only by the relative bar. It needs `geothermalFlux.bin` from the ECCO v4 tutorial distribution; it is **not** a PO.DAAC collection, so it won't be in anything you downloaded from PO.DAAC.
+3. **Data root.** I couldn't check whether `~/ECCO_V4r4` exists or carries the `RECORD.json` verify stamp (same sandbox restriction). Every attester refuses a receipt from an unstamped tree, so that stamp has to be in place before the run. For a multi-year subpolar budget you'd want the 1992–2017 science record (`~/ECCO_V4r4_record`) rather than the 2010 fixture.
+
+Also note: an explicit box carries no reference anchor — it's disclosed by mask digest and wet-cell count, and the attester checks the residual bars and the mutation evidence but not a stored reference value. The report has to say so.
+
+## What your 0.5° download is good for
+
+It isn't wasted, just not for this. It's the right product for subpolar T/S structure and its seasonal cycle, mixed-layer depth from a temperature or density criterion, water-mass/T-S census work, and heat-content *change* over the region — anything that reads the state rather than closing its budget. If the underlying question is "what warmed or cooled the subpolar North Atlantic and why," say the word and I'll scope it as a closed native-grid budget; if it's "how did subpolar heat content evolve," the 0.5° product can answer that directly.
+
+Which way do you want to go — narrow the control volume to a single tile, or reframe toward heat content from the data you already have?

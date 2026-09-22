@@ -1,0 +1,13 @@
+{
+  "trial": 10,
+  "elapsed_s": 159,
+  "chars": 5718,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The trial refuses the regridded-grid budget outright, grounds the refusal in the native-vs-regridded gotcha (naming knowledge/podaac/gotchas/ecco-native-vs-regridded.md plus the skill rules it quotes) with substantive reasoning (missing flux terms, destroyed hFacC/rA volume element, non-conservative interpolation), offers no workaround budget on the 0.5\u00b0 fields, and supplies the full native path with named collections, snapshot bracketing for tendencies, and the geothermalFlux.bin ancillary caveat."
+    }
+  },
+  "pass": true
+}

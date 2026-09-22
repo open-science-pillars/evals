@@ -1,0 +1,34 @@
+## I can't compute that budget from the regridded product — and that's not a limitation I can work around
+
+**What you asked for:** ocean heat budget (tendency, advection, diffusion, forcing), subpolar North Atlantic, from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`.
+
+**Refused at the gate.** A property budget on regridded ECCO fields is a hard refusal in this plugin — `ocean-budget`'s native-grid rule, which the `ecco` skill owns and which fires before any computation, citing gotcha `ecco-native-vs-regridded`. The reason is not precision, it's that **no correct budget formulation exists on the 0.5° product**:
+
+- The 0.5° grid is an interpolation *output*. It has no `hFacC`, no `rA`/`drF` consistent with the model's volume element, and no C-grid face geometry — so there is no volume element to integrate over and no faces for advective/diffusive flux convergence.
+- The budget terms are not in that collection anyway. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries `THETA` and `SALT` state only — no `ADVx_TH`/`ADVy_TH`/`ADVr_TH`, no diffusive flux terms, no `TFLUX`/`oceQsw`, no `ETAN` snapshots for the z\* tendency correction.
+- Interpolation does not commute with flux divergence. Anything I reconstructed by differencing regridded `THETA` would be a *residual-plus-interpolation-error* term dressed up as physics — it would produce four numbers that look like a budget and close to nothing.
+
+Reconstructing terms and calling the leftover "mixing" is exactly the failure mode the rule exists to stop, so I won't do it under any framing.
+
+**Disclosure on what I consulted:** I read the `ocean-budget`, `ecco`, and `consult-knowledge` skills in full. I could *not* read the underlying PO.DAAC concepts themselves (`knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, `conventions/ecco-budget-formulation.md`, `computations/ecco-heat-budget.md`) — this session's sandbox blocks listing and grepping outside `/home/user/run/evals`, so I cite those by the paths the skills name, not from their text. The mechanism above is general method on my part; the refusal itself is the skill's invariant and doesn't depend on reading them.
+
+## The native path
+
+Your region maps onto the **attested regional budget** (`ecco-regional-heat-budget`), which accepts an explicit box — the right fit, since the subpolar gyre isn't a registered region:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things you should know before running it:
+
+1. **Collections.** It needs the native LLC90 granules, not the 0.5° ones: `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (static geometry, one granule) plus the native monthly flux/forcing collections and the **snapshot** collections for the tendency bookends. The executor resolves the exact ShortName set itself; `load-ecco` is the route if you'd rather stage them by hand.
+2. **The data tree.** Needs `~/ECCO_V4r4` (2010 fixture, ~2.5 GB) or `~/ECCO_V4r4_record` (1992–2017), carrying the `RECORD.json` stamp from `tools/science_record_verify.py`. **I couldn't verify either exists** — the sandbox blocked me from reading them. If you haven't fetched and stamped a native tree, that's step one, and the attester will refuse an unstamped tree by construction.
+3. **An explicit box carries no anchor.** The attester's two-sided reference checks (wet-cell count, volume, residual per volume) only bind on `southeast-atlantic-upper`. Your box is disclosed by mask digest instead, and the report has to say so. Also: a lat/lon box in the subpolar North Atlantic is an **open domain** — closure is asserted only on closed domains, so the boundary transports travel explicitly in the result rather than being folded into a term.
+
+Tell me whether a stamped native tree is staged (and which years you want — 2010 fixture, or a span from the science record), and I'll run it, take it through the attester, and run `budget-auditor` on the result.
+
+**What your 0.5° product *is* good for:** heat *content* and its change, T/S structure, water-mass census, model-obs comparison. Those are legitimate on the regridded grid. If an OHC time series for the subpolar gyre would serve your actual question, say so — that's a different and much shorter path.

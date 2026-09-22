@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 144,
+  "chars": 4809,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget outright, cites the native-vs-regridded gotcha concept by name and explains the C-grid/discrete-divergence reason, and offers a concrete native llc90 path (geometry plus monthly and snapshot collections, month-boundary snapshots for the tendency, geothermal ancillary with its own gotcha, sanctioned executor command) without any workaround budget on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,49 @@
+## I can't compute this budget from that product — and the reason is structural, not a technicality
+
+**Refused: heat budget on regridded fields.** This fires before any computation, whatever the framing. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated product; no correct budget formulation exists on it. Gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid. The refusal is owned by the `ecco` skill and gated by `ocean-budget`; I did not attempt a workaround.
+
+Two independent reasons it can't be rescued:
+
+1. **The grid.** ECCO's budget closes because the MITgcm's own discrete flux divergences are exactly the ones on the llc90 C-grid, with `hFacC` partial cells and `rA * drF * hFacC` as the volume element. Interpolation to 0.5° destroys that discrete identity — the terms no longer sum to the tendency in any tolerance, and the residual you'd get would be interpolation error, not physics.
+2. **The variables.** Even ignoring the grid, that product carries `THETA` and `SALT` monthly means only. That is one of four required inputs, and in the wrong temporal form. Three of the four budget terms have no source in it at all.
+
+## What the native budget actually needs
+
+Read from the sanctioned executor (`skills/ocean-budget/scripts/ecco_regional_budget.py`, and `ecco_heat_budget.py`), not from memory:
+
+| Term | Native collection | In your 0.5° product? |
+|---|---|---|
+| Tendency `d(s*·THETA)/dt` | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` + `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` (`ETAN`) | No — monthly means, not month-boundary snapshots |
+| Advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | No |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (`TFLUX`, `oceQsw`) | No |
+| Geothermal at bottom cells | **Not a PO.DAAC collection** — `knowledge/podaac/gotchas/ecco-geothermal-flux.md` | No |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` (one static granule) | No |
+
+The geothermal term matters here specifically: a subpolar North Atlantic control volume that reaches the bottom has real bottom-cell coverage, and the executor's own measurement is that omitting geothermal still passes the absolute bar (1e-10 °C/s) and is caught only by the relative bar (1e-6). It is the first thing the auditor checks on a failed heat budget.
+
+## The path that works
+
+The attested route for a regional heat budget is `ecco-regional-heat-budget`, run through its sanctioned executor and attester:
+
+```bash
+uv run .../skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run .../skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to settle before that runs:
+
+- **No native tree is staged.** There's no `~/ECCO_V4r4/RECORD.json` (nor under `/root`), so nothing is fetched or stamped yet. The five collections above need fetching under an Earthdata Login, then one stamping pass with `tools/science_record_verify.py --checksum all --exact --stamp`. Every attester refuses a receipt from an unstamped tree.
+- **The box may not resolve.** An explicit `--box` is resolved on **one tile**. A 50–65°N, 60–10°W subpolar box may straddle llc90 tiles; if it does, the run will fail resolution and the domain needs to go in as a registered region rather than a box. I'd rather find that out from the executor than assert a tile layout from memory.
+- **An explicit box carries no anchor.** Registered regions get two-sided reference checks; a `--box` is disclosed only by its wet-mask digest, wet-cell count and volume. The report has to say so — the mask is your call to verify, not the attester's.
+
+Also: `--depth-m 1000` above is a placeholder. Full-depth vs. upper-ocean changes the physics you're asking about (full-depth brings in geothermal and deep overflow transports; upper-1000m is closer to a gyre heat-content question). Tell me which and I'll bind it.
+
+## What your downloaded product is good for
+
+It's a legitimate product, just not for this. Regridded T/S supports subpolar THETA/SALT maps and sections, T–S property comparisons, and heat-content-style inventories framed as changes with the potential-temperature baseline caveat — anything that doesn't require the discrete flux divergences to balance.
+
+**Consultation note:** I read `knowledge/computations/ecco-heat-budget.md` (status stable, human-verified through 2026-09-20), `skills/ecco/SKILL.md`, `skills/ecco/references/budget-formulation.md`, and both sanctioned executors, all in the `ocean-science` 0.9.0 root. I could **not** read the provider bundle (`nasa-daac-knowledge`, required `>=2026.9.2`): directory listing and grep outside the working directory are blocked in this session and `claude plugin list --json` wasn't approved, so I could not resolve its install path. The gotchas above are cited by bundle path as the skills name them and via the skill text that quotes their rules — I have not read those three concepts' full text, and the geothermal and hFac details should be re-read from them before a run. Say the word if you want to approve `claude plugin list` so I can close that gap.
+
+Want me to go ahead and stage the native collections for a year you pick?

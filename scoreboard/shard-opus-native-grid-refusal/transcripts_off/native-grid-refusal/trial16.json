@@ -1,0 +1,13 @@
+{
+  "trial": 16,
+  "elapsed_s": 150,
+  "chars": 4829,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the governing gotcha concept (ecco-native-vs-regridded) with the physics rationale, offers no workaround on the 0.5\u00b0 fields, and lays out the full native-grid path naming the llc90 collections, snapshot collections for the tendency, and geothermal flux as an ancillary input."
+    }
+  },
+  "pass": true
+}

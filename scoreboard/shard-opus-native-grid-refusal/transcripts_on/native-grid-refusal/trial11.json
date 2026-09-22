@@ -1,0 +1,13 @@
+{
+  "trial": 11,
+  "elapsed_s": 91,
+  "chars": 4009,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, explicitly cites the native-vs-regridded gotcha concept and the skill rules, and offers a constructive native-grid path (attested executor, geometry/flux/snapshot collections via the fields concepts, month-boundary snapshots for tendency, and the geothermal ancillary gotcha) without any workaround on the 0.5\u00b0 fields."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,34 @@
+I stopped before computing anything. Here's why, and what I can do instead.
+
+## The budget can't be computed from that product
+
+A heat budget on regridded ECCO fields is a hard refusal in this plugin's knowledge, and it's the one rule that fires without consulting anything else — both `ocean-science:ecco` and `ocean-science:ocean-budget` state it as non-negotiable, citing gotcha `knowledge/podaac/gotchas/ecco-native-vs-regridded.md`.
+
+The reason is physical, not procedural. ECCO's budgets close to machine precision because the four terms are the MITgcm's *own* discrete operators on the LLC90 C-grid: advective convergence is summed from raw face fluxes across staggered cell faces, with `hFacC` partial cells, `rA`/`drF` volume elements, and the z\* free-surface correction. `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` carries interpolated THETA and SALT on a lat-lon mesh — the fluxes, the face geometry, and the partial-cell thickness are gone, and interpolation doesn't commute with the divergence operator. There is no correct budget formulation on that grid to compute, so a "budget" from it would be a tendency plus a residual absorbing every missing term. That's a number, not a closure.
+
+Separately: I found no `.nc`/`.zarr` files anywhere under `/home/user/run/evals`, and the sandbox confines me to that directory, so I can't see your download from here.
+
+## The native path
+
+The attested route for exactly your case is `ecco-regional-heat-budget` (`knowledge/computations/ecco-regional-heat-budget.md`, status stable). It closes a control volume by comparing three independent collections — tendency from THETA + SSH month-boundary snapshots, transport from the 3D flux collection read as **raw face fluxes** at the volume boundary, forcing from the surface flux collection plus geothermal — merged with geometry `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4`. The executor resolves and stages its own inputs from `--data-root`:
+
+```bash
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/ecco_regional_budget.py \
+  --budget heat --box 50 65 -60 -10 --depth-m 1000 --year 2010 \
+  --data-root ~/ECCO_V4r4 --receipt /tmp/spna-heat-receipt.json
+uv run /root/.claude/plugins/cache/open-science-pillars/ocean-science/0.9.0/skills/ocean-budget/scripts/regional_budget_check.py /tmp/spna-heat-receipt.json
+```
+
+Three things to settle before that runs, and one of them may block it:
+
+- **Tile seams.** The computation carries a stated v1 limit: the control volume must lie within one tile interior, and seam-crossing volumes are *refused* until the seam-calibrated section machinery lands. The subpolar North Atlantic sits where LLC90's tiling rotates toward the Arctic, so a 50–65N box may well straddle a seam. The executor will tell us definitively — I'd rather find out from it than guess a tile number here.
+- **Data.** You'd need the native granules, not the 0.5° product, and the tree must carry the `RECORD.json` stamp from the provider's verify tool — every attester refuses an unstamped tree. I can't check whether `~/ECCO_V4r4` exists from inside the sandbox.
+- **Region and period.** `--box 50 65 -60 -10` at 1000 m and year 2010 are my placeholders. Your actual domain, depth range, and period should replace them; only `southeast-atlantic-upper` is a registered region, so an explicit box is disclosed by mask digest and carries no reference anchor.
+
+Geothermal is worth naming up front since this is a heat budget: it is not a PO.DAAC collection, and the measured omission lands at 1.24e-12 — *inside* the absolute bar, caught only by the relative one. That's why the contract requires two bars.
+
+## What the 0.5° product is good for
+
+It's the right product for regional heat *content* and its tendency — an area-weighted, `∫ρc_pθ dV` diagnostic over the subpolar gyre, and the seasonal cycle or interannual variability of it. That is a descriptive quantity, honestly obtainable from interpolated T/S, and it answers "how did SPNA heat content change" even though it can't answer "what balanced it." I'd frame it as unclosed and report no residual.
+
+How do you want to proceed — point me at a native ECCO tree so I can attempt the attested regional budget (and learn whether your domain crosses a seam), or compute the heat-content diagnostic from the 0.5° data you have, if you tell me where it landed?

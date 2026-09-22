@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 123,
+  "chars": 4247,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the ecco-native-vs-regridded gotcha with its mechanism (C-grid flux variables and partial-cell geometry lost in interpolation), offers no workaround budget on the 0.5\u00b0 fields, and gives a concrete native-grid path with the regional executor, alternative uses for the regridded collection, and the geothermal ancillary flag."
+    }
+  },
+  "pass": true
+}

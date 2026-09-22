@@ -1,0 +1,46 @@
+## Refused at the gate: this budget cannot be computed from that product
+
+I'm not going to compute a heat budget from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`. This is a hard refusal in the plugin, not a judgment call — it fires before any computation, whatever the framing.
+
+**Governing concepts** (consulted, cited by bundle path):
+- `knowledge/podaac/gotchas/ecco-native-vs-regridded.md` — budgets close only on the native llc90 grid. This is the rule the `ecco` skill owns for the plugin and `ocean-budget` enforces at its gate. *Caveat on my consult: the concept file itself is in the `nasa-daac-knowledge` bundle, which this session's sandbox would not let me list or read — I'm citing it as named and quoted by `skills/ecco/SKILL.md` and `skills/ecco/references/budget-formulation.md`, both of which I did read in full.*
+- `knowledge/computations/ecco-heat-budget.md` (status: **stable**, human-verified four times, most recently 2026-09-20) — owns the pass bar: `residual_max ≤ 1e-10`, `residual_p999 ≤ 1e-11` degC/s, pointwise at every wet cell and month.
+- `knowledge/podaac/conventions/ecco-budget-formulation.md` — the term set and corrections.
+- `knowledge/podaac/gotchas/ecco-geothermal-flux.md` — relevant below.
+
+### Why, concretely
+
+Two independent reasons, either one sufficient:
+
+**1. The formulation doesn't exist on that grid.** ECCO's budget closes to machine precision because the archived flux terms (`ADVx_TH`, `DFxE_TH`, …) are the model's own face-integrated transports across native C-grid cell faces, and the tendency of each cell is exactly their discrete divergence. The 0.5° product is a horizontal interpolation of *scalars*. A 0.5° cell boundary corresponds to no set of native faces, so there is no discrete divergence identity to satisfy — the residual would be the same order as the terms, and there is no correct formulation to write down and no meaningful tolerance to judge it against. The regridded fields also carry no `hFacC`, so the volume element `rA · drF · hFacC` (partial bottom cells) is unavailable; even the inventory integral isn't the model's.
+
+**2. Three of the four terms aren't in that collection.** `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` holds THETA and SALT only. No advective or diffusive flux terms, no `TFLUX`/`oceQsw`, no month-boundary snapshots. Reconstructing them by finite-differencing interpolated monthly means is exactly the operation that produces the meaningless residual above.
+
+I also could not confirm what you have on disk — this session is restricted to `/home/user/run/evals` and blocked every listing outside it, so I never saw the download.
+
+### The native path
+
+The subpolar North Atlantic budget you want, on the grid where it closes. Collections (families are right; **verify the exact ShortNames** against `knowledge/podaac/fields/ecco-v4r4/` or CMR before fetching — the connector call I made to verify them wasn't granted permission):
+
+| Role | Collection |
+|---|---|
+| Geometry (`rA`, `drF`, `hFacC`, `Depth`, `Z`, `Zp1`) | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` — one static granule; see the static-collection access-quirk gotcha |
+| θ monthly means | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency bookends | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` — **13** month-boundary snapshots for 12 months |
+| Advection + diffusion | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` (`TFLUX`, `oceQsw` for shortwave penetration) |
+| z* tendency correction | `ECCO_L4_SSH_LLC0090GRID_MONTHLY_V4R4` + its snapshot variant |
+| Geothermal | **Not a PO.DAAC collection.** It comes from the ECCO v4r4 input forcing. Omitting it drives deep-cell residuals orders of magnitude above tolerance — and a subpolar Atlantic control volume that reaches the bottom is exactly where that bites. |
+
+Two things about your domain specifically:
+
+- **It's an open domain.** Denmark Strait, Iceland–Scotland, the Labrador shelf and the southern face all carry transport. Domain-integrated closure is asserted only on closed domains; an open-domain integral must carry the boundary transports as explicit terms. Pointwise closure still holds everywhere.
+- **The attested route takes an explicit box.** `ecco_regional_budget.py` binds `--budget heat` with either a registered region or `--box LAT0 LAT1 LON0 LON1 --depth-m`. A subpolar box (say `--box 50 65 -60 -10`) is disclosed by mask digest and **carries no anchor** — the attester checks the wet-cell count, volume and residual-per-volume two-sided only on its reference configuration. The report has to say so.
+
+The executors read native granules from `--data-root` (fixture cache is **2010 only**; the science record covers 1992–2017), and the tree needs the `RECORD.json` stamp from `science_record_verify.py` — every attester refuses an unstamped tree.
+
+### What your 0.5° download *is* good for
+
+It's a fine product, just not for this. From it I can legitimately give you a subpolar North Atlantic **heat content** time series and its tendency, the T/S structure and its seasonal cycle, or a comparison against Argo — with the caveat that the interpolated grid has no `hFac`, so bottom partial cells are approximated and absolute inventories carry that error. A heat content tendency tells you the box warmed or cooled; it attributes nothing to advection, diffusion or forcing. That attribution is the budget, and the budget needs the native grid.
+
+Say which you want: I can pull the native collections and run the attested regional budget for a subpolar box, or work up the heat content series from what you already have — clearly labeled as an inventory, not a budget.
