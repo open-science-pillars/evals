@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 169,
+  "chars": 6022,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha, names the CRI product for the leakage-bounding difference against the unfiltered mascon grid, insists on mascon-scale (not 0.5\u00b0 cell) regional definition, states the ice-loss leakage risk with its sign-degeneracy against the real fingerprint, declines to quote a bare trend, and requires leakage plus GIA terms to be reported alongside formal errors on any trend."
+    }
+  },
+  "pass": true
+}

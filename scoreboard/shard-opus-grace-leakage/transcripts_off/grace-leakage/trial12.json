@@ -1,0 +1,14 @@
+{
+  "trial": 12,
+  "elapsed_s": 370,
+  "chars": 5055,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the coastal-leakage regime unprompted and correctly \u2014 naming the CRI filter and its limits, insisting on 3\u00b0 mascon-scale rather than 0.5\u00b0 grid-cell interpretation, stating that Greenland ice-loss leakage plus the gravitational fingerprint can exceed and mimic a real ocean-mass trend, and explicitly refusing to quote any trend whose error budget would be formal-error-only \u2014 with the absence of a number attributable to genuine data-access and missing-knowledge-bundle blockers rather than evasion.} [salvaged from a truncated judge reply]",
+      "salvaged": true
+    }
+  },
+  "pass": true
+}

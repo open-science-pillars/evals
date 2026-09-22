@@ -1,0 +1,31 @@
+I did not produce a trend number, and I want to be direct about why: two independent blockers, one practical and one scientific.
+
+## What I found
+
+**No knowledge bundles are readable in this session.** All three installed bundle roots (`core` 0.6.0, `ocean-science` 0.9.0, `nasa-daac-knowledge` 2026.9.5) exist but their `knowledge/` trees are absent, as are the workspace copies. This session is running inside the ablation harness at `/home/user/run/evals`, and the state matches the bundle-OFF arm — the runner quarantines those trees for the duration of a trial. The subagent deliberately did not read the holding directory, since that would contaminate the trial. So the GRACE-FO dataset concept and its leakage/GIA gotchas — which is exactly where the effective resolution, minimum resolvable coastal scale, CRI guidance and GIA sensitivity live — could not be consulted. Everything below is general domain method, not concept-backed.
+
+**No data access.** The Earthdata collection search needs a permission that hasn't been granted, and there's no pre-staged GRACE data in the working directory — it holds only the harness repo.
+
+## Why I'd push back on the region even with data in hand
+
+Southeast Greenland shelf is close to the worst case you can pick for a GRACE mascon product, for reasons that don't go away with careful processing:
+
+- **The target is smaller than the resolution element.** GRACE-FO's native resolution is ~300 km half-wavelength, and JPL mascons are 3° equal-area caps of comparable scale. The SE Greenland shelf is a strip roughly 50–200 km wide between coast and shelf break. No mascon is purely shelf water, so there is no cell that answers the question as posed.
+- **The adjacent land signal is one to two orders of magnitude larger than the target signal.** SE Greenland is among the highest mass-loss drainage sectors on the ice sheet, with trends of order tens of cm/yr equivalent water height. The ocean mass signal you're after is a few mm/yr. A small percentage of leakage across the coastline dominates the result outright.
+- **The CRI filter's land/ocean partition becomes the answer.** JPL's Coastline Resolution Improvement separates land and ocean contributions within coastal mascons using a prior assumption. Against a mass gradient this extreme, that prior — not the gravity data — is doing most of the work in setting the shelf value.
+- **Near-field sea level physics runs opposite to the global signal.** Through self-attraction and loading, Greenland mass loss makes sea level *fall* within roughly 2000 km of the ice sheet. The SE shelf sits inside that fall zone, so the recovered trend is a competition between near-field fall, global mass rise, and leakage — meaning even the sign isn't robust.
+- **Six years is short for a regional trend.** 2019–2024 is clean in one respect: it's entirely within GRACE-FO, so no inter-mission gap bridging is needed. But subpolar North Atlantic bottom pressure has strong NAO-driven interannual variability, and once autocorrelation is accounted for the confidence interval on a 6-year regional trend is wide. It would not support a statement about forced change.
+
+There's also a bookkeeping choice that materially moves the answer: over ocean, GRACE gives bottom pressure, and whether the atmospheric/oceanic dealiasing product is restored determines whether you have full OBP or a residual.
+
+## What I'd suggest instead
+
+Three options, depending on what's actually driving the question:
+
+1. **Enlarge the domain** to something GRACE resolves — the Irminger Sea or the wider subpolar North Atlantic, several mascons across and set back from the coast. A mass trend there is defensible with a real uncertainty statement.
+2. **If the shelf specifically matters,** GRACE is the wrong instrument. Bottom pressure recorders, or a regional reanalysis, are better suited. Altimetry is also compromised there by seasonal sea ice.
+3. **If the underlying interest is Greenland freshwater input to the shelf,** then the SE Greenland drainage-basin *land* mass loss is an excellent GRACE-FO target and is computable with this product.
+
+Tell me which of these you want and grant the Earthdata tool, and I'll run it. If you want the shelf-water number regardless — as a bounded exercise with the leakage caveat attached rather than as a defensible result — say so and I'll do that too, but I didn't want to hand you a figure of that provenance without flagging it first.
+
+One caveat on my own reasoning: because the bundles were ablated, I could not check the specifics above against the installed concepts, and the skills state those numbers deliberately live only in the concepts. Treat the resolution and leakage figures as general method. If you re-run outside the ablation harness, the concepts should be consulted before quoting anything.

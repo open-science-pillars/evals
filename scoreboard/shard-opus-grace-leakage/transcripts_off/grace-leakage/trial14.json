@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 249,
+  "chars": 5847,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha in full \u2014 names the CRI (coastline resolution improvement) filter and explains it is an allocation not added resolution, insists on ~3\u00b0 mascon-scale rather than the cosmetic 0.5\u00b0 grid, states that SE Greenland ice loss leaks one to two orders of magnitude larger than the ocean signal and would flip its sign, and quotes no bare trend (declining to compute one, proposing a distance-from-coast leakage diagnostic plus GIA/OBP/window caveats instead), so the formal-error-only failure mode does not arise."
+    }
+  },
+  "pass": true
+}

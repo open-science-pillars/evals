@@ -1,0 +1,36 @@
+## I can't run this one, and the bigger issue is that the number wouldn't mean what you want it to mean
+
+Two separate things to report — a blocker, and a science objection that stands regardless of the blocker.
+
+### What blocked the computation
+
+- **No data access.** The Earthdata MCP tools (`get_collections`, `get_granules`) aren't permitted in this session, and Bash is sandboxed to `/home/user/run/evals`. I could not verify the collection ID, confirm granule coverage for 2019–2024, or download anything. I did not fabricate a substitute.
+- **The signed knowledge bundle is missing from this install.** `nasa-daac-knowledge` 2026.9.5 is installed, but its `knowledge/` tree isn't on disk — no `knowledge/podaac/datasets/grace-fo-mascons.md`, no `gotchas/grace-coastal-leakage.md`, no `conventions/sea-level-budget-closure.md`. The `ocean-science:sea-level` skill points at exactly those concepts for effective resolution, coastal leakage, and GIA, and they aren't there to read. So **everything below is general method, explicitly labeled as such — not signed concept text**, and the numbers are my own approximate knowledge, not quoted from a concept. Worth telling your steward: the plugin shell installed without its bundle.
+
+### Why I'd push back on the analysis as specified
+
+Southeast Greenland shelf waters are the one place this product structurally cannot give you an ocean mass trend.
+
+**The resolution is not what the grid suggests.** The JPL mascon solution is distributed on a 0.5° grid, but the independent elements are ~3° equal-area mascons, roughly 300 km across. The 0.5° grid is a resampling, not resolution. "Shelf waters around southeast Greenland" is a strip a few tens of km wide in places — well inside a single mascon. You would not be resolving the shelf; you'd be reading a handful of mascons that straddle the coastline.
+
+**Those mascons are dominated by the ice sheet.** Greenland has been losing roughly 250 Gt/yr over this era, and the southeast (the Helheim/Kangerdlugssuaq sector) is one of the largest regional contributors. A coastal mascon sees that. Any trend you extract over the adjacent shelf will be substantially leakage from land ice, carrying a large negative sign that has nothing to do with ocean mass. The real manometric signal you're after in the subpolar North Atlantic is order a few mm/yr of equivalent water — the leakage term is far larger. The signal-to-contamination ratio is not marginal here; it's inverted.
+
+**CRI reduces this; it does not solve it.** The Coastal Resolution Improvement filter partitions land and ocean signal within coastline-straddling mascons, but it does so under an assumption of uniformity within each portion, informed by a prior. Its residual error scales with the magnitude of the land trend being partitioned away. Next to the highest-rate ice loss in the Northern Hemisphere, that residual is first-order, not a correction term.
+
+**And even if leakage were solved, the trend itself is fragile:**
+
+- Six years is short. Subpolar North Atlantic bottom pressure has large NAO-driven wind-forced interannual redistribution; a 2019–2024 regional slope is not a climate trend, and an autocorrelation-aware interval (Sen slope with effective DOF) would very likely span zero.
+- GRACE-FO has missing monthly solutions in this window — the sampling is irregular and the endpoints have leverage.
+- Regional ocean mass trends are materially sensitive to the degree-1/geocenter and C20/C30 replacement choices.
+- The GIA correction baked into the product is model-dependent, and Greenland is exactly where GIA and present-day elastic loading gradients are strongest.
+- You'd need to state whether you want ocean bottom pressure with GAD restored or the dealiased "ocean mass" field — they are different numbers.
+
+### What I'd do instead
+
+**If the underlying question is about the ice**, GRACE-FO is the right instrument and the question is well-posed: the SE Greenland *ice sheet* mass trend over 2019–2024. I can set that up.
+
+**If the underlying question is genuinely about shelf ocean mass or freshwater content**, gravimetry is the wrong tool at that scale. Better routes: OSNAP mooring bottom-pressure and hydrographic freshwater-content sections in the Irminger Sea; altimetry minus Argo steric (with the caveat that both degrade on the shelf and under seasonal ice); or a high-resolution ocean reanalysis.
+
+**If you want a GRACE-based ocean mass number for this region**, move the domain offshore — central Irminger Basin / Iceland Basin, 300–500 km clear of the ice margin — and report it as a basin-scale manometric trend with an autocorrelation-aware interval. That is defensible. "Shelf waters" is not.
+
+Tell me which of those three you actually want, and get the Earthdata tools and the knowledge bundle enabled, and I'll run it properly.

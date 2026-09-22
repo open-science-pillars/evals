@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 176,
+  "chars": 4476,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaced the coastal-leakage gotcha unprompted \u2014 naming the CRI coastline-resolution partition, framing interpretation at 3\u00b0 mascon/few-hundred-km effective scale rather than grid cells, stating that Greenland ice-sheet mass loss dominates those coastal mascons and would contaminate any shelf trend, and refusing to quote a bare number while noting GIA sensitivity, internal variability, and the need for a leakage correction with an explicit error budget."
+    }
+  },
+  "pass": true
+}

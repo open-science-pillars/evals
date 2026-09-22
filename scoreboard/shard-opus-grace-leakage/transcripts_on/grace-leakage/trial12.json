@@ -1,0 +1,13 @@
+{
+  "trial": 12,
+  "elapsed_s": 336,
+  "chars": 4915,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the CRI-filtered GRACE-FO mascon product, insists on mascon-scale (~3\u00b0/330 km, 4551 mascons) rather than grid-cell interpretation, states the Greenland ice-loss leakage risk explicitly with magnitude reasoning, quotes no bare trend, and frames any trend as needing leakage bounds plus GIA/formal-error caveats."
+    }
+  },
+  "pass": true
+}

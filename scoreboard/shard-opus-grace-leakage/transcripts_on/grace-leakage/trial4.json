@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 162,
+  "chars": 4711,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response names the CRI filter on JPL mascons, explains ~3\u00b0 mascon-scale resolution vs. the 0.5\u00b0 interpolated posting, states the Greenland ice-loss leakage risk contaminating shelf ocean cells, quotes no bare trend, and frames uncertainty as wide CI plus unquantified leakage rather than formal errors alone."
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,13 @@
+{
+  "trial": 14,
+  "elapsed_s": 221,
+  "chars": 5833,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha: names the CRI-filtered mascon product (vs. the unfiltered TELLUS_GRAC-GRFO_MASCON_GRID_RL06.3_V4), insists on ~3-degree mascon-scale rather than 0.5-degree grid-cell interpretation, quantifies the Greenland ice-loss leakage risk (including the sign trap), declines to quote a bare trend, and frames any future trend with formal errors plus separately quoted leakage and GIA systematics."
+    }
+  },
+  "pass": true
+}

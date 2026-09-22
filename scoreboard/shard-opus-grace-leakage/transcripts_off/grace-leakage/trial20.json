@@ -1,0 +1,13 @@
+{
+  "trial": 20,
+  "elapsed_s": 217,
+  "chars": 5624,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the CRI (Coastline Resolution Improvement) filter, explains mascon-scale (~300 km caps rendered on a 0.5\u00b0 grid) rather than grid-cell resolution, states the Greenland ice-loss leakage risk into coastal ocean mascons as sign-degenerate with the real fingerprint, and quotes no bare trend \u2014 committing instead to raw plus leakage-corrected values with the correction's own uncertainty alongside formal-error/autocorrelation caveats."
+    }
+  },
+  "pass": true
+}

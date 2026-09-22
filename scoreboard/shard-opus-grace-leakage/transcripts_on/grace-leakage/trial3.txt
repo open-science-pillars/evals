@@ -1,0 +1,34 @@
+## Short answer
+
+I did not produce a trend number, for two reasons — one procedural, one substantive.
+
+**Procedural:** Bash/Python execution and the Earthdata CMR calls were both declined at the permission prompt, so I could not download the mascon file or fit anything. Nothing below is a computed result.
+
+**Substantive, and the one that matters:** "ocean mass trend for the shelf waters around southeast Greenland" is not a quantity the JPL mascon product can deliver as posed. Had the computation run, it would have returned a confident-looking number that is mostly Greenland ice loss, not ocean mass.
+
+## What the knowledge bundle says
+
+I consulted the installed bundles per `core:consult-knowledge`. The controlling concept is `knowledge/podaac/gotchas/grace-coastal-leakage.md` — **severity high, status stable, human-verified** (PaulMRamirez, 2026-07-04) — and it names this exact case:
+
+> *"Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends near Greenland, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim."*
+
+Two independent failures stack here:
+
+1. **Leakage.** Mascons are 3° blocks; blocks straddling the SE Greenland coast integrate both the ice sheet and the shelf. The CRI filter partitions those blocks into land and ocean parts and "reduces leakage substantially but does not eliminate it." SE Greenland is adjacent to one of the largest mass-loss signals on Earth, so the residual after partitioning is being compared against an ocean signal orders of magnitude smaller.
+
+2. **Resolution.** Per `datasets/grace-fo-mascons.md`, the native information scale is the ~300 km mascon, not the 0.5° grid the data ships on. The SE Greenland shelf is narrower than a single mascon. The dataset concept's own rule: *"a basin whose area approaches or falls below the mascon scale is resolution- and leakage-dominated."*
+
+The gotcha's correct approach — *"keeps a buffer from strong land sources"* — has no valid instantiation here. The strong land source **is** the thing the shelf wraps around.
+
+One genuine point in your favor: 2019–2024 sits entirely within GRACE-FO, so it does not cross the 2017–2018 inter-mission gap (`gotchas/grace-intermission-gap.md`, high). That trap is avoided by your window choice.
+
+## What I can run instead
+
+Pick one and I'll do it, assuming Bash and the Earthdata calls get approved:
+
+- **Greenland ice-sheet mass balance, 2019–2024, at mascon scale.** This is what the product is *recommended* for, and it is the signal that would have dominated your shelf number. Method in `recipes/grace-mass-to-sea-level.md`, with formal error, leakage, and GIA quoted as separate terms.
+- **A leakage bound rather than an ocean trend.** Difference the CRI and unfiltered grids over the SE Greenland coastal mascons. That difference is the honest deliverable for this region — labelled as a leakage bound, not as ocean mass.
+- **Subpolar North Atlantic ocean mass with a real buffer** (Irminger/Labrador interior, whole mascons, one block clear of the coast). The gotcha states basin-scale open-ocean averages are robust; the trap is specifically the nearshore.
+- **Shelf-scale manometric change from a different observing system** — ECCO OBP, or altimetry minus Argo steric, or tide gauges with GNSS land motion. If the shelf is genuinely the target, gravimetry is the wrong instrument and one of these is the route.
+
+Whichever we run, the headline will need to name the product version (RL06.3Mv04, DOI 10.5067/TEMSC-3JC634), the baseline period, the applied GIA model (ICE-6G_D), and the degree-1 and C20/C30 series (JPL mascon-consistent geocenter; TN-14 v3) — those are pre-applied and must not be re-corrected.

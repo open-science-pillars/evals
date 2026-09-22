@@ -1,0 +1,39 @@
+## I did not compute it, for two separate reasons
+
+**Environment.** Python execution and the Earthdata MCP tools both require approvals that weren't granted in this session (`python3 --version` runs; `python3 script.py` and `get_collections` do not). No data was downloaded. I'm not going to quote you a trend number I didn't compute.
+
+**Science.** Even with full access, the quantity you asked for isn't recoverable from this product — and that's the more useful finding.
+
+## Why the SE Greenland shelf is the one place this product can't answer
+
+From the installed PO.DAAC bundle (`nasa-daac-knowledge` 2026.9.5), consulted before any method choice:
+
+`knowledge/podaac/gotchas/grace-coastal-leakage.md` — **severity high, status stable, human-verified** (PaulMRamirez, 2026-07-04; not yet stale) — names your exact case in its wrong-result section:
+
+> "apparent coastal sea level or ocean-mass trends **near Greenland**, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim."
+
+The geometry behind that, from `knowledge/podaac/datasets/grace-fo-mascons.md` (stable, verified twice, most recently 2026-09-13): the solution has **4,551 equal-area 3° mascons** (~1.1 × 10⁵ km², ~330 km across). The 0.5° grid you'd download *represents* those mascons — "the native information scale is the mascon, not the grid cell." The concept's Uncertainty section states the rule directly: "a basin whose area approaches or falls below the mascon scale is resolution- and leakage-dominated."
+
+The SE Greenland shelf is a ribbon roughly 100 km wide — my own scaling, not from a concept: the entire 60–68°N shelf is about the area of *one* mascon, smeared across four to six of them, and **every one of those also contains Greenland ice-sheet land**. There is no shelf mascon that isn't a coastal mascon.
+
+The signal ratio is what makes it hopeless rather than merely noisy (again my scaling, order-of-magnitude): the SE Greenland drainage sector sheds tens of Gt/yr, while a genuine manometric trend of 1 mm/yr over that shelf area is ~0.1 Gt/yr. Roughly two to three orders of magnitude. The CRI filter "reduces leakage substantially but does not eliminate it" — it does not have three orders of magnitude of headroom. A number would come back, it would look plausible, and it would essentially be a rescaled Helheim/Kangerdlugssuaq mass-loss curve.
+
+There's a second trap if you were to interpret such a number: `grace-gia-correction.md` (medium, stable) notes ICE-6G_D is **already applied** — don't re-correct — and that GIA-model spread is largest near formerly glaciated regions, with formal errors excluding it entirely.
+
+One thing that *doesn't* bite you: 2019–2024 sits entirely after the 2017–2018 hole, so `grace-intermission-gap.md` (severity high) doesn't constrain this window. Worth stating explicitly, since it would for almost any longer one.
+
+## What I'd run instead
+
+The script I've attached implements the recipe (`grace-mass-to-sea-level.md`, stable) — mascon-scale masks, true areas, linear + annual + semiannual fit, AR(1)-widened CI — but its purpose is the three diagnostics, which *are* computable and would let you show this rather than take my word for it: how many mascons the strip touches and what fraction of each is shelf; CRI minus unfiltered as the leakage bound the recipe prescribes; and whether the "shelf" trend tracks the adjacent ice sheet or a buffered open-ocean box. If it tracks the land, that settles it. It is untested — I couldn't run a line of it.
+
+Depending on what you actually want:
+
+- **Greenland meltwater input to the shelf** — well-posed for GRACE. Sum the *land* mascons of the SE drainage basins. That's the product's flagship use case, and `grace-mass-to-sea-level.md` covers it end to end.
+- **Shelf ocean bottom pressure** — needs ECCO OBP or a regional model. GRACE cannot resolve it here at any processing level.
+- **Coastal relative sea level** — PSMSL gauges plus GNSS vertical land motion, via this plugin's connectors and `recipes/regional-sea-level-trend.md`.
+
+Worth flagging for whichever you pick: near a shrinking ice sheet the gravitational fingerprint drives local sea level *down* even as the global mean rises, so the true shelf manometric trend is plausibly negative — the opposite sign from what leakage would imprint. That's textbook fingerprint physics, not something I computed or found in a concept.
+
+Bundles searched: `core` 0.6.0, `ocean-science` 0.9.0, `nasa-daac-knowledge` 2026.9.5 (`knowledge/podaac/`). I could not read the installer record — `claude plugin list --json` needs approval — so I located the provider bundle by path; if other bundles are installed, they weren't searched.
+
+Tell me which reframing you want and I'll write it up properly, though you'll need to grant execution and Earthdata access before any of it produces a number.

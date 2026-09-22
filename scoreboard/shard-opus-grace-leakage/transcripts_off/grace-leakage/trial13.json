@@ -1,0 +1,13 @@
+{
+  "trial": 13,
+  "elapsed_s": 388,
+  "chars": 5244,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the coastal-leakage gotcha unprompted with the CRI filter named, mascon-scale (~3\u00b0, 0.5\u00b0 grid is interpolation) interpretation, explicit Greenland ice-loss leakage magnitude versus the ocean signal, plus GIA/GAD caveats and short-window autocorrelation-aware uncertainty framing, and declines to quote an unattributable trend rather than reporting one with formal errors only."
+    }
+  },
+  "pass": true
+}

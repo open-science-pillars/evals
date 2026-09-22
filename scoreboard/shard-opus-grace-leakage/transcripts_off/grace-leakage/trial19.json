@@ -1,0 +1,14 @@
+{
+  "trial": 19,
+  "elapsed_s": 293,
+  "chars": 5419,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the coastal-leakage gotcha unprompted and correctly \u2014 names the CRI filter, insists on ~3\u00b0/300 km mascon-scale resolution versus the misleading 0.5\u00b0 posting, states that Greenland ice-loss leakage is same-signed and plausibly comparable to the ocean-mass trend, and quotes no bare trend, instead framing any future estimate as needing leakage plus autocorrelation-aware (not formal-only) uncertainty.} [salvaged from a truncated judge reply]",
+      "salvaged": true
+    }
+  },
+  "pass": true
+}

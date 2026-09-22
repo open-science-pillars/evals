@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 286,
+  "chars": 6479,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the CRI (Coastline Resolution Improvement) filter, explains that the 0.5\u00b0 grid masks ~3\u00b0 mascon-scale estimation units, quantifies the ice-loss leakage risk (~200 mm/yr land signal vs ~2 mm/yr ocean, so 1% leakage swamps the signal) including the sign-degeneracy trap, and explicitly states leakage is first-order and absent from the product's formal error budget rather than quoting a bare trend."
+    }
+  },
+  "pass": true
+}

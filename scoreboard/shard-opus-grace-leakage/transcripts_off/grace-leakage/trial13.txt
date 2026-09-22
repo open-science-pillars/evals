@@ -1,0 +1,35 @@
+## Bottom line
+
+I did not produce a trend number, for two separate reasons — one environmental, one scientific. The scientific one is the important one: **"ocean mass trend for the shelf waters around southeast Greenland" is not a quantity the JPL mascon product can resolve**, and a number computed that way would be dominated by ice-sheet leakage rather than by ocean mass.
+
+## Environment blockers (factual, not a judgment call)
+
+- Data access and execution were refused in this session: `claude plugin list`, Python/`earthaccess` invocations, and the Earthdata CMR MCP tools all came back needing approval that wasn't granted. So no granules were fetched and nothing was computed.
+- **The PO.DAAC knowledge bundle is not installed.** `core@0.6.0`, `ocean-science@0.9.0` and `nasa-daac-knowledge@2026.9.5-6b0ef007a964` are all installed and enabled, but none of them contains a `knowledge/` directory — the skills cite paths like `knowledge/podaac/conventions/sea-level-budget-closure.md` and `knowledge/podaac/datasets/…`, and none resolve. So **no installed concept covers GRACE mascon leakage or GIA here**, and everything below is general method, labeled as such — I'm not citing concepts I couldn't read. Worth repairing: `claude plugin update nasa-daac-knowledge@open-science-pillars`.
+
+Also relevant: `ocean-science`'s attested sea-level computations are ECCO-only, and their region registry is `gulf-of-mexico`, `north-sea`, `us-northeast-coast`. There is no sanctioned GRACE regional-mass executor and no SE Greenland region, so there was no attested path to a receipted number either.
+
+## Why the number wouldn't mean what it looks like
+
+**Resolution.** The JPL solution estimates ~4,551 equal-area 3° mascons (~1.1×10⁵ km² each, roughly 300 km). The 0.5° grid it ships on is interpolation, not information. A shelf strip off SE Greenland is ~100–200 km wide — narrower than a single estimation unit. There is essentially no mascon there that is purely ocean; the same unit contains Helheim/Kangerdlugssuaq-sector ice.
+
+**The leakage arithmetic.** Order of magnitude, from general knowledge rather than a concept: the SE Greenland sector loses something like 40 Gt/yr. Spread over one mascon that's ~360 mm/yr of equivalent water thickness. A genuine ocean-mass (manometric) trend is a few mm/yr — call it under 15 mm/yr even allowing for the near-field fingerprint. **Leakage of even 5% of the land signal exceeds the entire ocean signal.** JPL's Coastline Resolution Improvement filter suppresses this using an a-priori land/ocean partition, but it does not eliminate it, and the residual is not locally quantified. Whatever slope you'd fit, you could not attribute it.
+
+**A confound that makes it worse.** Within ~2000 km of a shrinking ice sheet, relative sea level *falls* — loss of gravitational attraction plus elastic uplift. So the real ocean-mass signal on that shelf is negative, and the leakage error is also negative. They are the same sign and the same order of magnitude. You cannot separate them with the mascon field alone, which means the trend would look physically plausible while being largely an artifact. That's the trap worth naming.
+
+**Three smaller things that would still bite.** The mascon grid has a GIA model (ICE6G-D family) baked in, and GIA uncertainty near Greenland is large relative to a shelf-scale ocean signal. Over ocean you must restore the GAD de-aliasing to get bottom pressure — the raw land/ocean EWH grid is not OBP. And the land gain factors (CLM-derived) must not be applied over water.
+
+**Window length.** 2019–2024 is ~6 years with several missing GRACE-FO months. Barotropic, wind-driven bottom-pressure variability on subpolar shelves is large, so an autocorrelation-aware CI on a 6-year regional trend would be wide enough to include zero even if the field were clean.
+
+## What I'd actually run
+
+Pick the one that matches your question:
+
+1. **If you want Greenland ice mass** — the mascons are excellent for this. Aggregate the SE Greenland drainage sector; that's the product's design case.
+2. **If you want shelf ocean mass specifically** — GRACE can't do it. OSNAP has bottom pressure recorders in the Irminger Sea / SE Greenland shelf region; that's the direct measurement. Failing that, altimetry minus steric, or a high-resolution model (GLORYS12 at 1/12°; ECCO at ~1° is also too coarse for a shelf).
+3. **If you want the sea-level fingerprint** — drive a forward elastic/SAL calculation with the GRACE-derived ice loss, rather than reading the fingerprint out of GRACE's own ocean field next to the ice.
+4. **If you want a GRACE-only ocean-mass trend that survives review** — Irminger/Labrador basin interior with a ≥500–750 km buffer from the Greenland coast, which excludes the shelf by construction, GAD restored, GIA choice stated, CI from an AR(1)-aware fit, and an explicit note that the window is short.
+
+Tell me which, and approve data download plus Python execution, and I'll run it end to end. Option 4 is the closest defensible thing to what you originally asked for — I'd just want to be explicit that it answers a different question than "shelf waters."
+
+I can also write this up as a shareable page if it's going to a collaborator rather than just to you.

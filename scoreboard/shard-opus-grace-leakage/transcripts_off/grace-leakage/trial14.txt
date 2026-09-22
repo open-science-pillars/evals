@@ -1,0 +1,46 @@
+I couldn't run the computation — and separately, I don't think the computation as specified would tell you what you want. Details on both, plus what I'd do instead.
+
+## What blocked the run
+
+No data path in this session:
+- The Earthdata MCP tools (`get_collections`, `get_granules`) are not permitted here — the discovery call was denied.
+- Outbound `curl` to CMR was denied, so I couldn't substitute a direct CMR query.
+- No Earthdata credentials are present (no `/root/.netrc`; the token check was denied), so `earthaccess` couldn't authenticate against PO.DAAC even if the network opened up.
+- Nothing relevant is cached locally — the working directory is an eval-runner repo, no GRACE data.
+
+`uv` and `python3` are available, so the compute side is fine; only the data is missing.
+
+## Knowledge-bundle consult: came up empty, and that's a gap worth naming
+
+Per `core:consult-knowledge`, here's what was searched. The installer record couldn't be read (`claude plugin list --json` was denied). Searching the reachable roots by hand:
+
+- `core` 0.6.0 and `ocean-science` 0.9.0 are installed and readable, but **neither contains a `knowledge/` directory** in this install, though both READMEs say they ship one.
+- `ocean-science`'s README and the `sea-level` skill both point the GRACE facts — effective resolution, coastal leakage, GIA — at `knowledge/podaac/` in the **`nasa-daac-knowledge`** plugin, declared as a dependency at `>=2026.9.2` and listed in the marketplace at `nasa-daac-knowledge--v2026.9.5`. **It is not present in the plugin cache.** So the concepts that specifically own this question were not searched, because they aren't here.
+
+Everything below is therefore **general method, not concept-cited**. I'm not going to invent concept paths or quote numbers as if they came from a signed bundle. The missing provider bundle is itself the finding to report to the steward: `claude plugin install nasa-daac-knowledge@open-science-pillars` (or reinstalling `ocean-science`, which pulls it) is what would close it, and `land-ice@open-science-pillars` v0.2.0 — which carries the attested Greenland mass-balance computations — is also absent.
+
+## Why the number would have been misleading anyway
+
+The request asks for an *ocean* mass trend in the one place where GRACE-FO's *land* signal is largest and its resolution is worst. Three things compound:
+
+**1. There is no such thing as a shelf mascon there.** JPL's solution is ~4,500 equal-area 3° spherical-cap mascons (~300 km), posted on a 0.5° grid for convenience — the 0.5° cells inside one mascon carry identical values, so the fine grid is cosmetic, not resolution. The southeast Greenland shelf is roughly 50–150 km wide. Every mascon covering it also covers ice sheet.
+
+**2. Southeast Greenland is among the largest concentrated mass-loss signals on Earth.** The Kangerdlugssuaq–Helheim sector loses mass at rates that, expressed as equivalent water thickness over a mascon, run to hundreds of mm/yr. A plausible ocean-mass trend on that shelf is a few mm/yr (the barystatic term plus regional redistribution). Order-of-magnitude, leakage across the coastline is one to two orders of magnitude larger than the signal you're asking about. The answer wouldn't be "noisy" — it would be a measurement of Greenland, wearing an ocean label, and it would come out strongly negative, opposite in sign to what the physics of that shelf implies.
+
+**3. CRI does not rescue this.** The coastline-resolution-improvement filter partitions land and ocean *within* a straddling mascon using a priori assumptions. It's an allocation, not added resolution, and its residual error scales with the land signal it's separating from — which here is the worst case globally.
+
+Two further issues that would bite even on a clean patch of ocean: the standard TELLUS mascon grid is not an ocean-bottom-pressure product as distributed (the de-aliasing product has to be handled deliberately before a manometric reading), and the trend carries the product's baked-in GIA model. And 2019–2024 is six years starting in Greenland's extreme 2019 melt year, with a handful of missing GRACE-FO months — the window itself loads the result before any leakage.
+
+## What I'd do instead
+
+Pick by what you're actually after:
+
+- **Freshwater input to the SE Greenland shelf** — this is almost certainly the real question, and it's a *land-ice* problem, not an ocean one. GRACE-FO mascons over the SE Greenland drainage basins, with proper basin masks. That's the signal that's contaminating the ocean answer; measure it directly. The `land-ice` plugin exists for exactly this and isn't installed here.
+- **Manometric sea level / OBP on the shelf** — GRACE is the wrong instrument at this scale. In-situ bottom pressure recorders, or a state estimate, with GRACE used only over the open Irminger/Labrador interior, several hundred km clear of the coast.
+- **Total sea level on the shelf** — altimetry (NASA-SSH) with a steric estimate, noting that Argo doesn't sample shelf water.
+
+## If you want the GRACE number anyway
+
+Reasonable — it's a legitimate thing to look at as long as it's labeled as a leakage diagnostic rather than an ocean measurement. Give me Earthdata credentials plus network or MCP access and I'll run it, with a built-in test rather than an assumption: compute the same area-weighted trend over a series of ocean masks at increasing distance from the coast (0–100 km, 100–300, 300–500, >500 km) and plot trend against offshore distance. If the magnitude decays toward the open-ocean value as you move away, that curve *is* the leakage, quantified. Trend by Sen slope with an AR(1)- or block-bootstrap-adjusted confidence interval, seasonal cycle removed first, and the exact PO.DAAC ShortName and release confirmed in CMR rather than assumed.
+
+Say the word and I'll write it up as a shareable page.

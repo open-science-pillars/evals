@@ -1,0 +1,35 @@
+I consulted the installed bundles before touching any data, and the result changes the answer rather than decorating it. Here is where it landed.
+
+## I did not produce a trend number, and the reason is the region, not the tooling
+
+`knowledge/podaac/gotchas/grace-coastal-leakage.md` (severity **high**, status **stable**, human-verified 2026-07-04) names your exact case as its wrong-result mode:
+
+> "Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends near Greenland, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim."
+
+The geometry is the problem. Per `knowledge/podaac/datasets/grace-fo-mascons.md` (stable, human-verified 2026-09-13), the JPL solution estimates mass on **4,551 equal-area 3-degree spherical caps** — roughly 110,000 km² each, about 335 km on a side — and is distributed as 0.5° grids that *represent* those mascons: "the native information scale is the mascon, not the grid cell." The southeast Greenland shelf is a strip on the order of 50–150 km wide (general geography, not from a concept). It does not contain a single whole ocean mascon. Every mascon you would touch is a coastline-straddling one whose land half sits under the Helheim–Kangerdlugssuaq sector, among the fastest-losing parts of the ice sheet.
+
+The recipe that owns regional mascon sums, `knowledge/podaac/recipes/grace-mass-to-sea-level.md` (stable), requires the region be "a mask defined at mascon scale (whole mascons, chosen from the placement file), **never at 0.5-degree cell scale**." Your region cannot satisfy that.
+
+**Why this one is especially treacherous.** A naive computation would not return garbage — it would return a strong *negative* ocean-mass trend that looks physically right. Ice-loss leakage pushes the coastal ocean mascon negative, and the real manometric signal near a shrinking ice sheet is also negative (the sea-level fingerprint: reduced gravitational attraction plus solid-Earth uplift depress relative sea level within ~2,000 km of Greenland — standard physics, not from a bundle concept). The artifact and the signal share a sign and a rough magnitude. You would have no way to tell them apart from the number alone, and the leakage term is explicitly *not* in the product's formal errors: the dataset concept states the formal grids "do NOT include the two dominant systematic terms: coastal leakage ... and the GIA model choice ... both exceed the formal errors regionally."
+
+Separately, there are no Earthdata Login credentials in this environment (`~/.netrc` absent) and no staged mascon granules, so the fetch step was not available either. But that is the smaller obstacle — the region definition is the blocking one.
+
+## What does hold for your window
+
+Three things in your favour, worth stating because they are the usual suspects and they are clean here:
+
+- **2019–2024 sits entirely after the inter-mission gap.** `knowledge/podaac/gotchas/grace-intermission-gap.md` (high, stable) covers July 2017–May 2018 plus August/September 2018; your window starts after all of it. No bridging argument needed.
+- **GIA and the low-degree terms are pre-applied, so nothing gets re-corrected** — but any trend you quote must name them: ICE-6G_D at the 2008-01-01 epoch, C20/C30 from TN-14 version 3, and JPL's own mascon-consistent geocenter (`gotchas/grace-gia-correction.md`, medium/stable; `gotchas/grace-low-degree-replacements.md`, medium/stable).
+- Two file-vintage points land inside your window. RL06.3Mv04 differs from v3 in an **accelerometer transplant** touching January–February 2023 and July 2023 onward — over a third of 2019–2024. And a **July 2025 fix corrected the GAD mass added back to the ocean part of land/ocean mascons**, carried only by files extending past March 2025 (`recipes/grace-mass-to-sea-level.md`, quoting the release note). That fix applies precisely to the coastal ocean mascons you were asking about, so the file vintage would have moved your answer.
+
+## Three ways forward — pick by what you actually want to know
+
+**1. If you want ocean mass (manometric) change in this sector.** Reframe to the open Irminger Sea: whole ocean mascons with a one-mascon buffer from the Greenland coast, per the gotcha's correct approach ("Basin-scale open-ocean averages are robust; the trap is specifically the nearshore"). Bound the residual leakage by differencing the CRI grid against the unfiltered `TELLUS_GRAC-GRFO_MASCON_GRID_RL06.3_V4` over the coastal mascons, and quote that as its own term beside the formal error. For scale, the bundle's attested global ocean-mass anchor is +2.299 mm/yr over 2005–2016 (95% half-width 0.205). This is defensible — but it is the Irminger basin, not the shelf.
+
+**2. If you actually want the southeast Greenland ice loss.** Then the product is right and the region is just on the other side of the coastline — the collection is the *recommended* one for land-ice applications. Route through `knowledge/nsidc/recipes/ice-sheet-balance.md` and the land-ice plugin's attested `ice-sheet-balance` computation, and note `gotchas/ice-sheet-boundaries-and-drainage-basins.md`: "southeast Greenland" must name which basin set defines it.
+
+**3. If you want sea level on the shelf itself.** GRACE is the wrong instrument at that scale. Use altimetry (NASA-SSH), the PSMSL/CO-OPS tide-gauge connectors, and Argo steric via `ocean-science/knowledge/recipes/regional-sea-level-trend.md`.
+
+Tell me which of the three you meant and I will run it properly — for 1 or 2 I will need Earthdata Login credentials staged.
+
+**Bundles searched:** core 0.6.0, ocean-science 0.9.0, and the PO.DAAC and NSIDC provider bundles in nasa-daac-knowledge 2026.9.5. I could not read the installer's record (`claude plugin list --json` requires approval in this session), so I resolved bundle roots through the marketplace manifest instead; if other bundles are installed outside that manifest, they were not searched.

@@ -1,0 +1,44 @@
+I could not run this end-to-end — several things I need are gated in this session. Here's where it stands, and the part of the answer that doesn't depend on running anything, because it's the more important part.
+
+## What's blocked
+
+- **Bash execution**: every command beyond listing the working directory returned "requires approval" — no Python, so no compute.
+- **Earthdata (CMR) queries**: `get_collections` isn't permitted yet, so I couldn't even confirm the exact JPL mascon collection ID, version, or granule coverage for 2019–2024, let alone download it.
+- **The installer record**: `claude plugin list --json` wasn't approved, and directory listing outside `/home/user/run/evals` is blocked.
+
+## Which knowledge I could and couldn't consult
+
+I reached two bundle roots by absolute path: **core 0.6.0** and **ocean-science 0.9.0** (`knowledge/index.md` in each). Neither holds a GRACE concept.
+
+The `sea-level` skill is explicit that the GRACE facts you'd need here — effective resolution, coastal leakage, and the baked-in GIA correction — live in the **PO.DAAC provider bundle** (`knowledge/podaac/`, the `nasa-daac-knowledge` dependency, floor `>=2026.9.2`), which I could not locate without the installer record. Precedence rules say that provider concept wins over anything I remember, so I'm not going to quote its numbers from memory. Everything below is labeled general method, not concept-backed.
+
+I also checked the attested route: ocean-science's sanctioned computations (`ecco-regional-sea-level`, `ecco-steric-height`) are ECCO-only, bounded to 1992-01–2017-12, and registered for `gulf-of-mexico`, `north-sea`, `us-northeast-coast`. Nothing attested covers GRACE-FO, 2019–2024, or Greenland — so even with data this would be general-method work, with no receipt behind the number.
+
+## The substantive problem with the question
+
+Even fully unblocked, I don't think I could give you a defensible number for *this* quantity, and I'd rather say so than hand you one.
+
+JPL mascons are solved on ~3° equal-area caps — roughly 300 km. They're *distributed* on a 0.5° grid, but that posting is interpolation, not resolution. The shelf strip around southeast Greenland is narrower than a single mascon. There is no "shelf waters" domain to average over; any polygon you draw there is sampling mascons that are substantially land.
+
+That matters more than usual at this specific location, for two independent reasons:
+
+1. **Leakage.** Southeast Greenland sits next to one of the largest and most sharply varying mass-loss signals on Earth. The CRI filter partitions land and ocean within coastal mascons, but residual leakage scales with the adjacent land signal — and here it's enormous. A trend computed over those cells would be dominated by ice loss bleeding into the ocean estimate.
+2. **The sea-level fingerprint.** The real manometric signal near a rapidly deglaciating ice sheet is *negative* — reduced gravitational attraction and elastic uplift move water away from the melting mass. Ocean mass near Greenland falls while global ocean mass rises.
+
+So a computed trend there would very likely come out negative, and you'd be unable to separate how much is genuine local ocean mass loss (fingerprint, real and interesting) from how much is Greenland's ice leaking into your ocean cells (artifact). Both push the same direction, which is exactly the situation where a number looks clean and means nothing. Add a 6-year window against strong interannual bottom-pressure variability in the Irminger/Labrador system, and the CI would be wide even before the leakage problem.
+
+## What I'd suggest instead
+
+- **Enlarge the domain**: an Irminger Sea or Labrador Sea basin average, held several mascon-widths off the coast, is a quantity mascons can actually resolve.
+- **Keep the fingerprint question but ask it properly**: a fingerprint gradient across the subpolar North Atlantic is measurable; a shelf-strip trend is not.
+- **For the shelf specifically**: bottom pressure recorders or a model OBP field are the right instruments. GRACE is the wrong one at that scale.
+
+## To go further
+
+Tell me which you'd like, and grant the matching approvals:
+
+- `claude plugin list --json` — so I can reach the PO.DAAC bundle and cite the actual GRACE leakage/GIA/resolution concepts rather than my general knowledge.
+- MCP `get_collections`/`get_granules` — to pin the exact mascon product and confirm 2019–2024 coverage.
+- Bash/Python plus Earthdata credentials — to compute a basin-scale trend with an autocorrelation-aware CI.
+
+If you want the Irminger or Labrador basin version, say so and I'll set it up as soon as the tools open; I can write it up as a shareable page if this is going to anyone else.

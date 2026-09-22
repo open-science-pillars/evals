@@ -1,0 +1,60 @@
+## Bottom line
+
+I can't give you a trend number, for two separate reasons. One is mechanical; the other is the actual answer to your question.
+
+**Mechanical:** every command I tried beyond listing this directory was denied — no Python, no network, no Earthdata access. So no computation happened, and I'm not going to quote a figure I didn't compute.
+
+**Scientific, and the one that matters:** "ocean mass trend for the shelf waters around southeast Greenland" is not a quantity the JPL mascon product can deliver. If I had run it, the number would have been dominated by leakage from the ice sheet, not by ocean mass.
+
+## Why the mascon product can't resolve that region
+
+The JPL GRACE/GRACE-FO mascon solution is distributed on a 0.5° grid, which routinely misleads people. The 0.5° grid is a rendering convenience — the actual estimation units are ~3° equal-area mascons, roughly 300 km across. The southeast Greenland shelf is a strip on the order of 100–200 km wide. There is no mascon there that is a shelf mascon; every candidate cell straddles ice sheet, fjords, shelf, and open Irminger Sea, and inherits a single value from its parent mascon.
+
+JPL's Coastline Resolution Improvement filter partitions land and ocean signal within straddling mascons, which helps, but it assumes the land and ocean parts are each spatially smooth. Next to the highest-loss sector of Greenland that assumption is at its weakest.
+
+Here's the scaling that decides it — my own arithmetic, so check it:
+
+- A coastal mascon there is order 10⁵ km² ≈ 10¹¹ m².
+- The Helheim/Kangerdlugssuaq sector loses order 20 Gt/yr = 2×10¹³ kg/yr.
+- That's ~200 kg/m²/yr, i.e. **~200 mm/yr of equivalent water height** in the land part of the mascon.
+- The entire global ocean mass trend is ~2 mm/yr.
+
+So a **1% residual leakage** from land into the ocean part of that mascon equals the whole global barystatic signal. CRI residuals near a signal this large and this non-uniform are not at the 1% level. The leakage term is first-order, and it is not in the product's formal error budget.
+
+## The trap that makes this actively dangerous
+
+Near a rapidly deglaciating ice sheet, the real sea-level fingerprint drives ocean mass *down* within roughly 1000–2000 km — reduced gravitational attraction plus solid-earth uplift. So the genuine manometric signal on that shelf is expected to be negative.
+
+Leakage from ice loss is *also* negative.
+
+A naive extraction will therefore produce a plausible-looking negative shelf trend, of roughly the magnitude you'd half-expect, that is mostly an artifact. This is the failure mode where the wrong answer passes the smell test.
+
+## Other things that would move the number
+
+- **GAD (de-aliasing) convention.** Whether the atmospheric/high-frequency ocean de-aliasing product has been restored determines whether you have ocean bottom pressure or the post-de-aliasing residual. PO.DAAC distributes distinct variants. In a subpolar sea with large storm-driven pressure variability this is not a detail. Verify against the specific product's user handbook — I couldn't.
+- **GIA.** Removed from the product using a single model. Near Greenland, GIA model choice (ICE6G-D vs. Caron-type) differs enough to be a large fraction of a small regional trend. Any headline number needs a sensitivity test across GIA models, not a single value.
+- **C30 / accelerometer transplant.** 2019–2024 is entirely GRACE-FO, which is good — no inter-mission bridging. But the GF2 accelerometer transplant and C30 replacement add long-wavelength noise exactly where a small regional signal lives.
+- **Record length.** ~6 years, minus GRACE-FO's missing months, against strong NAO-driven interannual bottom-pressure variability in the subpolar North Atlantic. Fit trend plus annual and semiannual jointly, and get the confidence interval from an autocorrelation-aware method or a block bootstrap — naive OLS will understate the interval by a factor of two to three.
+
+## What I'd compute instead
+
+1. **Basin-scale, honestly posed.** Ocean mass trend for the Irminger Basin / subpolar North Atlantic, restricted to mascons whose centers are ≥500 km from the ice margin. That is a resolvable quantity with a defensible uncertainty.
+2. **Shelf-scale with explicit leakage correction.** Forward-model the Greenland land signal (from a land-only GRACE inversion or an independent mass-balance product), propagate its gravitational leakage into the ocean mascons, subtract, and carry the correction's own uncertainty. This is the only route to a shelf number worth quoting.
+3. **The diagnostic that settles it either way.** Compute the trend as a function of distance from the coast, and with and without CRI. If the value migrates strongly as you step offshore, leakage dominates — and you've converted the caveat into evidence rather than an assertion. I'd run this first regardless of which of the above you choose.
+
+If you want a genuine shelf-scale manometric signal, GRACE is the wrong instrument. Bottom pressure recorders, or tide gauges differenced against altimetry-minus-steric, resolve that scale; GRACE does not.
+
+## What I need to actually run it
+
+Bash and network approval, an Earthdata Login for `earthaccess`, and a decision on which of the three framings above you want.
+
+## Provenance note — a gap worth fixing
+
+This repo's convention is to consult installed knowledge concepts before acting on a dataset, and the `sea-level` skill points specifically at a GRACE dataset concept plus its leakage and GIA gotchas — exactly the concepts this question turns on. **I could not read any of them.** Everything above is general domain knowledge and my own arithmetic, labeled as such, not concept-backed.
+
+What I searched:
+
+- `ocean-science` 0.9.0 and `core` 0.6.0 installed roots (paths from the skills themselves). Neither has a readable `knowledge/` tree — I probed two concept files named verbatim by the package's own `CONNECTORS.md` (`knowledge/connectors/psmsl-gauges.md`, `argo-floats.md`); both absent.
+- `nasa-daac-knowledge` — the PO.DAAC provider bundle where the GRACE concepts live — is enabled in `~/.claude/settings.json`, but I couldn't find its install root: `claude plugin list --json` needs approval, and directory listing outside `/home/user/run/evals` is blocked.
+
+So the concept-backed numbers and the product-specific GAD/GIA facts are gaps here, not settled facts. If the trees were moved aside deliberately, that explains it; if not, the install is worth checking.

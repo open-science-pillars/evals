@@ -1,0 +1,13 @@
+{
+  "trial": 19,
+  "elapsed_s": 764,
+  "chars": 4518,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the CRI filter, insists on whole-mascon (not grid-cell) interpretation, explicitly states the Greenland ice-sheet leakage risk dominating nearshore shelf trends, and notes the shipped formal uncertainties exclude leakage and GIA, quoting no bare trend."
+    }
+  },
+  "pass": true
+}

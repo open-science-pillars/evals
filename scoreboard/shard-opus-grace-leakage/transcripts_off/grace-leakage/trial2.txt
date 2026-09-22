@@ -1,0 +1,36 @@
+I could not compute this, and there are two separate reasons — one environmental, one scientific. The scientific one matters more.
+
+## What I could and couldn't consult
+
+Per the `core:consult-knowledge` convention, GRACE statements must come from the installed knowledge concepts, not from memory. I got the skills but not the concepts:
+
+- **Read:** `ocean-science:sea-level`, `sea-level-analysis`, `sea-level-budget` (all from `ocean-science 0.9.0`). These name the concepts that own the facts I need — the GRACE dataset concept and its **coastal-leakage** and **GIA** gotchas, plus `knowledge/podaac/recipes/grace-mass-to-sea-level.md` and `knowledge/podaac/conventions/sea-level-budget-closure.md`.
+- **Not read:** every one of those concepts. They live in the `nasa-daac-knowledge` PO.DAAC provider bundle (declared as an ocean-science dependency, `>=2026.9.2`). `claude plugin list --json` was denied, `ls`/`find` outside `/home/user/run/evals` is blocked, and I have no Glob/Grep, so I could only probe paths by hand; no `knowledge/` tree was reachable under either plugin root in the cache.
+- Also denied: the Earthdata CMR tools, so I could not even confirm mascon granule coverage for 2019–2024.
+
+So: **no installed concept was actually read.** Everything below is general method, labeled as such, and the numbers that would settle it live in concepts I could not open.
+
+## The scientific problem with the request as posed
+
+Shelf waters around southeast Greenland is close to the worst-case geometry for a mascon ocean-mass trend:
+
+- JPL mascons are 3° blocks with an **effective resolution of a few hundred km**. "Shelf waters" off SE Greenland is a strip narrower than that — it is not resolved, it is a partition of cells that also contain ice sheet.
+- Those cells sit against **the largest land mass-loss signal in the Northern Hemisphere**. Greenland's ice loss is orders of magnitude larger than the ocean-mass signal you are asking for, so even a small fractional leakage across the coast dominates the result. A trend computed there is mostly an artifact of how the land/ocean split was done, not ocean mass.
+- The CRI filter partitions land and ocean within coastal mascons, which is exactly what makes the product usable near coasts — but the residual is first-order here, and the `slb_mass_mascons.py` loader in the ocean-science package is explicit that the CRI partition is the product's own and **no further coastal buffer is applied**. It computes a *global* ocean mean for that reason.
+- Separately, GRACE trends over 2019–2024 carry a **GIA-model sensitivity** that for some regions exceeds measurement noise, and a 6-year window in a region with strong dynamic variability needs an internal-variability caveat before anything is called a trend.
+
+A single mm/yr number for that strip would be reportable-looking and wrong. I'm not going to produce one.
+
+## What the sanctioned computations actually cover
+
+Neither attested computation fits this question: `sea-level-budget` is **global**-mean ocean mass (and refuses a period crossing the 2017-07–2018-05 gap without a cited bridge — your 2019–2024 window is clear of it); `ecco-regional-sea-level` is ECCO, 1992–2017, regions `gulf-of-mexico`, `north-sea`, `us-northeast-coast`. There is no attested regional GRACE trend to run.
+
+## What I'd suggest instead — pick one and I'll do it
+
+1. **Open-ocean box, not the shelf** — Irminger Sea / Labrador Basin interior, kept several mascons clear of the Greenland coast. Defensible manometric trend with a leakage caveat.
+2. **The signal you may actually be after** — Greenland ice-sheet mass loss for SE Greenland. That's the *land* term, it's what dominates those mascons, and the `land-ice` plugin covers it.
+3. **The shelf, done properly** — needs a leakage/forward-model correction with an explicit error budget, not a raw mascon average, and ideally cross-checked against ocean bottom pressure (ECCO OBP or BPR moorings).
+
+To unblock the environment side, either approve `claude plugin list --json` plus directory listing under `/root/.claude/plugins`, or point me at the `nasa-daac-knowledge` checkout. Data access also needs the CMR tools approved and an Earthdata Login (`EARTHDATA_TOKEN` or `~/.netrc`).
+
+One gap worth recording for the steward: no concept covers a **regional** shelf-scale GRACE mass trend or the leakage correction it would require — the bundle's GRACE guidance, as the skills describe it, is framed around the global budget.

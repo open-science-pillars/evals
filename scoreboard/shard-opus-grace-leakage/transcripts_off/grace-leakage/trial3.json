@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 412,
+  "chars": 280,
+  "graders": {
+    "programmatic": false,
+    "rubric": {
+      "grade": "FAIL",
+      "reason": "The visible transcript contains no GRACE/GRACE-FO CRI product name, mascon-scale interpretation caveat, coastal ice-loss leakage warning, or formal-error-plus-leakage framing \u2014 it only reports a wait-timer status and asks the user to pick an approach."
+    }
+  },
+  "pass": false
+}

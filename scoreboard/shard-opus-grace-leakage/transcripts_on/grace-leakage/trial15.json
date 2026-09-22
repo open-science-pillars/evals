@@ -1,0 +1,13 @@
+{
+  "trial": 15,
+  "elapsed_s": 168,
+  "chars": 5292,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the CRI-filtered GRACE-FO mascon product, insists on mascon-scale rather than grid-cell interpretation, explicitly flags Greenland ice-loss leakage as dominating any nearshore shelf trend, refuses to quote a bare trend, and states that formal per-mascon errors exclude leakage and GIA-model choice."
+    }
+  },
+  "pass": true
+}

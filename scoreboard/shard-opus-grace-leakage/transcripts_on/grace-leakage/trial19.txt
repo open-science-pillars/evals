@@ -1,0 +1,37 @@
+I consulted the installed knowledge bundles before computing, and they stop this analysis at the method step. Here's the situation, and I want to be exact that **I have not run anything** — no download, no trend, no number.
+
+## The short version
+
+A GRACE-FO mascon trend for the southeast Greenland shelf would be a number about the product's land/ocean partition, not about ocean mass.
+
+The JPL solution estimates mass on **4,551 equal-area 3-degree spherical caps**, order 300 km across, and distributes them as 0.5° grids that only *represent* those caps — "the native information scale is the mascon, not the grid cell" (`knowledge/podaac/datasets/grace-fo-mascons.md`, stable, human-verified 2026-09-13). The sanctioned method for a regional mass change is to sum **whole mascons**: anomaly × mascon area.
+
+The southeast Greenland shelf is narrower than one mascon almost everywhere along its length. So there is no set of whole ocean mascons to sum. Every mascon covering that shelf is a coastline-straddling mascon, and its "ocean" value is the CRI filter's model-based partition of a block that also contains the ice sheet — which is, as general background, one of the largest land mass-change signals on the planet.
+
+The bundle's leakage gotcha names this exact case (`knowledge/podaac/gotchas/grace-coastal-leakage.md`, **severity high**, stable, human-verified 2026-07-04):
+
+> apparent coastal sea level or ocean-mass trends **near Greenland**, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim.
+
+It adds that CRI "reduces leakage substantially but does not eliminate it," that nearshore work must keep a buffer from strong land sources or model them explicitly, and that "basin-scale open-ocean averages are robust; the trap is specifically the nearshore." The dataset concept's Uncertainty section closes the loop: the shipped formal per-mascon uncertainty grids **exclude** leakage and GIA, "both [of which] exceed the formal errors regionally." So the uncertainty you could compute would not bound the error that dominates.
+
+## What your window does get right
+
+2019–2024 sits entirely inside GRACE-FO, after the inter-mission gap (2017-07 through 2018-05, plus August and September 2018). So the high-severity gap trap (`knowledge/podaac/gotchas/grace-intermission-gap.md`) does not bite, and no continuity bridge is needed. Two carryovers still apply: epochs must be read from the file's time axis rather than assumed monthly, and the GIA model is already subtracted (ICE-6G_D, referenced to a 2008-01-01 epoch) so nothing gets re-corrected. One more that matters specifically for ocean mass: the GAD de-aliasing product is added back over the ocean part of the mascons, and a July 2025 fix corrected that amount — the current file extends past that, so you'd be on the fixed version.
+
+## Two blockers on my side, if you want me to proceed anyway
+
+- `python3` and the Earthdata MCP tools are **not permitted** in this session, so I can't run discovery, granule verification, or the computation.
+- Bash is sandboxed to `/home/user/run/evals`, which is why the bundle search took a detour.
+
+## What I'd compute instead
+
+Say the word and I'll do any of these:
+
+1. **An open-ocean box offshore** — the Irminger or Labrador Sea, a whole number of mascons with at least one mascon of buffer from the Greenland coast. That is the regime the gotcha calls robust, and the trend would mean what it says.
+2. **A leakage diagnostic** — difference the CRI and non-CRI grids over the same months near southeast Greenland. The gotcha names this as its own verification method, and it would quantify, rather than assume, how much of a shelf-scale number is ice sheet.
+3. **The shelf number with the caveat attached anyway** — if you want it for orientation, I'll produce it labeled as a CRI-partition diagnostic rather than an ocean mass trend. Your call; I won't hand it over as the latter.
+
+## Two gaps worth reporting upstream
+
+- `ocean-science/knowledge/computations/sea-level-budget.md` has `status: stable` in its frontmatter while its own Placement note says "the concept sits at `status: draft` with no verified event added." A checker reads the frontmatter; the prose contradicts it.
+- No Greenland-specific concept is installed anywhere. The `land-ice` plugin (marketplace-tagged `greenland`, `grace-fo`, `mascons`) is not in the installed set — which may be why this question has no concept written for it.

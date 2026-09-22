@@ -1,0 +1,46 @@
+## I did not compute this, and I want to be plain about why
+
+Two independent blockers, neither of which I can work around from here:
+
+**1. No data access.** The Earthdata connector (`get_collections`) is not permission-granted in this session, `python3` is not approved, and my Bash is sandboxed to `/home/user/run/evals`. I never downloaded a mascon granule and never fit a trend. There is no number in this reply, and any number I gave you would be invented.
+
+**2. The knowledge bundle that governs this exact computation is not installed.** This one matters more than the first.
+
+The plugin `nasa-daac-knowledge@open-science-pillars` (version `2026.9.5-6b0ef007a964`) is installed and enabled, but its entire `knowledge/` subtree is absent — verified directly: `knowledge/podaac/index.md` does not exist, while the plugin's `README.md`, `docs/` and `tools/` do. The same is true of `core/0.6.0/knowledge/` and `ocean-science/0.9.0/knowledge/`. Every root is populated *except* its knowledge tree, which is a packaging or install defect, not a layout I misread.
+
+Per core's `consult-knowledge` convention ("when nothing matches": say so, proceed on general method labeled as such, and never invent a concept, a path, a number, or a citation) — **no installed concept covers the GRACE-FO mascon product.** I can't cite one, so I won't.
+
+What the *installed skill text* does say, and which is the whole point here — `ocean-science/0.9.0/skills/sea-level/SKILL.md`:
+
+> **Gravimetry (GRACE/GRACE-FO mascons):** ocean mass, i.e., the manometric piece. Its effective resolution, **coastal leakage**, and the baked-in GIA correction are **first-order** and live in the GRACE dataset concept and its gotchas; consult and cite them.
+
+That skill deliberately holds no numbers of its own ("Never carry those numbers or rules here"), so the facts that would bound your answer are precisely the missing files. Two named concepts that provably should exist — cited by path inside installed skills — are unreadable here: `knowledge/podaac/conventions/sea-level-budget-closure.md` and `knowledge/podaac/recipes/grace-mass-to-sea-level.md`.
+
+## Why I'd push back on the question even with the data in hand
+
+This is general domain knowledge, **not** concept-backed, and should be re-checked against the concepts once they're installed:
+
+Southeast Greenland shelf is close to the worst-case region on Earth for this particular product. Three things collide:
+
+- **The region is smaller than the measurement.** JPL mascons are 3° equal-area elements (served on a 0.5° grid, which flatters the true resolution). The SE Greenland shelf is narrower than a single mascon, so "shelf waters" is not a resolvable target — you'd be reading a land–ocean blend. The CRI filter mitigates but does not eliminate this.
+- **The largest nearby signal is on land.** Greenland is losing mass at a couple hundred Gt/yr. Residual leakage from that into the adjacent ocean mascons is plausibly larger than the ocean-mass trend you're trying to measure, and it has the same sign as a real ocean mass loss — so the result looks physical and is not.
+- **Part of the true signal is also not what it appears.** Greenland's ice loss lowers local sea level via the gravitational fingerprint — reduced self-attraction pulls water away from the coast. So a genuinely negative ocean-mass trend on that shelf is expected and is a *signature of ice loss*, not the shelf gaining or losing water for oceanographic reasons. Leakage and fingerprint are separately negative and hard to disentangle at mascon resolution.
+
+Add GIA uncertainty (large and model-dependent around Greenland, and the correction is already baked into the product) and a 6-year window that is short against interannual variability, and the honest result is a number whose dominant error terms you cannot state.
+
+Your 2019–2024 window does at least sit cleanly **after** the GRACE/GRACE-FO inter-mission gap — `skills/sea-level-budget/SKILL.md` puts that at 2017-07 through 2018-05, so the gap-crossing refusal would not fire.
+
+## To unblock
+
+```
+claude plugin update nasa-daac-knowledge@open-science-pillars
+```
+
+Also worth installing: `land-ice` (marketplace tags include `greenland`, `grace-fo`, `mascons`) is the likelier home for ice-sheet leakage knowledge, and it isn't enabled. Approving the Earthdata connector and `python3` would cover the data side.
+
+## Two things I need from you before re-running
+
+1. **Ocean mass (mascons) or ocean bottom pressure as a dynamical field?** On a narrow shelf beside Greenland these diverge and route to different products entirely.
+2. **Is the Greenland signal your target or your contaminant?** If you want shelf ocean mass with ice loss removed, that's a leakage-correction problem. If you want the combined coastal signal, it's a much weaker claim. I won't pick for you.
+
+If the real question is Greenland's mass loss, mascons are the right tool pointed at the right place — the ice sheet itself, not the shelf beside it. Say the word and I'll set that up instead once the bundle is back.

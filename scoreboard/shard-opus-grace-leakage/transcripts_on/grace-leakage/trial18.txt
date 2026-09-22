@@ -1,0 +1,38 @@
+I consulted the installed knowledge bundles before touching the data, and the result changes the answer, so let me give you that first.
+
+## I stopped short of running it, and the reason is the result itself
+
+`knowledge/podaac/gotchas/grace-coastal-leakage.md` (provider tier, **status stable, severity high**, human-verified by PaulMRamirez 2026-07-04) names your exact case as its wrong-result mode:
+
+> "Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends **near Greenland**, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim."
+
+The geometry is the problem, and it isn't fixable by masking harder:
+
+- JPL RL06.3Mv04 solves **4,551 equal-area 3° spherical caps** — roughly 112,000 km² each, about **330 km across**. The 0.5° grid you'd download is a *rendering* of those caps, not independent information (`knowledge/podaac/datasets/grace-fo-mascons.md`, stable, human-verified twice, most recently 2026-09-13).
+- The southeast Greenland shelf is roughly **50–150 km wide** over most of that coast, widening toward Kap Farvel. It is comfortably **sub-mascon**. Every mascon with shelf water in it also contains ice sheet.
+- So there is no set of *whole ocean mascons* covering the SE Greenland shelf, which is what the recipe requires: "the region is a set of whole mascons taken from the placement file … never at 0.5-degree cell scale" (`knowledge/podaac/recipes/grace-mass-to-sea-level.md`, stable). The gotcha's correct approach — "keeps a buffer from strong land sources or models them explicitly" — has no buffer available here.
+
+## What the number would have looked like, and why I won't hand it to you
+
+You would have gotten a **strongly negative** ocean mass trend, and it would have been read as the shelf losing mass. Order of magnitude, clearly labeled as an argument and not a computed result:
+
+- Greenland's ice loss over 2019–2024 is order **a few hundred Gt/yr**, concentrated within a few hundred km of your box — i.e. inside the same mascons.
+- The genuine ocean-mass signal there is the *sea-level fingerprint* of that melt, which is **negative near Greenland** (the ice sheet's gravitational pull on the ocean relaxes as it thins) at order **1–3 mm/yr**, or a few tenths of a cm/yr of equivalent water thickness.
+
+That's a signal-to-leakage ratio of roughly **1:10 to 1:100**. The CRI filter "reduces leakage substantially but does not eliminate it." You'd be measuring the ice sheet through an ocean mask and calling it ocean mass.
+
+Three things specific to your 2019–2024 window that compound it:
+
+1. **2019 was an extreme Greenland melt year** and it sits at the start of the window, so it levers the slope hard — the leakage term is not just large, it's front-loaded.
+2. **A July 2025 fix corrected the GAD mass added back to the ocean part of land/ocean mascons**, and only files whose series runs past March 2025 carry it (release note, via the dataset concept). That fix lands on precisely the coastal land/ocean mascons your region is made of.
+3. Accelerometer-transplant wide-dead-band months (Jan–Feb 2023, Jul 2023 onward) sit inside your window. The 2017–18 inter-mission gap does *not* — 2019–2024 is entirely GRACE-FO, so that one gotcha is clear.
+
+## What I can do instead — pick one and I'll run it
+
+1. **Bound the leakage explicitly.** Compute the trend over your shelf mascons from *both* the CRI grid (`TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4`) and the unfiltered grid (`..._MASCON_GRID_RL06.3_V4`). The recipe names that difference over coastal mascons as the leakage bound. This gives you a defensible statement of the form "the shelf trend is X ± formal, with a leakage term of Y that exceeds it" — which is an honest published-quality result, just not the one you asked for.
+2. **Move the box offshore.** Whole ocean mascons in the Irminger Sea / central Denmark Strait, one full mascon clear of the coast, will give a real manometric trend with the fingerprint signal in it. This is the version that survives review.
+3. **Reframe to the quantity GRACE actually resolves here** — the SE Greenland *ice sheet* drainage-basin mass trend over 2019–2024, which is a well-posed mascon-scale problem and is probably the signal you're circling anyway.
+
+I'd suggest 1 and 2 together: the offshore trend as the result, the CRI-minus-unfiltered difference as the leakage caveat.
+
+One practical note: running any of these needs your approval for Python execution and a PO.DAAC download in this sandbox — my `python3` and directory-listing calls were both blocked, so I verified coverage from the dataset concept's CMR check (2026-09-13, one granule spanning 2002-04-16 to 2026-07-16) rather than live. Say which option and I'll set it up.

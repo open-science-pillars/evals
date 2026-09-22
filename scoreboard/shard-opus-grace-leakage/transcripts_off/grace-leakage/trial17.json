@@ -1,0 +1,13 @@
+{
+  "trial": 17,
+  "elapsed_s": 392,
+  "chars": 4832,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the coastal-leakage gotcha unprompted with all required elements \u2014 names the CRI filter and its residual-error limitation, insists on ~3\u00b0 mascon-scale rather than the 0.5\u00b0 grid, states that SE Greenland ice loss (~250 Gt/yr) would dominate any shelf trend as leakage, and quotes no bare trend, instead framing any would-be trend as fragile under leakage plus formal/structural error (GIA, geocenter/C20-C30, short record, autocorrelation)."
+    }
+  },
+  "pass": true
+}

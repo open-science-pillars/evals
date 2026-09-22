@@ -1,0 +1,13 @@
+{
+  "trial": 3,
+  "elapsed_s": 171,
+  "chars": 3796,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaces the coastal-leakage gotcha with the CRI-filtered product named (RL06.3Mv04/DOI), mascon-scale (~300 km, not 0.5\u00b0 grid) interpretation, explicit Greenland ice-loss leakage contamination risk, and commits to formal-error-plus-leakage-plus-GIA framing for any trend it would quote \u2014 no bare trend is given."
+    }
+  },
+  "pass": true
+}

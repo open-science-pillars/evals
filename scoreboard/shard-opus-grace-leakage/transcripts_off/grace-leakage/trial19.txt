@@ -1,0 +1,37 @@
+The knowledge agent came back, and it changes the answer. Here's where things stand.
+
+## I can't compute this, and I won't estimate it
+
+Three things are unavailable, and each alone blocks the result:
+
+1. **Code execution** — every non-trivial Bash call ("requires approval"), so no subsetting, masking, or trend fit.
+2. **The Earthdata connector** — `get_collections` isn't granted, so I can't even verify which JPL mascon collection and granules exist for 2019–2024.
+3. **The knowledge bundle is not on disk.** This is the important one. The `knowledge/` trees for `core`, `ocean-science`, and `nasa-daac-knowledge` have all been removed. The GRACE dataset concept, the coastal-leakage gotcha, the GIA gotcha, the inter-mission-gap concept, the validity domains, and the smell-test ranges are all absent.
+
+That third point is not incidental. These skills are deliberately written to hold *no* dataset facts — `sea-level/SKILL.md:29-36` names the GRACE resolution, leakage, and GIA facts and then says **"Never carry those numbers or rules here."** The skills confirm the concepts exist and refuse to restate them. So with the bundle gone, there is no sourced value for the one number this whole question turns on: how much Greenland Ice Sheet mass loss leaks into an adjacent ocean mascon.
+
+The agent also found recorded answers to this exact question sitting in the working directory — prior model transcripts, a results file, and a case file the repo's own README calls "an answer sheet." It didn't read them, and neither will I. Lifting the figures from there would be contamination dressed up as retrieval, and the transcripts are bundle-off outputs anyway — the least authoritative source available.
+
+## What I can tell you, labeled as general method, not concept-sourced
+
+Everything below is my own background knowledge. It is exactly what the bundle exists to supersede, so treat it as a sketch to be replaced, not as a citation:
+
+**The region you picked is close to the worst case for this product.** JPL mascons are roughly 3° equal-area blocks — order 300 km across. The southeast Greenland shelf is narrower than that. The product is *posted* on a 0.5° grid, which fools people constantly: the posting is interpolation, not resolution, so a pretty-looking half-degree map of the shelf carries no independent shelf-scale information. There is essentially no mascon there that is purely ocean.
+
+**The contaminating signal is enormous and has the same sign as the real one.** Greenland has been losing mass at a few hundred Gt/yr. The CRI filter partitions land from ocean inside coastline-straddling mascons, but residual leakage from a source that large is plausibly comparable to or bigger than the ocean-mass trend you're after. Worse: there is a genuine physical signal here — as the ice sheet loses mass its gravitational pull weakens, so relative sea level actually *falls* within roughly a couple thousand km of Greenland. Leakage and real signal both push negative. A result can look physically reasonable and still be mostly leaked ice mass. That is the trap, and it's why "compute it and caveat it" isn't good enough.
+
+**The window is short and badly anchored.** 2019–2024 is about six years of monthly solutions, with gaps in the GRACE-FO record, and it opens on an extreme Greenland melt year. A six-year trend is endpoint-sensitive, and a naive OLS confidence interval on autocorrelated monthly mass data will understate the true uncertainty substantially — this needs an autocorrelation-aware treatment, not a least-squares slope.
+
+**Two corrections I'd need the concept to pin down** rather than recall: which GIA model is baked into the mascons and whether it's applied over ocean cells (GIA is large and model-dependent near formerly glaciated margins like this one), and the dealiasing convention — whether GAD has been restored, which determines whether you're looking at ocean bottom pressure or total ocean mass.
+
+One thing I'd actively warn against: the scale/gain factors shipped with the mascon product are derived from a **land** hydrology model to restore land amplitude. They are not an ocean leakage correction and shouldn't be applied here.
+
+## What I'd need from you
+
+**To do it properly:** restore the bundle (`claude plugin install ocean-science@open-science-pillars` pulls `core` and `nasa-daac-knowledge` with it), and grant Bash plus the `mcp__plugin_core_earthdata__*` tools. Then I'll consult the leakage and GIA concepts, follow whatever treatment they require, and run it.
+
+**If the bundle can't be restored,** I can fetch the concepts from the upstream GitHub repo instead — but that's upstream `main`, not the version-pinned installed bundle, so it carries no release provenance, and I'd label it as an upstream read rather than a consult. Your call; I haven't done it.
+
+**A substantive alternative worth considering:** if what you actually want is an ocean-mass trend you can defend, move the box offshore — the Irminger Sea or the Iceland Basin, far enough from the coast that the mascons are ocean-interior. That trades the shelf specificity you asked for against a number that means what it says. If the shelf itself is the target, GRACE is likely the wrong instrument and bottom pressure recorders or a high-resolution model would serve better.
+
+Tell me which way you want to go, and confirm the box you had in mind (I'd guessed something like 62–68°N, 42–30°W).

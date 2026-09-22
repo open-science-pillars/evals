@@ -1,0 +1,36 @@
+## Short answer
+
+I can't hand you a defensible number for that domain, and the reason isn't tooling — it's that the JPL mascon product cannot resolve "shelf waters around southeast Greenland" as a separate thing from the ice sheet next to it. A trend computed over that box would come back strongly negative and would be read as "ocean mass is falling on the SE Greenland shelf," but most of that signal would be Greenland Ice Sheet mass loss leaking into the coastal mascons.
+
+Two practical notes on this session first:
+
+- **No knowledge bundle was reachable.** I searched the running plugins' own roots (`core/0.6.0`, `ocean-science/0.9.0`) as `core:consult-knowledge` directs. Those trees carry `skills/` but no `knowledge/` directory, so the GRACE dataset concept, its coastal-leakage and GIA gotchas, and `knowledge/podaac/recipes/grace-mass-to-sea-level.md` — all of which `ocean-science:sea-level` and `ocean-science:sea-level-budget` point at by path — could not be read. `claude plugin list --json` isn't runnable here either. **Everything below is general method, not concept-backed**, and no number is quoted from a concept or a receipt.
+- **No data access was granted.** The Earthdata MCP tools and Python are both gated in this session, so I could not verify granule coverage or compute anything. Nothing below is a computed result.
+
+## Why the computation as specified doesn't work
+
+**The footprint is larger than the target.** JPL estimates on 3°×3° equal-area spherical caps (~300 km on a side) and distributes them on a 0.5° grid. The 0.5° grid is a rendering convenience, not resolution — sub-mascon structure in it is imposed, not observed. The SE Greenland shelf is a ~100–200 km strip. There is essentially no mascon covering that shelf that does not also cover ice sheet.
+
+**The neighbouring signal is enormous.** Greenland has been losing mass at order a few hundred Gt/yr, and the southeast is among the largest-loss sectors. The CRI (Coastline Resolution Improvement) filter in the product does separate land and ocean portions within coastal mascons, which is exactly why it exists — but it does so through an assumed partition, and residual leakage next to a source that large is comparable to or bigger than any true ocean-mass trend. For scale: global mean ocean mass rise is roughly +2 mm/yr equivalent water thickness. Leakage from a basin shedding tens of Gt/yr smeared over a ~300 km footprint is order-of-magnitude larger than that in the adjacent ocean cells.
+
+**The artifact and the real signal have the same sign.** Self-attraction and loading means relative sea level and ocean mass genuinely *fall* near a melting ice sheet, out to ~2000 km. So a negative shelf trend is exactly what both the physics and the artifact predict. You cannot tell them apart by inspecting the mascon field — which is what makes this particular domain a trap rather than merely a noisy one.
+
+**Three more bookkeeping items** that would bite even if leakage were solved:
+- **GIA is baked in** (ICE6G-D for the RL06 series). Around Greenland and Baffin Bay the GIA field is large and models disagree; for some basins the GIA-model choice moves a trend more than measurement noise does.
+- **Dealiasing convention.** The mascon ocean field has the GAD product removed. If you want ocean bottom pressure rather than the product's native quantity, GAD gets added back — check the PO.DAAC product docs for the exact convention before differencing against anything else.
+- **Start-point sensitivity.** 2019 was an extreme Greenland melt year. Anchoring a 6-year linear fit to it materially changes the slope. With ~70 monthly samples, a strong seasonal cycle and autocorrelated residuals, the trend also needs an autocorrelation-aware interval (Sen's slope with a block bootstrap, or an AR(1)-adjusted fit), and 6 years is short against North Atlantic decadal variability regardless.
+
+One genuine point in your window's favour: 2019–2024 sits entirely inside GRACE-FO, so it never crosses the 2017-07 → 2018-05 inter-mission gap and needs no bridge. Occasional missing months within the record should be dropped, never interpolated.
+
+## What I'd do instead
+
+Which one depends on what you're actually after:
+
+1. **If the question is about Greenland's mass loss** — use the land-ice mascon basin estimates directly, or IMBIE / ICESat-2, rather than reading it off the ocean side of the coastline.
+2. **If the question is genuinely shelf ocean mass / bottom pressure** — GRACE can't deliver it at that scale. Bottom pressure recorders, a shelf-resolving ocean reanalysis, or altimetry-minus-steric are the routes. (ECCO v4r4 won't help: 1° and it ends in 2017.)
+3. **If the question is the sea-level fingerprint** — compute the predicted fingerprint forward from an independent mass-loss estimate and compare it to GRACE, instead of trying to extract the fingerprint from the contaminated coastal mascons.
+4. **If you want a GRACE ocean-mass trend in this region that survives review** — take it over the Irminger or Labrador Sea interior, several hundred km off the ice sheet, and state the standoff distance explicitly.
+
+If you want to press ahead with the shelf domain anyway, I'd need data access restored, and I'd report the raw shelf-average trend *and* a leakage-corrected version side by side with the correction's own uncertainty — expecting the two to differ by more than the signal itself, which is the honest result to publish.
+
+Tell me which of the four framings matches your question and I'll set it up. I can also put this as a short methods memo on a page you can pass to a co-author if that's useful.

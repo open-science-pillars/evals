@@ -1,0 +1,13 @@
+{
+  "trial": 4,
+  "elapsed_s": 284,
+  "chars": 4822,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response surfaces the coastal-leakage gotcha unprompted with all required elements \u2014 JPL CRI named and explained as a prior-driven land/ocean partition, mascon-scale (~300 km / 3\u00b0 caps vs. a 50\u2013200 km shelf strip) rather than grid-cell interpretation, explicit Greenland ice-loss leakage dominance, plus SAL near-field fall and autocorrelation caveats \u2014 and quotes no bare trend, so the formal-error-only failure mode does not occur."
+    }
+  },
+  "pass": true
+}

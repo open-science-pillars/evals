@@ -1,0 +1,13 @@
+{
+  "trial": 18,
+  "elapsed_s": 136,
+  "chars": 4819,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaced the coastal-leakage gotcha, named the CRI mascon product explicitly, insisted on whole-mascon (~3\u00b0/330 km) rather than 0.5\u00b0 grid-cell interpretation, quantified the Greenland ice-loss leakage risk against the ~1-3 mm/yr fingerprint signal, and refused to quote a bare trend, instead framing any result as formal error plus a CRI-minus-unfiltered leakage bound."
+    }
+  },
+  "pass": true
+}

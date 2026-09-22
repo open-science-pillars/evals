@@ -1,0 +1,3 @@
+That was the wait timer I set for the knowledge agent, which already reported. Nothing to re-arm — no change to the answer above.
+
+Still standing by on the two things I need from you: which of the four approaches you want, and Earthdata tool access so I can pull actual granules.

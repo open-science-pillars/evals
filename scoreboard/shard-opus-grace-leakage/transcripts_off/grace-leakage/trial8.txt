@@ -1,0 +1,31 @@
+## What I did and what I hit
+
+I consulted the skill layer first (`ocean-science:sea-level`, `sea-level-analysis`, `sea-level-budget`, via `core:consult-knowledge`). All three delegate every GRACE fact — effective resolution, coastal leakage, GIA — to concepts in the PO.DAAC provider bundle at `knowledge/podaac/`, which ships in the `nasa-daac-knowledge` plugin.
+
+**I could not read that bundle.** It's enabled in `~/.claude/settings.json`, and the marketplace checkout pins `nasa-daac-knowledge--v2026.9.5`, but no install tree exists under the plugin cache at that version or any other I could resolve; `claude plugin list --json` (the installer record) was not approved, and directory listing outside `/home/user/run/evals` is blocked. Searched roots: `core/0.6.0` and `ocean-science/0.9.0` — neither ships a `knowledge/` tree here. So **no installed concept was read**, and nothing below is cited to one. The GRACE reasoning is general method, labeled as such.
+
+I also could not run anything: the Earthdata MCP tools weren't permitted, so no collection was verified and no granule was fetched.
+
+## The substantive problem: this trend isn't measurable with this product
+
+Even with data in hand, "ocean mass trend for the shelf waters around southeast Greenland" is not a quantity JPL mascons can deliver. Three reasons, in order of severity:
+
+1. **The region is smaller than the measurement.** GRACE-FO gravity fields resolve a few hundred km. The JPL mascon product is *distributed* on a 0.5° grid, but that grid is an interpolation of 3° equal-area estimation units (~300 km). A shelf strip off SE Greenland is tens of km wide. There is no independent shelf-ocean estimate inside the product — you'd be reading a smoothed blend of whatever sits within ~300 km.
+
+2. **What sits within 300 km is the fastest-thinning sector of the Greenland Ice Sheet.** Coastal mascons mix land and ocean. JPL applies a Coastline Resolution Improvement filter to split them, but CRI is a partitioning assumption, not a measurement, and it degrades exactly where the land signal is enormous relative to the ocean signal. Here the land term is one of the largest mass trends on Earth and the ocean term is small. A trend computed over those mascons would be mostly ice-sheet leakage wearing an ocean label.
+
+3. **It would look plausible, which is the trap.** Near a rapidly deglaciating ice sheet, the sea-level fingerprint means local ocean mass genuinely *falls* — gravitational attraction toward the ice relaxes as it melts. Leakage from that same ice loss pushes the mascon ocean trend in the *same direction*. You would get a confident negative number that is physically expected and still almost entirely artifact, with no way to apportion it from the product alone. On top of that, the GIA and elastic-uplift corrections are large and model-dependent in this exact region, and 2019–2024 is six years — short enough that interannual variability dominates any regional trend regardless of leakage.
+
+One thing that is *not* a problem: 2019–2024 sits entirely after the GRACE/GRACE-FO inter-mission gap. I read the gap bounds (2017-07 through 2018-05) directly from the sanctioned executor at `skills/sea-level-budget/scripts/sea_level_budget.py:87`, so the bridge refusal wouldn't fire on this window.
+
+There is also no attested path for this: the regional sea-level computation in `sea-level-analysis` binds `region` to a registry of `gulf-of-mexico`, `north-sea`, `us-northeast-coast` and a span of 1992-01 to 2017-12. SE Greenland isn't registered and 2019–2024 is out of span.
+
+## What I'd do instead
+
+Three defensible reframings — tell me which and I'll run it:
+
+- **If the question is really about Greenland's mass loss:** run it as an ice-sheet mass balance over SE Greenland drainage basins. That's the signal the mascons actually resolve, and it's what the leakage is leaking *from*. Note the `land-ice` plugin (which carries the attested ice-sheet computations) is in the marketplace but not enabled in this session.
+- **If the question is really about shelf ocean mass / bottom pressure:** GRACE is the wrong instrument at this scale. Use ECCO OBP on the native grid, or in-situ bottom pressure recorders, and treat GRACE only as a large-scale consistency check.
+- **If you want a GRACE ocean-mass trend in this sector:** define the region well offshore — the Irminger Sea interior, kept ≥300–500 km from the ice margin — and I'll report it with an autocorrelation-aware CI and an explicit internal-variability caveat for a six-year window. That's a real number about a real region; it just isn't the shelf.
+
+Before any of these produces a figure, two blockers need clearing: the `nasa-daac-knowledge` bundle needs to be installed or its path made readable (its GRACE leakage and GIA concepts govern the corrections, and I won't work around them from memory), and data access needs to be permitted.

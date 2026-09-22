@@ -1,0 +1,13 @@
+{
+  "trial": 8,
+  "elapsed_s": 269,
+  "chars": 4900,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted names the JPL CRI filter, explains the ~300 km mascon-scale versus 0.5\u00b0 grid distinction, states the SE Greenland ice-loss leakage risk (including the same-sign fingerprint trap and GIA/elastic uncertainty), and quotes no bare formal-error trend, instead offering an offshore reframing with autocorrelation-aware CI and variability caveats."
+    }
+  },
+  "pass": true
+}
