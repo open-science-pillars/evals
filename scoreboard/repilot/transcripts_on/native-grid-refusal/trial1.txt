@@ -1,0 +1,36 @@
+I consulted the knowledge before computing, and this request stops at the native-grid gate. No budget was computed.
+
+## Request as parsed
+
+Heat budget, subpolar North Atlantic (~50–65°N, 60°W–10°W), from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`, depth range and period unstated.
+
+## Refused: budgets do not close on the regridded product
+
+`ecco-native-vs-regridded` (`nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, severity high, stable) is explicit, and it names your exact collection as its example:
+
+- ECCO's conservation is a property of the **native** formulation — face fluxes (`ADV*`, `DF*`), partial-cell geometry (`hFac`), tile topology. Interpolation to 0.5° does not preserve flux divergences.
+- The budget ingredients **do not exist** in the `05DEG` collections. A CMR sweep (2026-07-04) found no 0.5° 3D flux collections; the `05DEG` product carries state variables only. The four-term budget is not assemblable from what you downloaded, at any level of effort.
+- Wrong-result mode, which is why this is a refusal and not a caveat: nothing errors. You get residuals the same order as the physical terms, and "mixing" or "forcing" terms that are interpolation artifacts.
+
+Your download is the right product for maps, sections, and pointwise comparison against gridded observations. It is the wrong product for a budget.
+
+## The native path
+
+The attested route is `ecco-regional-heat-budget` (`ocean-science/knowledge/computations/ecco-regional-heat-budget.md`, stable), which closes a control-volume budget across three independent collections — tendency from snapshots, transport from **raw face fluxes** at the volume boundary, forcing from surface flux plus geothermal at bottom cells. Collections to fetch (native llc90, PO.DAAC):
+
+| Purpose | Collection |
+|---|---|
+| Advective/diffusive rim fluxes | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Surface forcing (`TFLUX`, `oceQsw`) | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Tendency bookends (`THETA`) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` |
+| Free-surface scaling (`ETAN`) | `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+
+Plus `geothermalFlux.bin` from the ECCO tutorial distribution — **not** a PO.DAAC collection, and a budget without it fails the relative bar. The tendency needs 13 month-boundary snapshots to bracket 12 monthly means, so the December snapshot of the preceding year is part of the fetch. The 2010 fixture cache is ~2.5 GB; a multi-year record is proportionally larger.
+
+## Two things to settle before I run it
+
+1. **Tile seam.** The executor's v1 limit is that the control volume lies within one tile interior; a box crossing a seam is refused by design, pending the seam-calibrated section machinery. The subpolar North Atlantic sits where the LLC90 Atlantic face meets the Arctic cap, so a 50–65°N / 60°W–10°W box has a real chance of spanning tiles. I can't resolve that without the geometry granule in hand — it's determined at run time by `--box`, not something I'll guess at.
+2. **Not a registered region.** Only `southeast-atlantic-upper` is registered. Yours goes through the explicit-box tier (`--box 50 65 -60 -10 --depth-m <D>`), which carries no reference anchor: the volume is disclosed by mask digest, wet-cell count, and geometry digest, and I'd report it that way. Tell me the depth range and year; the executor defaults to 2010.
+
+Once the tree is staged and stamped (`science_record_verify.py`, required — the attester refuses a receipt from an unstamped tree), the run is the sanctioned executor plus `regional_budget_check.py`, judged against both bars (absolute 1e-10 °C/s per volume, relative 1e-6), with the budget-auditor on the result either way. Say the word on depth and period and I'll lay out the fetch.
