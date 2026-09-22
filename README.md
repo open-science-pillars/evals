@@ -179,7 +179,15 @@ difference between the arms. Only the exact fixture files a case declares are
 allowed beside it.
 
 A run workspace is therefore prepared rather than cloned whole, and the check is
-what says it is prepared. `prepare_workspace.py` builds one and refuses to hand
+what says it is prepared.
+
+The capabilities in that workspace are checked out at the refs the marketplace
+serves, not at their default branch. A shard installs from the marketplace,
+which pins each plugin to a release tag, and the trials read that installed
+tree; the checkout is where the runner reads the version and the release lock
+it records as the capability under test. At main those are two different trees,
+so the record describes something no trial read. `released_refs.py` reads the
+refs out of the catalog rather than from a list kept beside it. `prepare_workspace.py` builds one and refuses to hand
 it over until the check passes on it.
 
 Two things the check found that nothing else was looking for. A tree renamed to
