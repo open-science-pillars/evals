@@ -25,19 +25,76 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from leak_check import digest, windows  # noqa: E402
+from leak_check import cited_concepts, digest, fingerprints, normalise, windows  # noqa: E402
 
 PATH_MARK = "knowledge/"
 
 
-def audit(outdir: Path, case: str, marks_file: Path):
-    doc = json.loads(marks_file.read_text())
-    salt, size = doc["salt"], doc.get("words", 14)
+def full_marks(ws: Path, manifest: Path, case: str):
+    """Every window of the case's concepts, minus the windows of what stays.
+
+    The frozen fingerprints take three windows per concept. That is ample for
+    the gate, which asks whether a copy of a whole file is readable and finds
+    one by any of its windows, and thin here, where the question is whether a
+    transcript reproduced prose: a trial can quote a paragraph and miss three
+    windows out of hundreds. Where the concepts are readable, which is where
+    an audit runs and not where the gate runs, every window can be used.
+
+    Windows that also occur in material the design leaves in place are
+    dropped. The skills are not ablated and they quote the knowledge, so a
+    trial repeating a skill would otherwise be recorded as reading a concept
+    that was not on the machine.
+    """
+    by_case, _ = cited_concepts(ws, manifest, {case})
+    concepts = by_case.get(case) or []
+    if not concepts:
+        raise SystemExit(f"the manifest gives no concepts for a case called {case}")
+
+    # Everything in the workspace that is not knowledge and not this run's own
+    # output: the skills above all, which cite and paraphrase the concepts and
+    # are deliberately left in place. A window shared with them says nothing
+    # about whether a concept was readable. The skills of every bundle count,
+    # not only the bundle the concept lives in, since a case's concept and the
+    # skill that quotes it are routinely in different bundles.
+    skip = {".git", "knowledge", "transcripts_on", "transcripts_off",
+            "scoreboard", "results", "node_modules", "__pycache__"}
+    keep = set()
+    for md in ws.rglob("*.md"):
+        if skip & set(md.parts):
+            continue
+        keep |= set(_body_windows(md))
+
     marks = set()
-    for ms in doc["cases"].get(case, {}).values():
-        marks |= set(ms)
-    if not marks:
-        raise SystemExit(f"the frozen fingerprints hold no case called {case}")
+    for concept in concepts:
+        marks |= set(_body_windows(concept))
+    return marks - keep, len(concepts)
+
+
+def _body_windows(path: Path):
+    """The windows of a file's prose, filtered the way the freeze filters."""
+    lines = [ln for ln in path.read_text(errors="ignore").splitlines()
+             if ln.strip() and not ln.startswith(("#", "-", "*", ">", "|", "---"))
+             and ":" not in ln[:24]]
+    return windows(normalise(" ".join(lines)))
+
+
+def audit(outdir: Path, case: str, marks_file: Path, full=None):
+    """Which transcripts reproduce the case's concept prose, and which name it.
+
+    `full` is a set of raw windows, used when the concepts are readable.
+    Otherwise the frozen hashes are used, which is the only option where they
+    are not.
+    """
+    if full is None:
+        doc = json.loads(marks_file.read_text())
+        salt, size = doc["salt"], doc.get("words", 14)
+        marks = set()
+        for ms in doc["cases"].get(case, {}).values():
+            marks |= set(ms)
+        if not marks:
+            raise SystemExit(f"the frozen fingerprints hold no case called {case}")
+    else:
+        size = 14
 
     report = {}
     for arm in ("on", "off"):
@@ -45,8 +102,11 @@ def audit(outdir: Path, case: str, marks_file: Path):
         prose, paths, seen = [], 0, 0
         for f in sorted(root.rglob("trial*.txt")):
             seen += 1
-            text = " ".join(f.read_text().split())
-            if {digest(salt, w) for w in windows(text, size)} & marks:
+            text = " ".join(f.read_text(errors="ignore").split())
+            seen_windows = windows(text, size)
+            hit = (seen_windows & full if full is not None
+                   else {digest(salt, w) for w in seen_windows} & marks)
+            if hit:
                 prose.append(f.name)
             paths += text.count(PATH_MARK)
         report[arm] = {"transcripts": seen, "reproduce_prose": prose,
@@ -60,9 +120,23 @@ def main() -> int:
     ap.add_argument("--case", required=True)
     ap.add_argument("--fingerprints",
                     default=str(Path(__file__).parent / "concept-fingerprints.json"))
+    ap.add_argument("--workspace", help="audit against every window of the cited "
+                    "concepts, read from this workspace, rather than the three "
+                    "frozen per concept. Use it wherever the concepts are "
+                    "readable, which is anywhere an audit runs.")
+    ap.add_argument("--manifest", help="the manifest naming the case's concepts; "
+                    "defaults to manifests/ablation.yaml under the workspace")
     args = ap.parse_args()
 
-    r = audit(Path(args.outdir), args.case, Path(args.fingerprints))
+    full = None
+    if args.workspace:
+        ws = Path(args.workspace).resolve()
+        man = Path(args.manifest) if args.manifest else ws / "evals/manifests/ablation.yaml"
+        full, n = full_marks(ws, man, args.case)
+        print(f"auditing against {len(full)} windows across {n} concepts read at "
+              f"{ws}, not the three frozen per concept")
+
+    r = audit(Path(args.outdir), args.case, Path(args.fingerprints), full)
     for arm in ("on", "off"):
         a = r[arm]
         print(f"{arm} arm: {a['transcripts']} transcripts, "

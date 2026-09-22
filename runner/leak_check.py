@@ -322,9 +322,20 @@ def main() -> int:
         print("ERROR: " + "\n".join(problems))
         return 1
 
-    print(f"checked against {named}: no copy of a cited concept and no recorded "
-          f"answer to the {len(case_ids)} cases is readable under "
-          f"{', '.join(str(r) for r in roots)}")
+    # The two arms are checked for different things, so they may not claim the
+    # same thing. Only the bundle-off arm is required to have no cited concept
+    # readable; the bundle-on arm is supposed to have them, and its concept
+    # hits are counted and discarded above. A line that said otherwise would
+    # assert of the on arm something no arm verified.
+    where = ", ".join(str(r) for r in roots)
+    if args.arm == "off":
+        print(f"checked against {named}: no copy of a cited concept and no "
+              f"recorded answer to the {len(case_ids)} cases is readable "
+              f"under {where}")
+    else:
+        print(f"checked against {named}: no recorded answer to the "
+              f"{len(case_ids)} cases is readable under {where}; the cited "
+              f"concepts are readable, which is what this arm is")
     return 0
 
 
