@@ -202,6 +202,12 @@ provider bundle in the plugin cache, installed under a different marketplace
 name by an earlier qualification run, which would have defeated the off arm
 without appearing in the scope derivation at all.
 
+The bundle-off arm also sets aside the bundle-on arm's transcripts. They are
+answers to the very cases it is about to be asked, written by the harness into
+a directory its trials can read, so they contaminate the rate rather than the
+difference between the arms. The first shard to reach the off arm was stopped
+exactly there, by the check catching a leak the harness had made itself.
+
 The runner owns all of this rather than the ablation script, because only the
 runner knows when it has finished loading the cases it is about to take away. A
 case's `notes` field states what a passing answer must contain, so a case file

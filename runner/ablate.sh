@@ -78,6 +78,14 @@ QUAR_ON=()
 for w in "${WDIRS[@]}"; do QUAR_ON+=(--quarantine "$w"); done
 QUAR_OFF=("${QUAR_ON[@]}")
 for k in "${KDIRS[@]}"; do QUAR_OFF+=(--quarantine "$k"); done
+# And the bundle-ON arm's own transcripts. They are answers to the very cases
+# the bundle-OFF arm is about to be asked, written by this script into a
+# directory the off trials can read, so they contaminate the rate rather than
+# the difference. The first shard to reach the off arm was stopped here: three
+# of twenty on-arm transcripts had quoted enough of the cited concept for the
+# leak check to match it, which is the check doing its job on a leak this
+# script created. The runner puts them back when the off arm is done.
+QUAR_OFF+=(--quarantine "$OUT/transcripts_on")
 
 mkdir -p "$OUT"
 
