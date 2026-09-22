@@ -1,0 +1,31 @@
+## The budget can't be computed from that product — and this is a hard rule, not a preference
+
+`ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4` is the 0.5° interpolated grid. The `ocean-budget` workflow refuses budgets on regridded fields before any computation, under gotcha **`ecco-native-vs-regridded`** (cited by the skill; the concept file itself lives in the installed bundle outside this session's readable root, so I'm citing it by id rather than quoting it).
+
+The physical reason, not just the policy one: ECCO's budget terms are defined on the Arakawa C-grid as fluxes through cell faces, with the volume element `rA * drF * hFacC`. Interpolation to 0.5° destroys the discrete divergence — the face fluxes no longer telescope against the cell volumes they bounded, and the partial-cell `hFac` scaling is gone. There is no formulation on that grid that closes; any residual you'd get would be an interpolation artifact you'd then be tempted to call "mixing." Regridding also breaks the terms in a way an absolute residual bar alone won't catch, which is exactly the failure mode the regional contract's second (relative) bar exists for.
+
+Also worth knowing: I looked for your files and found no 0.5° granules under `/home/user` — only an eval fixture, `agent-evals/ecco/fixtures/native-grid/ecco_05deg_stub.nc`. Nor is there a native tree (`~/ECCO_V4r4` / `~/ECCO_V4r4_record`). So the inputs check would have stopped this regardless of grid.
+
+## The native path for a subpolar North Atlantic heat budget
+
+The attested route is `ecco-regional-heat-budget` (`knowledge/computations/ecco-regional-heat-budget.md`, status stable), which closes over a control volume by comparing **three independent collections** so agreement is evidence rather than arithmetic. Collections to fetch (LLC90 native, all V4R4):
+
+| Term | Collection |
+|---|---|
+| Geometry | `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` |
+| Tendency (monthly + bookend snapshots) | `ECCO_L4_TEMP_SALINITY_LLC0090GRID_MONTHLY_V4R4`, `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4`, `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` |
+| Transport (raw face fluxes) | `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+| Forcing | `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` |
+
+A year needs 12 monthly means bracketed by 13 month-boundary snapshots. After the first fetch the tree must be stamped with `tools/science_record_verify.py` — every attester refuses a receipt from an unstamped tree.
+
+Two things specific to *your* region that I want flagged before you spend the download:
+
+1. **Tile seam.** The v1 contract states the control volume must lie within one tile interior; seam-crossing volumes are refused. The subpolar gyre (~50–65°N, 60–10°W) sits where the LLC90 Atlantic faces meet the Arctic cap, so it may well cross a seam. I'd resolve the mask first and read the disclosed index bounds before assuming a box works.
+2. **Geothermal flux.** This is a deep-reaching budget, and the geothermal term at bottom wet cells is the classic silent omission — measured at 1.24e-12 °C/s, *inside* the absolute bar, caught only by the relative bar (`knowledge/podaac/gotchas/ecco-geothermal-flux.md`). If you subset to an upper layer instead, the executor records geothermal as not-applicable with the bottom-cell count.
+
+Your region is also not the registered region (`southeast-atlantic-upper`), so it runs on the explicit-box tier: disclosed by mask digest, no reference anchor. That's supported, just unanchored.
+
+## What I can do instead
+
+Say the word and I'll either (a) stage the native fetch and run the attested executor + attester for a year you pick, or (b) if you'd rather use the 0.5° product you already have, compute **ocean heat content and its tendency** from it — that's a legitimate diagnostic on the interpolated grid and I'd report it as OHC, not as a closed budget, since the convergence and forcing terms can't be recovered there.

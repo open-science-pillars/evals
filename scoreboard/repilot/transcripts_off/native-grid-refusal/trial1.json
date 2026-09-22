@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 107,
+  "chars": 4447,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the ecco-native-vs-regridded gotcha with its silent-failure mechanism, offers no workaround on the 0.5\u00b0 fields (only a clearly-labeled non-budget heat content option), and lays out the native LLC90 path naming the transport/forcing/snapshot-tendency/geometry collections plus the geothermal bottom-cell ancillary and closure bars."
+    }
+  },
+  "pass": true
+}

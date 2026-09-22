@@ -1,0 +1,38 @@
+I consulted the installed knowledge bundles before touching data, and that changed the answer. I have **not** computed a trend — two things stopped me, one procedural and one scientific.
+
+## Procedural: I'm blocked on permissions
+
+Every execution path is gated in this session — `python3`, `earthaccess`, and the Earthdata CMR discovery tools all returned "requires approval." So I could not download granules or run a fit. Nothing below is a computed number.
+
+## Scientific: the region as specified is not a thing this product can measure
+
+Consulted concepts (live bundle, `nasa-daac-knowledge` 2026.9.5, PO.DAAC provider tier):
+
+- `knowledge/podaac/datasets/grace-fo-mascons.md` — stable, human-verified 2026-09-13
+- `knowledge/podaac/gotchas/grace-coastal-leakage.md` — **severity high**, stable, human-verified 2026-07-04
+- `knowledge/podaac/gotchas/grace-gia-correction.md`, `grace-low-degree-replacements.md`, `grace-intermission-gap.md`
+- `knowledge/podaac/recipes/grace-mass-to-sea-level.md` — stable
+
+Three findings, in order of severity:
+
+**1. The shelf is sub-mascon.** The JPL solution is 4,551 equal-area 3° spherical caps (~300 km). It is *distributed* on a 0.5° grid, but the dataset concept is explicit that "the native information scale is the mascon, not the grid cell," and its Uncertainty section states that a region whose area approaches or falls below the mascon scale "is resolution- and leakage-dominated." The SE Greenland shelf is ~100–200 km wide. The grid will hand you shelf-shaped cells that carry no independent information. The recipe requires regions be built from *whole mascons* taken from the placement file — and there is no whole-mascon set that is "shelf and not ice sheet."
+
+**2. Leakage would dominate, with the same sign as the signal you'd want.** The coastal-leakage gotcha names this case directly: "apparent coastal sea level or ocean-mass trends **near Greenland** ... can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim." Every mascon over that shelf straddles the coastline, and its land part contains Helheim/Kangerdlugssuaq — one of the ice sheet's largest dynamic-loss sectors. CRI mitigates, never eliminates.
+
+The trap is sharper than usual here. There *is* a real local ocean-mass decrease near a melting ice sheet (gravitational self-attraction and loading — the sea-level fingerprint makes bottom pressure fall within ~2000 km of Greenland). It has the **same sign** as the leakage error and is roughly an order of magnitude smaller. So a number would look physically plausible and be mostly artifact. That is the worst kind of wrong.
+
+**3. A fix landed on exactly this quantity.** Per the release note via the recipe: a July 2025 correction fixed "the GAD mass added back to the **ocean part of land/ocean mascons**," and only files whose series extends past March 2025 carry it. That is precisely the quantity you asked for, so the file's last month has to be named alongside the version.
+
+Your window is at least clean on one axis: 2019–2024 sits entirely inside GRACE-FO and does not cross the 2017–2018 gap. But RL06.3M v4's accelerometer-transplant bundle touches Jan–Feb 2023 and Jul 2023 onward — about a third of the window — and six years is short against interannual variability in that region.
+
+## What I recommend instead
+
+Pick one and I'll run it once you approve tool access:
+
+- **A — Bound it honestly.** Build a whole-mascon SE Greenland shelf/slope region on the CRI grid, and compute the CRI-minus-unfiltered difference over those mascons as the explicit leakage bound (the gotcha's own prescribed approach), quoted beside the formal per-mascon error. My expectation is the bound swamps the trend and the honest result is "not resolved" — but that's a defensible, citable result rather than a bad number.
+- **B — Step one mascon ring offshore.** The Irminger Sea / SE Greenland open ocean is a legitimate basin-scale target where the concept says averages are robust.
+- **C — Different instrument.** If what you actually want is shelf freshwater content, that's largely steric/halosteric and GRACE is the wrong tool. Note ECCO v4r4 ends in 2017, so it won't cover 2019–2024.
+
+Any number I do produce will name the version (RL06.3Mv04, DOI 10.5067/TEMSC-3JC634), the file's last month, the baseline period, the GIA model (ICE-6G_D, 2008-01-01 epoch, pre-applied — not re-corrected), and the low-degree series (TN-14 v3 C20/C30, JPL mascon-consistent geocenter).
+
+Which option — and can you grant Bash plus the Earthdata tools?

@@ -1,0 +1,32 @@
+I stopped before computing, because the installed knowledge concepts say this particular quantity isn't recoverable from this product — and two of the gates I'd need (Python execution, the Earthdata connector) are unapproved in this session anyway. Here's what I found.
+
+## I did not produce a trend number
+
+Not a tooling excuse — the region as specified is below the product's information scale, and sits on top of the largest land mass-loss signal in the northern hemisphere.
+
+**Resolution.** JPL mascons are 4,551 equal-area 3° spherical caps, order 300 km. The 0.5° grid you'd download *represents* those mascons; it does not resolve them. The SE Greenland shelf is roughly 100–150 km wide — well inside a single mascon. The dataset concept is explicit: a region whose area "approaches or falls below the mascon scale is resolution- and leakage-dominated" (`knowledge/podaac/datasets/grace-fo-mascons.md`, stable, human-verified 2026-09-13). The sanctioned recipe requires a mask of *whole mascons* taken from the placement file, "never at 0.5-degree cell scale" (`knowledge/podaac/recipes/grace-mass-to-sea-level.md`, stable). There is no whole-mascon mask that contains SE Greenland shelf water and excludes the ice sheet.
+
+**Leakage.** The coastal-leakage gotcha names your case as its wrong-result mode, nearly verbatim (`knowledge/podaac/gotchas/grace-coastal-leakage.md`, severity high, stable, human-verified 2026-07-04):
+
+> Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends near Greenland, Alaska, or major river basins can be dominated by leakage rather than ocean change. Nothing errors; the series just is not what its coordinates claim.
+
+The CRI filter partitions coastline-straddling mascons into land and ocean parts — it "reduces leakage substantially but does not eliminate it." Every mascon in your region is within one block of the coast, which is precisely where the concept says the residual bites.
+
+**So what would the computation have shown?** Almost certainly a strong *negative* mass trend hugging the southeast coast. That is the ice sheet's loss bleeding outward through the mascon geometry, not the ocean. Reading it as ocean mass would invert the physics — Greenland melt *adds* mass to those waters.
+
+## What the window gets right
+
+2019–2024 is entirely GRACE-FO and sits cleanly after the July 2017–May 2018 hole, so the inter-mission gap gotcha doesn't bite here (`knowledge/podaac/gotchas/grace-intermission-gap.md`, severity high, stable). Good window choice — the problem is spatial, not temporal.
+
+Two things that would travel with any mascon trend regardless: the GIA model is already applied (ICE-6G_D, Peltier and others 2018, referenced to the 2008-01-01 epoch) and must not be re-corrected (`knowledge/podaac/gotchas/grace-gia-correction.md`, severity medium, stable); and the scale factors shipped with the CRI grid come from a land hydrology model — not valid over ice, and not for ocean.
+
+## What I'd suggest instead
+
+1. **Greenland ice sheet mass trend, 2019–2024** — whole land mascons, which is what CMR calls this product's recommended application. The recipe carries the full method and every uncertainty term, with sea level equivalent at ~362 Gt per mm.
+2. **Open-ocean mass for the Irminger or Labrador Sea**, with at least one mascon of buffer from the coast. The gotcha is clear that "basin-scale open-ocean averages are robust; the trap is specifically the nearshore."
+3. **The leakage demonstration** — differencing the CRI and unfiltered grids over the coastal mascons is how the recipe says to bound leakage. I can run it to show you how large the contamination is relative to any trend you'd extract. That turns the negative result into a quantified one.
+4. **If the real question is shelf freshening or shelf-water mass**, GRACE is the wrong instrument at this scale — that's hydrographic or model territory, and the plugin has ECCO paths for it.
+
+Tell me which of these you want, and approve Python execution plus the Earthdata connector — both are currently gated, so I couldn't have downloaded a granule either way.
+
+One caveat on provenance: I read these concepts from the development repos in `/home/user` (`nasa-daac-knowledge`, `ocean-science`, `core`), not from the installer record — `claude plugin list --json` and directory listing outside `/home/user` are both blocked here. If the installed cache versions differ from these working copies, the concept text I cited may be ahead of what's installed.

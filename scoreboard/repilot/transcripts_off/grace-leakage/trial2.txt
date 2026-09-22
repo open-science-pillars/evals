@@ -1,0 +1,34 @@
+I'm blocked on execution — every Bash call and the Earthdata MCP tools are returning "requires approval," so I haven't downloaded or computed anything yet. Before you grant those, there's a finding from the knowledge bundle that changes what's worth computing.
+
+## The region you named is the documented failure mode for this product
+
+`knowledge/podaac/gotchas/grace-coastal-leakage.md` (status stable, severity high, human-verified 2026-07-04) names your case almost verbatim:
+
+> Nearshore ocean mass series inherit land signal: apparent coastal sea level or ocean-mass trends **near Greenland**, Alaska, or major river basins can be dominated by leakage rather than ocean change. **Nothing errors; the series just is not what its coordinates claim.**
+
+The geometry is the problem. JPL mascons are 3° equal-area spherical caps — order 300 km. The SE Greenland shelf is roughly 100–200 km wide. It is distributed on a 0.5° grid, but per `knowledge/podaac/datasets/grace-fo-mascons.md`, those cells only *represent* the mascons; the native information scale is the mascon. So the shelf contains essentially **no whole ocean mascon** — it sits entirely inside coastline-straddling blocks, and the neighbouring land blocks cover Helheim, Kangerdlugssuaq and Køge Bugt, the highest-ablation sector of the ice sheet. The CRI filter partitions those straddling mascons but, per the same concept, "reduces leakage substantially but does not eliminate it."
+
+A trend computed on that polygon will come back strongly negative and look like real ocean mass loss. It would mostly be ice.
+
+Three more things that bite this specific window, all from the same bundle:
+
+- **Good news on the gap** — 2019–2024 is entirely GRACE-FO, so `grace-intermission-gap` doesn't apply. That trap is avoided by your window.
+- **GAD fix, directly on point.** The recipe records that a July 2025 fix "corrected the GAD mass added back to the **ocean part of land/ocean mascons**" — exactly the cells your region is made of — and only files extending past March 2025 carry it. The file version has to be named.
+- **Accelerometer transplant.** RL06.3 v4 differs from v3 in the transplant bundle touching the wide-dead-band months: Jan–Feb 2023 and July 2023 onward. That's a third of your window.
+
+## What I'd like to run
+
+Rather than hand you one contaminated number, let me compute three things and show them together:
+
+1. **The literal ask** — your shelf polygon, at mascon scale as the recipe requires, CRI grid. The number you asked for, labelled for what it is.
+2. **The leakage bound** — same region on the unfiltered grid (`TELLUS_GRAC-GRFO_MASCON_GRID_RL06.3_V4`). The recipe specifies the CRI-versus-unfiltered difference over coastal mascons as the way to bound leakage. My expectation is this difference will be comparable to or larger than the trend itself, which is the quantitative proof that #1 isn't ocean.
+3. **A defensible alternative** — whole ocean mascons in the deep Irminger Sea, one mascon block clear of the coast, which is what the gotcha's "correct approach" actually sanctions. This gives a real regional ocean-mass (manometric) trend, with formal uncertainty from the per-mascon grids.
+
+All with GIA (ICE-6G_D, 2008-01-01 epoch), the degree-1 and C20/C30 series, baseline period and file end-month named, per `grace-gia-correction` and `grace-low-degree-replacements`.
+
+**Two things I need from you:**
+
+- **Approvals** for Bash/python and the Earthdata MCP tools (the CRI granule is a single global file, roughly a few hundred MB).
+- **A steer on intent**, because it changes the answer more than the method does. If you want ocean mass *on the shelf* — freshwater piling up from meltwater and glacier discharge — GRACE-FO cannot resolve it at that width, and I'd point you at ECCO bottom pressure or altimetry-minus-steric instead. If you want the *Greenland mass loss* feeding that shelf, that's a land-mascon sum and GRACE does it well. If you want *regional ocean mass* in the Irminger, #3 is the honest version.
+
+Tell me which, or say "run all three" and I'll do exactly that and let the numbers make the argument.

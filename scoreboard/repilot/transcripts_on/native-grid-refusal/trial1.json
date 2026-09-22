@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 95,
+  "chars": 3841,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the ecco-native-vs-regridded gotcha by name and path with the wrong-result rationale, offers no workaround on the 0.5\u00b0 fields, and lays out the native-grid path with the five llc90 collections named, snapshots for the tendency, and geothermalFlux.bin called out as required."
+    }
+  },
+  "pass": true
+}

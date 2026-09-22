@@ -1,0 +1,33 @@
+## Refused: this budget cannot be computed on the 0.5° product
+
+I'm not going to compute a heat budget from `ECCO_L4_TEMP_SALINITY_05DEG_MONTHLY_V4R4`. This isn't a preference — it's the one rule the `ocean-budget` workflow applies before anything else, and the reason is physical, not procedural.
+
+**Why** (`nasa-daac-knowledge/knowledge/podaac/gotchas/ecco-native-vs-regridded.md`, severity high, status stable):
+
+- ECCO's conservation is a property of the **native llc90 formulation** — face fluxes (`ADV*`, `DF*`), partial-cell geometry (`hFac`), and tile topology together satisfy the model equations exactly. Interpolation to a 0.5° lat-lon grid does not preserve flux divergences.
+- The budget ingredients **don't exist** in the 05DEG collections. A CMR sweep (2026-07-04, recorded in that concept) found no 05DEG 3D flux collections — they carry state variables only (`THETA`, `SALT`). So the four-term budget isn't merely inaccurate there, it isn't assemblable.
+- The failure mode is the dangerous kind: **nothing errors**. You'd get residuals the same order as the physical terms, and the tendency you'd attribute to mixing or forcing would be an interpolation artifact.
+
+The 0.5° product is the right tool for maps and pointwise comparison against gridded observations. It is not a budget product.
+
+## The native path
+
+The attested route is `ecco-regional-heat-budget` (`ocean-science/knowledge/computations/ecco-regional-heat-budget.md`, status stable). It closes the budget by comparing **three independent collections**, so agreement is evidence rather than arithmetic — tendency from snapshots, transport from raw face fluxes at the control-volume boundary, forcing from surface flux plus geothermal at bottom wet cells. Five collections to fetch:
+
+| Collection | Role |
+|---|---|
+| `ECCO_L4_TEMP_SALINITY_LLC0090GRID_SNAPSHOT_V4R4` | tendency bookends |
+| `ECCO_L4_SSH_LLC0090GRID_SNAPSHOT_V4R4` | free-surface scaling |
+| `ECCO_L4_OCEAN_3D_TEMPERATURE_FLUX_LLC0090GRID_MONTHLY_V4R4` | advection + diffusion |
+| `ECCO_L4_HEAT_FLUX_LLC0090GRID_MONTHLY_V4R4` | surface forcing |
+| `ECCO_L4_GEOMETRY_LLC0090GRID_V4R4` | `rA`, `drF`, `hFacC` |
+
+I found no native granules staged here — the only NetCDF under `/home/user` is `agent-evals/ecco/fixtures/native-grid/ecco_05deg_stub.nc`, a stub. So this needs a fetch (`load-ecco`, with its volume gate) plus the `RECORD.json` verify-tool stamp, which every attester requires before it will read a receipt.
+
+## Two things I need from you before I run it
+
+1. **Domain and period.** "Subpolar North Atlantic" needs to become a box — I'd propose roughly 50–65°N, 60–10°W — plus a depth range and a year. Depth matters for more than scope: the geothermal term at bottom wet cells is exactly what the absolute residual bar alone fails to catch (measured 2026-08-31: omitting it lands at 1.24e-12 degC/s, *inside* the absolute bar, caught only by the relative bar).
+
+2. **A seam check.** The executor carries a stated v1 limit — the control volume must lie within one tile interior, and seam-crossing volumes are refused until the seam-calibrated section machinery lands. The subpolar North Atlantic sits where llc90 faces meet, so I'd want to resolve the box against tile geometry before promising a run. If it does cross a seam, the honest answer is that this budget isn't available today, and I'd say so rather than silently shrinking your domain.
+
+Give me the box, depth, and year and I'll fetch, run the sanctioned executor, and report the attester's verdict as it reads — including a FAIL.

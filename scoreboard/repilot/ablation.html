@@ -1,0 +1,11 @@
+<!doctype html><meta charset=utf-8><title>OSP evals: ablation-gotcha-avoidance (claude-opus-5, N=2)</title>
+<style>body{font:14px system-ui;margin:2rem;max-width:60rem}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}
+th{background:#f4f4f4}.p{color:#137333;font-weight:600}.f{color:#c5221f;font-weight:600}
+caption{text-align:left;color:#555;padding-bottom:.5rem}</style>
+<h1>OSP evals: ablation-gotcha-avoidance (claude-opus-5, N=2)</h1>
+<p><b>A:</b> ocean-science 0.9.0 sha256:de135f0aa0f8 | runtime claude-code (claude, 2.1.278 (Claude Code)) | model claude-opus-5 | judge claude-opus-5 | date 2026-09-22 | N=2</p><p><b>B:</b> ocean-science 0.9.0 sha256:de135f0aa0f8 | runtime claude-code (claude, 2.1.278 (Claude Code)) | model claude-opus-5 | judge claude-opus-5 | date 2026-09-22 | N=2</p>
+<p>A case passes when its point-estimate pass rate meets the threshold; the
+Wilson 95% interval is reported beside it. Bundle-off columns, when present, are the knowledge-layer ablation.</p>
+<table><tr><th>case</th><th>type</th><th>bundle on: rate (95% CI)</th><th>bundle off: rate</th><th>delta</th><th>verdict</th></tr><tr><td>native-grid-refusal</td><td>rejection</td><td>1.00 [0.34, 1.00]</td><td>1.00</td><td>+0.0</td><td class='p'>PASS</td></tr><tr><td>grace-leakage</td><td>gotcha-avoidance</td><td>1.00 [0.21, 1.00]</td><td>1.00</td><td>+0.0</td><td class='p'>PASS</td></tr></table>
+<p style=color:#888>Generated from results.json by scoreboard.py.</p>

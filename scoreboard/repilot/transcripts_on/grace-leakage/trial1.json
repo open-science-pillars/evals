@@ -1,0 +1,13 @@
+{
+  "trial": 1,
+  "elapsed_s": 172,
+  "chars": 4571,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response unprompted surfaced the coastal-leakage gotcha with the CRI product named, insisted on whole-mascon (not grid-cell) interpretation, explicitly identified Greenland ice-loss leakage of the same sign as the signal, and specified that any trend would be quoted with formal per-mascon error plus an explicit CRI-minus-unfiltered leakage bound rather than giving a bare trend."
+    }
+  },
+  "pass": true
+}

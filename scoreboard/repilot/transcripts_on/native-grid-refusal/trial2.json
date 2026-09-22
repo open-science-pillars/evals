@@ -1,0 +1,13 @@
+{
+  "trial": 2,
+  "elapsed_s": 85,
+  "chars": 3911,
+  "graders": {
+    "programmatic": true,
+    "rubric": {
+      "grade": "PASS",
+      "reason": "The response refuses the regridded budget, cites the ecco-native-vs-regridded gotcha by id with the correct physical rationale (C-grid face fluxes, hFac volume element, broken discrete divergence), names the native LLC90 collections including bookend snapshots for tendency and flags the geothermal ancillary gotcha, and offers no workaround budget on the 0.5\u00b0 fields (only OHC, correctly labeled as not a closed budget)."
+    }
+  },
+  "pass": true
+}
