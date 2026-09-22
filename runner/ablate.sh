@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 # Ablation harness: run the gotcha-avoidance suite bundle-ON, then bundle-OFF
-# (knowledge/ stripped from the installed plugin cache), then render the delta.
-# The knowledge/ directory is ALWAYS restored, even on error or interrupt.
+# (every knowledge tree the cases cite stripped from the installed plugin
+# cache), then render the delta. The trees are ALWAYS restored, on error or
+# interrupt as well as on success.
+#
+# What bundle-OFF removes is derived, not assumed. Until 2026-09-21 this moved
+# one tree, the capability's own, and called that off. Thirteen of the suite's
+# fourteen concept citations name files in nasa-daac-knowledge, a separate
+# plugin with a separate cache the arm never touched, so the bundle-OFF arm had
+# the cited knowledge in front of it the whole time. One of its transcripts
+# opens "I read the bundle concepts before touching data" and cites both files
+# by path. Every ON minus OFF number this harness has produced, the pilot null
+# in the pre-registration included, compared knowledge against knowledge.
+# ablation_scope.py now derives the plugins from the manifest and their declared
+# dependencies, and refuses to run when a cited concept sits outside them.
 #
 # Both arms keep their transcripts, under <out_dir>/transcripts_{on,off}. This
 # is not optional here and is not left to the caller. The pre-registration's
@@ -25,43 +37,50 @@ WS="$1"; TRIALS="$2"; OUT="$3"; MODEL="${4:-}"; shift 3
 shift
 EXTRA="${*:-}"
 MAN="$WS/evals/manifests/ablation.yaml"
-# The installed knowledge tree, found rather than pinned, in the marketplace
-# as well as the version. This read open-science-pillars/ocean-science/0.3.0
-# until 2026-09-21: four releases behind, and under a marketplace name that a
-# candidate or release-candidate install does not use, so it matched nothing on
-# the machine the qualification runs installed. Ablating the wrong tree would be
-# worse than matching none, so more than one match is an error rather than a
-# choice the script makes quietly.
-KDIRS=$(ls -d "$HOME"/.claude/plugins/cache/*/ocean-science/*/knowledge 2>/dev/null | sort -V)
-KCOUNT=$(printf '%s\n' "$KDIRS" | grep -c . || true)
-if [ "$KCOUNT" -gt 1 ]; then
-  echo "ERROR: ocean-science knowledge trees are installed from more than one marketplace;"
-  echo "the ablation would not know which one the trials read. Found:"
-  printf '  %s\n' $KDIRS
-  echo "Leave exactly one installed and run again."
+# The trees to move: derived from the manifest and the dependencies its plugins
+# declare, checked so that every cited concept is inside one of them.
+SCOPE="$WS/evals/runner/ablation_scope.py"
+uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN" --check || {
+  echo "ERROR: the bundle-OFF arm would not remove the knowledge these cases cite; not running"
   exit 1
-fi
-KDIR=$(printf '%s\n' "$KDIRS" | tail -1)
-KOFF="${KDIR:-/nonexistent}.ABLATION_OFF"
+}
+mapfile -t KDIRS < <(uv run --with pyyaml==6.0.2 "$SCOPE" "$WS" "$MAN")
+[ "${#KDIRS[@]}" -gt 0 ] || { echo "ERROR: no installed knowledge tree to ablate"; exit 1; }
+
 mkdir -p "$OUT"
 
-restore() { [ -d "$KOFF" ] && mv "$KOFF" "$KDIR" && echo "restored knowledge/"; }
+restore() {
+  local back=0
+  for k in "${KDIRS[@]}"; do
+    [ -d "$k.ABLATION_OFF" ] && mv "$k.ABLATION_OFF" "$k" && back=$((back+1))
+  done
+  [ "$back" -gt 0 ] && echo "restored $back knowledge tree(s)"
+  return 0
+}
 trap restore EXIT INT TERM
 
 echo "== bundle-ON arm =="
 python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
   --trials "$TRIALS" --model "$MODEL" --bundle on --out "$OUT/results_on.json" \
-  --transcripts "$OUT/transcripts_on" $EXTRA
+  --transcripts "$OUT/transcripts_on" $EXTRA || {
+    echo "ERROR: the bundle-ON arm failed; not spending the bundle-OFF arm after it"
+    exit 1
+  }
 
-echo "== stripping knowledge/ for the bundle-OFF arm =="
-[ -n "$KDIR" ] && [ -d "$KDIR" ] || { echo "ERROR: no installed ocean-science knowledge tree under $HOME/.claude/plugins/cache/*/ocean-science/*/knowledge; install the capability before the ablation"; exit 1; }
-echo "ablating $KDIR"
-mv "$KDIR" "$KOFF"
+echo "== stripping every cited knowledge tree for the bundle-OFF arm =="
+for k in "${KDIRS[@]}"; do
+  [ -d "$k" ] || { echo "ERROR: $k is not there to ablate"; exit 1; }
+  echo "  ablating $k ($(find "$k" -name '*.md' | wc -l) concepts)"
+  mv "$k" "$k.ABLATION_OFF"
+done
 
 echo "== bundle-OFF arm =="
 python "$WS/evals/runner/run_evals.py" --manifest "$MAN" --workspace "$WS" \
   --trials "$TRIALS" --model "$MODEL" --bundle off --out "$OUT/results_off.json" \
-  --transcripts "$OUT/transcripts_off" $EXTRA
+  --transcripts "$OUT/transcripts_off" $EXTRA || {
+    echo "ERROR: the bundle-OFF arm failed"
+    exit 1
+  }
 
 restore; trap - EXIT INT TERM
 
