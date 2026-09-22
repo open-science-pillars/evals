@@ -19,7 +19,7 @@ from judge import parse_judgement  # noqa: E402
 from stats import verdict  # noqa: E402
 from record import RUNTIMES, build_record, capability_record, runtime_record, value_digest  # noqa: E402
 from drivers import command_for  # noqa: E402
-from scoreboard import comparison, label, mismatched_rubrics, render  # noqa: E402
+from scoreboard import comparison, label, mismatched_rubrics, outage_block, render  # noqa: E402
 
 # (checker_id, good transcript, bad transcript)
 CASES = [
@@ -345,6 +345,19 @@ def main():
         except ValueError:
             pass
 
+    # Outages are reported beside the delta, and an uneven loss is called out.
+    even_a = dict(a, cases=[dict(a["cases"][0], errors=1, trials_requested=20)])
+    even_b = dict(even_a, bundle="off",
+                  cases=[dict(a["cases"][0], errors=1, trials_requested=20)])
+    block = outage_block(even_a, even_b)
+    if "lost 1 of 20" not in block or "did not lose trials at the same rate" in block:
+        fails.append("an even outage rate is misreported or wrongly flagged")
+    uneven = dict(even_b, cases=[dict(a["cases"][0], errors=8, trials_requested=20)])
+    if "did not lose trials at the same rate" not in outage_block(even_a, uneven):
+        fails.append("an arm that lost four times as many trials is not flagged")
+    if outage_block(dict(a, cases=[dict(a["cases"][0], errors=0, trials_requested=20)])) != "":
+        fails.append("a single arm with no outages still printed an outage line")
+
     # Two arms graded by different text do not have a delta between them.
     armed = dict(a, cases=[dict(a["cases"][0], rubric="notes")])
     other = dict(armed, bundle="off",
@@ -367,7 +380,8 @@ def main():
           f"mention over {probe_checks} phrasings and agree with {recorded} recorded transcripts; "
           f"{len(JUDGE)} judge replies (whole, truncated, absent, ambiguous) read correctly; "
           f"{len(TOOLS)} tool specs split into names and rules correctly; "
-          "verdict aggregation correct; a rubric a case names but cannot resolve stops "
+          "verdict aggregation correct; outages are reported per arm and an uneven "
+          "loss flagged; a rubric a case names but cannot resolve stops "
           "the run and a delta between differently graded arms is refused; the "
           "cross-runtime record, the drivers and the scoreboard's runtime comparison behave")
     print("evals runner selftest: PASSED")

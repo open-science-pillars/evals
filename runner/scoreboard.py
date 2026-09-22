@@ -63,6 +63,62 @@ def comparison(on, off):
     return ("bundle", f"bundle {on.get('bundle', 'on')}", f"bundle {off.get('bundle', 'off')}")
 
 
+def outages(on, off=None):
+    """Trials each arm lost, per case and in total.
+
+    A lost trial is an outage and never enters a rate, which is right and is
+    not the end of it. Consulting the bundle costs turns, because the skill
+    reads concepts and each read is a turn, so the arm holding the knowledge
+    exhausts its budget more readily and the trials that survive it are the
+    atypically brief ones. That is a bias in the sample rather than in the
+    rate, so no interval shows it. A shard probe on 2026-09-21 lost one of two
+    bundle-on trials to the turn limit at a budget of 30, which is why this is
+    reported beside the delta rather than left in the results file.
+    """
+    off_by_id = {c["id"]: c for c in off["cases"]} if off else {}
+    per_case = []
+    for c in on["cases"]:
+        o = off_by_id.get(c["id"])
+        per_case.append((c["id"], c.get("errors", 0), c.get("trials_requested", 0),
+                         o.get("errors", 0) if o else None,
+                         o.get("trials_requested", 0) if o else None))
+    return per_case
+
+
+def outage_rate(cases):
+    lost = sum(c.get("errors", 0) for c in cases)
+    asked = sum(c.get("trials_requested", 0) for c in cases)
+    return lost, asked, (round(lost / asked, 3) if asked else 0.0)
+
+
+def outage_block(on, off=None):
+    """The outage paragraph and table that go under the delta."""
+    a_lost, a_asked, a_rate = outage_rate(on["cases"])
+    if off is None:
+        if not a_lost:
+            return ""
+        return (f"<p><b>Outages:</b> {a_lost} of {a_asked} trials were lost and are not "
+                "in any rate above.</p>")
+    b_lost, b_asked, b_rate = outage_rate(off["cases"])
+    gap = round(a_rate - b_rate, 3)
+    warn = ("" if abs(gap) < 0.1 else
+            " <b>The arms did not lose trials at the same rate.</b> A pooled risk "
+            "difference across arms whose samples were thinned unequally is not read "
+            "as a treatment effect without saying so.")
+    rows_html = "".join(
+        f"<tr><td>{cid}</td><td>{ae}/{aa}</td><td>{be}/{ba}</td></tr>"
+        for cid, ae, aa, be, ba in outages(on, off) if be is not None)
+    return (f"<h2>Outages</h2><p>Lost trials are not failures and are in no rate above. "
+            f"They are reported because they do not fall evenly: consulting the bundle "
+            f"costs turns, so the arm holding the knowledge exhausts its budget more "
+            f"readily and its surviving trials are the atypically brief ones. "
+            f"{on.get('bundle', 'on')} lost {a_lost} of {a_asked} ({a_rate}); "
+            f"{off.get('bundle', 'off')} lost {b_lost} of {b_asked} ({b_rate}); "
+            f"difference {'+' if gap >= 0 else ''}{gap}.{warn}</p>"
+            f"<table><tr><th>case</th><th>{on.get('bundle','on')} lost</th>"
+            f"<th>{off.get('bundle','off')} lost</th></tr>{rows_html}</table>")
+
+
 def render(on, off=None):
     if off is not None:
         differ = mismatched_rubrics(on, off)
@@ -102,6 +158,7 @@ caption{{text-align:left;color:#555;padding-bottom:.5rem}}</style>
 <p>A case passes when its point-estimate pass rate meets the threshold; the
 Wilson 95% interval is reported beside it. {note}</p>
 <table>{head}{''.join(body)}</table>
+{outage_block(on, off)}
 <p style=color:#888>Generated from results.json by scoreboard.py.</p>
 """
 
