@@ -99,6 +99,14 @@ def audit(outdir: Path, case: str, marks_file: Path, full=None):
     report = {}
     for arm in ("on", "off"):
         root = outdir / f"transcripts_{arm}"
+        # The runner files transcripts under a directory per case. A run that
+        # covers one case can scan the arm whole, but a run that covers seven
+        # cannot: every case would be audited against all of the arm's
+        # transcripts, and the count reported beside the verdict would be the
+        # arm's total rather than the case's. Scope to the case when its own
+        # directory is there.
+        if (root / case).is_dir():
+            root = root / case
         prose, paths, seen = [], 0, 0
         for f in sorted(root.rglob("trial*.txt")):
             seen += 1

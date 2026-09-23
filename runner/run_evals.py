@@ -316,9 +316,55 @@ def main():
     aside += [Path(q) for q in args.quarantine]
     holding = Path(tempfile.mkdtemp(prefix="osp-quarantine-"))
     moved = []
+    def put_back():
+        # The "data" filter is meant for archives from elsewhere. It refuses
+        # an absolute symlink, and refusing one here aborted the extraction
+        # part way, left the tree half restored, and never tried the archives
+        # queued behind it. The "tar" filter is the smallest step that
+        # restores a tree faithfully: it still refuses to write outside the
+        # destination, which is the property worth keeping, and permits the
+        # symlink that was already on disk a moment ago. "fully_trusted"
+        # would also work and is not used, because nothing here needs it.
+        # A restore that gives back some of someone's files is worse than one
+        # that fails loudly, so each archive is now attempted on its own and a
+        # failure names itself rather than stranding the ones behind it.
+        failed = []
+        for archive, path in moved:
+            if not (archive.is_file() and not path.exists()):
+                continue
+            try:
+                with tarfile.open(archive) as tf:
+                    try:
+                        tf.extractall(path.parent, filter="tar")
+                    except TypeError:  # the filter argument is newer than 3.11.4
+                        tf.extractall(path.parent)
+            except Exception as exc:                      # noqa: BLE001
+                failed.append((archive, path, exc))
+        if moved:
+            print(f"put back {len(moved) - len(failed)} of {len(moved)} "
+                  f"set aside", flush=True)
+        if failed:
+            for archive, path, exc in failed:
+                print(f"ERROR: {path} was NOT put back: {exc}\n"
+                      f"  its archive is kept at {archive}", flush=True)
+            print("ERROR: the holding directory is kept because a restore "
+                  "failed; put these back by hand before trusting this "
+                  "machine", flush=True)
+            return
+        shutil.rmtree(holding, ignore_errors=True)
+
+    # Registered before the first tree moves, not after the last one. It used
+    # to be registered after the loop, so a failure inside the loop, which is
+    # where the deleting happens, left everything already moved on the floor
+    # with no handler to put it back. That is exactly how a run ended holding
+    # seven trees hostage in a temporary directory.
+    atexit.register(put_back)
     for n, path in enumerate(dict.fromkeys(p.resolve() for p in aside)):
-        if not path.is_dir():
+        if not path.exists():
             continue
+        # A file is set aside as readily as a directory. An arm's own results
+        # file is a recorded answer to every case in it, and skipping it
+        # silently because it is not a directory hid that fact.
         archive = holding / f"{n:02d}-{path.name}.tar.gz"
         with tarfile.open(archive, "w:gz") as tf:
             tf.add(path, arcname=path.name)
@@ -326,24 +372,12 @@ def main():
             # Read it back before deleting the only copy.
             if not tf.getmembers():
                 raise SystemExit(f"the archive of {path} is empty; nothing deleted")
-        shutil.rmtree(path)
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
         moved.append((archive, path))
         print(f"set aside {path}", flush=True)
-
-    def put_back():
-        for archive, path in moved:
-            if archive.is_file() and not path.exists():
-                with tarfile.open(archive) as tf:
-                    try:
-                        tf.extractall(path.parent, filter="data")
-                    except TypeError:   # the filter argument is newer than 3.11.4
-                        tf.extractall(path.parent)
-        if moved:
-            print(f"put back {len(moved)} director"
-                  f"{'y' if len(moved) == 1 else 'ies'}", flush=True)
-        shutil.rmtree(holding, ignore_errors=True)
-
-    atexit.register(put_back)
 
     # atexit does not run when the process is signalled, and a run killed
     # mid-arm would leave the workspace with its cases and its knowledge set

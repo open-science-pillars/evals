@@ -234,12 +234,26 @@ def scan(roots: list[Path], by_case: dict[str, list[Path]], case_ids: set[str],
                 concept_hits.append((cid, concept, path))
                 break
         parts = {p.lower() for p in path.parts}
-        if parts & {"transcripts", "results", "fixtures"}:
+        if answer_bearing(parts):
             for cid in case_ids:
                 if cid in path.stem or cid in text[:4000]:
                     answer_hits.append((cid, path))
                     break
     return concept_hits, answer_hits
+
+
+def answer_bearing(parts: set) -> bool:
+    """Does any directory on this path hold recorded answers?
+
+    The harness writes its own transcripts to `transcripts_on` and
+    `transcripts_off`, and an exact match on "transcripts" sees neither. A
+    sibling run's output sitting on the same disk is the plainest form of a
+    recorded answer there is, and it was invisible to this check: the only
+    reason it never mattered is that each run was given a fresh machine and
+    the arm quarantines its own transcripts by path.
+    """
+    return any(p == "fixtures" or p.startswith(("transcripts", "results"))
+               for p in parts)
 
 
 def scan_frozen(roots, salt, size, frozen, case_ids, allowed):
@@ -255,7 +269,7 @@ def scan_frozen(roots, salt, size, frozen, case_ids, allowed):
                 concept_hits.append((cid, hit, path))
                 break
         parts = {p.lower() for p in path.parts}
-        if parts & {"transcripts", "results", "fixtures"}:
+        if answer_bearing(parts):
             for cid in case_ids:
                 if cid in path.stem or cid in text[:4000]:
                     answer_hits.append((cid, path))

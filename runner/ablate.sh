@@ -86,6 +86,14 @@ for k in "${KDIRS[@]}"; do QUAR_OFF+=(--quarantine "$k"); done
 # leak check to match it, which is the check doing its job on a leak this
 # script created. The runner puts them back when the off arm is done.
 QUAR_OFF+=(--quarantine "$OUT/transcripts_on")
+# The on arm's results file is the same kind of thing and was left readable.
+# It carries every trial's verdict and the grader's reasoning about what the
+# response said, case by case, which is an answer sheet in a plainer form than
+# the transcripts are. It went unnoticed because the check that looks for
+# recorded answers matched directory names and this is a file, and because a
+# run had never yet shared a machine with its own earlier arm in a way that
+# made it visible.
+QUAR_OFF+=(--quarantine "$OUT/results_on.json")
 
 mkdir -p "$OUT"
 
