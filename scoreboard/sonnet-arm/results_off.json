@@ -1,0 +1,1949 @@
+{
+  "manifest": "ablation-gotcha-avoidance",
+  "model": "claude-sonnet-5",
+  "bundle": "off",
+  "trials": 20,
+  "timeout": 1200,
+  "claude_args": [],
+  "record_version": 2,
+  "suite": "ablation-gotcha-avoidance",
+  "runtime": {
+    "name": "claude-code",
+    "projection": "claude",
+    "version": "2.1.280 (Claude Code)"
+  },
+  "judge_model": "claude-sonnet-5",
+  "date": "2026-09-23",
+  "capabilities": {
+    "ocean-science": {
+      "name": "ocean-science",
+      "version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "release_lock_version": "0.9.0",
+      "release_lock_current": null
+    }
+  },
+  "cases": [
+    {
+      "passes": 11,
+      "trials": 20,
+      "rate": 0.55,
+      "ci95": [
+        0.342,
+        0.742
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "native-grid-refusal",
+      "type": "rejection",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 0,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 33,
+          "chars": 2103,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response correctly refuses and cites the ecco-native-vs-regridded gotcha with native-grid collections and snapshot guidance, but omits the required geothermal ancillary flux mention for the heat budget, making the constructive path incomplete per the strict rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 26,
+          "chars": 2217,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses to compute the budget on the regridded product, cites the specific gotcha (regridding destroys flux-divergence consistency needed for closure), and offers a constructive native-grid path naming specific collections (LLC0090GRID temp/salinity, snapshot for tendencies, heat flux, geometry) plus geothermal/forcing terms, without falling back to a workaround on the regridded fields.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 28,
+          "chars": 2387,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses to compute the heat budget on the regridded product, explicitly cites the gotcha concept (ecco-native-vs-regridded), and offers a constructive native-grid path naming specific collections, snapshots for the tendency term, and geothermal is not mentioned but the overall structure (collections named, snapshots, refusal without a regridded-field workaround) matches the required pass pattern.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 27,
+          "chars": 2512,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The refusal cites the native-grid gotcha and names native collections, but omits the required specifics (snapshot fields for tendencies, geothermal ancillary flux) and then offers a fallback analysis explicitly said to 'tolerate the regridded product,' which matches the rubric's fail condition of a workaround on regridded fields."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 293,
+          "chars": 2239,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses to work on the regridded product, cites the gotcha concept (tendency vs. snapshot diff, curvilinear masking, geothermal flux in geometry) and offers a constructive native-grid path with named ECCO V4r4 collections and the sanctioned executor, without falling back to a workaround budget on regridded fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 22,
+          "chars": 1932,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded-budget request, explicitly cites the ecco-native-vs-regridded gotcha, and offers a constructive native-grid path naming the correct collections (monthly, snapshot for tendencies, geometry) without proposing any workaround on the regridded fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 24,
+          "chars": 2194,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The refusal cites the regridding gotcha and offers a native-grid path with collections named and snapshots for tendencies, but never mentions geothermal flux as an ancillary field needed for a closed heat budget, so the required constructive path is incomplete."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 24,
+          "chars": 1981,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response refuses and offers native-grid collections and snapshot fields, but never cites the geothermal-flux gotcha/ancillary collection required by the rubric, nor does it explicitly cite a named gotcha concept rather than just prose reasoning."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 36,
+          "chars": 2639,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses to compute the budget on the regridded product, explicitly cites the gotcha (ecco-native-vs-regridded), and offers a constructive native-grid path naming the specific collections (T/S, heat flux, snapshots, geometry) plus surface forcing, without offering any workaround budget on the regridded fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 41,
+          "chars": 2324,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The refusal is well-grounded and names native-grid collections plus snapshot files for tendency, but never mentions the geothermal ancillary flux term that the rubric requires as part of the constructive native-grid path."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 137,
+          "chars": 2585,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response refuses and cites the ecco-native-vs-regridded gotcha with a native-grid path naming collections and snapshots, but never mentions geothermal ancillary flux as required by the rubric's constructive-path criteria, making it partial compliance."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 26,
+          "chars": 2241,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded budget request, cites the ecco-native-vs-regridded gotcha by name with the mechanistic reason, and offers a constructive native-grid path naming specific collections (LLC90 T/S, heat flux, geometry, surface forcing) plus snapshot variant mention and the sanctioned executor, without performing any workaround computation on the regridded fields.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 25,
+          "chars": 1781,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response issues a hard refusal citing the specific gotcha (ecco-native-vs-regridded) explaining why regridded fields cannot support a budget, and offers a constructive path using named native LLC90 collections, snapshot/monthly-mean pairs for tendencies, and the sanctioned executor/attester, without performing any workaround computation on the regridded data.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 273,
+          "chars": 2482,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses to use the regridded product by citing the gotcha (regridding destroys the discrete divergence operators the budget depends on) and offers a constructive native-grid path naming the required collections, snapshot products for the tendency term, and the geothermal flux as an ancillary consideration, without offering any workaround on the regridded fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 466,
+          "chars": 2925,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript refuses the regridded budget while citing the ecco-native-vs-regridded gotcha, and offers a constructive native-grid path naming the required LLC90 collections, snapshots for the tendency term, and geothermal flux ancillary, without falling back to a workaround budget on the regridded fields."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 221,
+          "chars": 1963,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response refuses based on physics but explicitly admits it cannot cite the plugin's gotcha concept, and instead of offering the required constructive native-grid path (named LLC0090 collections, snapshot-based tendencies, geothermal ancillary term), it asks for a tool permission grant or offers a single-term diagnostic on the regridded product itself."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 23,
+          "chars": 1989,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response refuses the regridded heat budget, explicitly cites the gotcha (ecco-native-vs-regridded), and offers a constructive native-grid path naming specific collections, snapshot products for tendencies, without providing any workaround budget on the regridded fields (geothermal ancillary point isn't mentioned but the core pass criteria of refusal+citation+native path are met).\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 77,
+          "chars": 2408,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The refusal cites the gotcha and names native collections plus snapshot bookends, but omits the geothermal ancillary component the rubric requires as part of the constructive native-grid path for a heat budget."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 22,
+          "chars": 2030,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response refuses and cites the regridding/hFac gotcha with native-grid collections and snapshot-for-tendency guidance, but never mentions geothermal heat flux as a required ancillary term, which the rubric requires as part of the constructive native-grid path."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 206,
+          "chars": 2641,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript refuses to proceed with the regridded budget, cites the native-vs-regridded/hFac gotcha explicitly, and offers a constructive native-grid path naming specific LLC0090 collections including snapshots for the tendency term and flagging geothermal flux as an ancillary term to check, without offering any workaround on the regridded fields."
+            }
+          },
+          "pass": true
+        }
+      ]
+    },
+    {
+      "passes": 4,
+      "trials": 19,
+      "rate": 0.211,
+      "ci95": [
+        0.085,
+        0.433
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "geothermal-omission",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 1,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 346,
+          "chars": 5862,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan mentions geothermal flux is not a PO.DAAC granule but never states it as a static ancillary input file (geothermalFlux.bin) or names it specifically, instead vaguely calling it 'baked into the forcing' and deferring to future verification rather than asserting the fact."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 451,
+          "chars": 8646,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal heat flux term and states it is not a PO.DAAC granule but a static input field applied manually at the bottom cell, and it also includes z* free-surface correction for the tendency snapshots."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 339,
+          "chars": 6118,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan includes geothermal heat flux explicitly as a static ancillary one-time input (item #9, distinguished from the PO.DAAC ShortName collections) and also includes THETA snapshots at month boundaries for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 306,
+          "chars": 8265,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal flux term, correctly states it is a static ancillary/boundary-condition input not available as a PO.DAAC collection (geothermal boundary field), and also includes the snapshot collection for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 309,
+          "chars": 9583,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal heat flux term (in both the download plan and computation term 7) and states it is typically a static forcing field bundled with model input rather than a separate PO.DAAC granule, and the tendency term explicitly calls for snapshot differences (item 1) rather than differenced monthly means."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 262,
+          "chars": 5294,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes geothermal forcing as a mandatory term for the full-depth budget and states it is a fixed static field baked into the MITgcm config (not a separate PO.DAAC granule/collection), and it lists the snapshot THETA/SALT collection required for the z*-corrected tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 288,
+          "chars": 6909,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan mentions geothermal heat flux as a needed term but does not state it is a static ancillary file (geothermalFlux.bin) rather than a PO.DAAC collection, and its data-volume/collection table never includes it, leaving it unaccounted for in the actual data-acquisition plan."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 329,
+          "chars": 6469,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan mentions geothermal flux only as an unresolved open question about whether ECCO applies it, never stating it is the static ancillary input geothermalFlux.bin outside PO.DAAC collections, and it never mentions z* snapshots for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 368,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 139,
+          "chars": 1732,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces a plan at all (it asks the user to choose a path), so it never states the geothermal flux as a static ancillary input nor includes z* snapshots for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 347,
+          "chars": 5395,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes geothermal flux as a required budget term and states it is a static field baked into the model, not a downloadable PO.DAAC collection, and it also specifies snapshot (not mean) THETA for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 494,
+          "chars": 7719,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan mentions geothermal flux as a term to check but never states it is a static ancillary input (geothermalFlux.bin) distinct from a PO.DAAC collection, which the rubric requires."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 281,
+          "chars": 5944,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal flux term as a mandatory forcing component and states it is a static ancillary boundary field not archived as a standard PO.DAAC granule series, and it also includes the snapshot temperature/salinity collection for the tendency term."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 189,
+          "chars": 6127,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan lists geothermal flux as a row in the 'PO.DAAC collections to download' table (implying it needs a PO.DAAC collection/granule), rather than correctly stating it is a static ancillary input file (geothermalFlux.bin) not obtained from PO.DAAC."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 238,
+          "chars": 8139,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan flags geothermal flux only as a gotcha/caveat without naming it as a required ancillary input file (geothermalFlux.bin) or including it in the collections/terms list, and it never mentions z* snapshot fields for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 321,
+          "chars": 6259,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal flux term in the budget equation and states it is a static field not properly a PO.DAAC collection (\\\"Likely bundled as a static field... rather than its own collection\\\"), and full-depth integration to bathymetry is specified, though it's slightly ambiguous on the exact 'geothermalFlux.bin' filename and doesn't explicitly mention z* snapshots for the tendency term.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 303,
+          "chars": 8767,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes geothermal flux as term 7 and states it is not on PO.DAAC, sourced as a static file (geothermalFlux.bin), and it also includes the required TEMP_SALINITY snapshot collection for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 326,
+          "chars": 6218,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The plan includes a geothermal flux term but lists it ambiguously as item #7 in the PO.DAAC collections table and merely flags uncertainty about whether it's a PO.DAAC granule, rather than clearly stating it is a static ancillary input (geothermalFlux.bin) that is not a PO.DAAC collection."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 313,
+          "chars": 7103,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The plan explicitly includes the geothermal flux term as a budget component and states it is a static field (not deposited/hosted as a separate PO.DAAC forcing collection but a static geometry/ancillary field), and it also includes snapshot THETA/SALT (z*-style month-boundary snapshots) as distinct from monthly means for the tendency term."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 313,
+          "chars": 1613,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces a plan at all (it's blocked/asking the user how to proceed), so it does not include the geothermal flux term as a static ancillary input nor z* snapshots."
+            }
+          },
+          "pass": false
+        }
+      ]
+    },
+    {
+      "passes": 5,
+      "trials": 18,
+      "rate": 0.278,
+      "ci95": [
+        0.125,
+        0.509
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "swot-calval-window",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 2,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 512,
+          "chars": 4523,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "While the response surfaces the orbit-phase seam and splits the time series into two regimes, it never mentions the cycle-numbering discontinuity across phases nor the version-family constraint that cal/val data lives only in D collections (no collection was even chosen, since the search tool was blocked), so the required specific gotchas are not fully surfaced."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 299,
+          "chars": 4579,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response mentions the cal/val-to-science orbit transition and a generic 'version family' split, but never surfaces the cycle-numbering discontinuity between orbit phases nor ties the version-family constraint concretely to selecting the 'D' collections for cal/val data, and no actual collection/range selection was ever made since no data was loaded."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 531,
+          "chars": 2041,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never reaches the actual SWOT cal/val-to-science analysis; the assistant reports blockers and refuses to proceed, so it never surfaces the orbit-phase range split, cycle-numbering discontinuity, or version-family (D collection) constraint required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 213,
+          "chars": 4126,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript unprompted flags the March 2023\u2013March 2024 window as spanning the 1-day cal/val orbit to 21-day science orbit transition (~July 2023), notes the cadence/cycle-numbering discontinuity requiring segmentation rather than a smoothed continuous series, though it does not explicitly mention the D-collection version-family constraint since no collection search was actually performed.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 217,
+          "chars": 4498,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript surfaces the orbit-phase gotcha unprompted, notes the cal/val vs science version-family split and the sampling regime discontinuity, and explicitly plans to keep the cal/val (irregular ~1-day) and science-orbit (~21-day) cycles distinguishable rather than building one continuous series, before halting for legitimate permission reasons.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 459,
+          "chars": 3571,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response only vaguely flags that the window may straddle the cal/val-to-science transition without splitting/narrowing the range, never mentions the cycle-numbering discontinuity, and never applies the version-family (D-collection) constraint to collection choice."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 234,
+          "chars": 1930,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never surfaces or resolves the cal/val-to-science orbit-phase gotcha for the requested window (no range split, no cycle-numbering discontinuity note, no D-collection version constraint applied); it only reports a knowledge-file access problem and defers the actual analysis."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 284,
+          "chars": 3009,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never delivers the required time series or dataset plan at all (blocked by tool/knowledge access), and while it vaguely mentions the orbit change, it does not surface the required cycle-numbering discontinuity or version-family (D collections) constraint, nor apply a range split/narrowing per phase."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 208,
+          "chars": 4857,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript unprompted surfaces the cal/val-to-science orbit transition mid-window, explains the cycle/pass sampling discontinuity, recommends splitting rather than uniformly stitching the series, and flags baseline/CRID discontinuity, satisfying the rubric's core requirements even though the version-family D-collection point wasn't explicitly named."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 98,
+          "chars": 3539,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the orbit-phase transition unprompted (naming the July 2023 1-day cal/val to 21-day science orbit switch), proposes splitting the series into two regimes with a transition marker rather than pooling continuously, and flags the crossover-calibration/version gotcha, though it does not fully verify the D-collection cal/val constraint due to a blocked knowledge bundle, which it honestly discloses.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 76,
+          "chars": 223,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only contains a permission request to query CMR and never shows the actual analysis, so none of the required orbit-phase/cal-val discontinuity handling is present."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 167,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 145,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 379,
+          "chars": 1153,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript is a follow-up about a failed knowledge-file lookup and never surfaces the orbit-phase split, cycle-numbering discontinuity, or version-family (D-collection) constraint for the July 2023 cal/val-to-science transition."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 165,
+          "chars": 3376,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript raises the general cal/val-vs-science orbit-phase caveat but never narrows/splits the date range, never mentions the cycle-numbering discontinuity, and never applies a version-family (D-collection) constraint to collection choice \u2014 it just cites a single generic SWOT_L2_LR_SSH product for the whole span."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 103,
+          "chars": 1451,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never reaches or surfaces the orbit-phase gotcha (cal/val vs science cycle split, cycle-numbering discontinuity, or D-collection version constraint) since the assistant stopped at permission/access blockers without producing any analysis or plan addressing the July 2023 transition."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 325,
+          "chars": 5395,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response mentions the cal/val-to-science orbit transition in general terms but never splits/narrows the range per phase, never mentions the cycle-numbering discontinuity between orbit phases, and never applies the version-family (D-collection) constraint to collection choice, instead building one continuous per-pass time series with only a vague 'flag the boundary' comment."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 361,
+          "chars": 4258,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the orbit-phase transition unprompted, explicitly segments the series into cal/val vs science orbit rather than treating it as continuous, and flags the version-family/knowledge-gap issue, though it doesn't explicitly discuss cycle-numbering discontinuity or the D-collection constraint by name since the CMR search was blocked."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 548,
+          "chars": 4536,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "While the response surfaces the orbit-phase split and cycle-numbering discontinuity, it never mentions the version-family constraint that cal/val data lives only in separate 'D' collections, so that requirement of the rubric is not applied to collection choice."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 468,
+          "chars": 3499,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response mentions the orbit-phase transition generically but never surfaces the version-family (cal/val-only D collections) constraint or the cycle-numbering discontinuity, so the specific gotchas required by the rubric are not applied."
+            }
+          },
+          "pass": false
+        }
+      ]
+    },
+    {
+      "passes": 13,
+      "trials": 19,
+      "rate": 0.684,
+      "ci95": [
+        0.46,
+        0.846
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "grace-leakage",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 1,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 132,
+          "chars": 2285,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript unprompted names the CRI product, frames leakage at mascon scale, states the ice-loss leakage risk with SE Greenland specifics (Helheim, Kangerdlugssuaq), and refuses to quote any trend without pairing formal errors with the leakage caveat."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 219,
+          "chars": 3266,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refuses to produce any trend and never states the formal-error-plus-leakage framing on a quoted number, nor names a CRI product or mascon-scale interpretation explicitly as required by the rubric, so it does not meet the pass bar despite mentioning leakage risk qualitatively."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 695,
+          "chars": 3304,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI-filtered mascon product, explains leakage at mascon (not grid-cell) resolution, explicitly states the ice-loss leakage risk with named outlet glaciers, and since it declines to quote any trend number, it never violates the bare-trend-without-leakage-caveat failure mode."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 151,
+          "chars": 3288,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response names the CRI product, correctly frames leakage at mascon scale (~3\u00b0 equal-area caps, not grid cells), states the ice-loss leakage risk explicitly, and refuses to quote any trend without the formal-error-plus-leakage caveat, satisfying all rubric elements unprompted."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 165,
+          "chars": 3048,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response flags ice-sheet mass-loss leakage into mascons but never names the CRI (Coastline Resolution Improvement) product/filter or explicitly frames the mascon-vs-grid-cell distinction, so the required gotcha elements aren't fully surfaced."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 177,
+          "chars": 2698,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage gotcha unprompted with the right specifics (mascon ~300 km footprint, ice-mass-loss leakage into coastal mascons, and the JPL coastal-resolution-improvement/CRI correction), and since it declines to quote any trend at all, there is no bare-trend-without-leakage-framing failure to trigger."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 272,
+          "chars": 2898,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response surfaces the coastal-leakage gotcha unprompted, naming JPL's CRI-filtered mascons, explaining leakage occurs at mascon (not grid-cell) scale, stating the ice-loss leakage risk explicitly, and refuses to quote any trend without both formal error and leakage caveats, consistent with the rubric's requirements.\" [salvaged from a truncated judge reply]",
+              "salvaged": true
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 303,
+          "chars": 2621,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refuses to compute the trend and never surfaces the required coastal-leakage gotcha elements (no CRI product named, no mascon-scale vs grid-cell framing, no formal-error-plus-leakage framing on a quoted trend), only a generic mention of self-attraction/loading fingerprint effects."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 201,
+          "chars": 3233,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refuses to produce a trend at all and never names a CRI product or gives mascon-scale interpretation with formal-error-plus-leakage framing on a quoted number; it discusses leakage/fingerprint effects only as unattested general knowledge, not surfaced against an actual attested trend."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 487,
+          "chars": 3459,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI product, explains mascon-scale (not grid-cell) spatial resolution, and states the ice-sheet-loss leakage risk specifically for SE Greenland/Denmark Strait, and since it declined to quote any actual trend, the 'formal-error-plus-leakage framing on any trend quoted' requirement is not violated."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 191,
+          "chars": 3591,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript names the CRI product, correctly interprets mascon-scale (not grid-cell) resolution, explicitly states the ice-loss leakage risk into SE Greenland shelf ocean mascons, and frames any quoted trend as leakage-dominated rather than a validated formal-error-only number, all surfaced unprompted."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 254,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 144,
+          "chars": 3117,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response names the CRI product, explicitly frames leakage as a mascon-scale (not grid-cell) issue, states the ice-loss leakage risk unprompted, and ties the formal-error-plus-leakage caveat to any trend before ultimately declining to quote a bare number."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 377,
+          "chars": 3980,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI product, explains mascon-scale (~300km blocks) rather than grid-cell resolution, explicitly states the ice-loss leakage risk for SE Greenland, and never quotes a bare trend without leakage/GIA caveats attached."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 163,
+          "chars": 2901,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted named the CRI mascon product, explained the ~3\u00b0 equal-area mascon-scale (not grid-cell) interpretation, explicitly flagged the ice-sheet mass-loss leakage risk into adjacent ocean mascons, and stated that any credible trend needs the leakage check reported alongside it rather than just a CI."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 118,
+          "chars": 3151,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response names the CRI product, explains the leakage is mascon-scale not grid-cell, states the ice-loss leakage risk specific to nearshore SE Greenland, and refuses to quote any trend without both formal error and leakage caveats, all surfaced unprompted."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 500,
+          "chars": 3409,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never computes or quotes any trend at all, so it cannot satisfy the required formal-error-plus-leakage framing on a quoted trend\u2014it only discusses the leakage risk in the abstract while refusing to produce a number."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 389,
+          "chars": 3810,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted surfaces the coastal-leakage gotcha in full: names the CRI filter, explains mascon-scale (~3\u00b0 block) leakage rather than grid-cell effects, states the ice-loss leakage risk with magnitude figures, and explicitly avoids quoting a bare regional trend, instead refusing until leakage/GIA correction can be shown alongside it."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 182,
+          "chars": 2954,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never names a CRI (coastal-corrected/leakage-corrected) product or gives mascon-scale interpretation guidance or a formal-error-plus-leakage framing on any quoted trend; it only generically warns about leakage and offers no trend at all, so it doesn't meet the rubric's specific pass criteria."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 568,
+          "chars": 2917,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response unprompted names the CRI mascon product, explains the leakage is a mascon-scale effective-resolution issue (not grid-cell), states the ice-loss leakage risk explicitly, and frames any trend as needing leakage correction plus uncertainty rather than quoting a bare number with only formal errors."
+            }
+          },
+          "pass": true
+        }
+      ]
+    },
+    {
+      "passes": 3,
+      "trials": 17,
+      "rate": 0.176,
+      "ci95": [
+        0.062,
+        0.41
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "ecco-release-mixing",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 3,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 311,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 438,
+          "chars": 2617,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never identifies or discusses the V4R4/V4R4B release-mismatch gotcha at all, so it fails to cite the specific concept the rubric requires despite otherwise appropriately declining to fabricate a result."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 596,
+          "chars": 2873,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly flags the V4R4/V4R4B re-release gotcha, states never to blend them, and commits to staying on plain V4R4 throughout for consistency."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 328,
+          "chars": 2671,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never mentions V4R4B or the release-correction gotcha at all, instead treating V4R4 as the sole complete collection without flagging the two-release mixing risk the rubric requires."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 382,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 506,
+          "chars": 2830,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never mentions the V4R4/V4R4B release-correction gotcha at all, discussing only the native-vs-regridded grid distinction, so it fails to cite or flag the required concept."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 256,
+          "chars": 3380,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never cites the V4R4/V4R4B release-correction gotcha or the SSH IB-correction mixing concept as the reason to pick one release; it only vaguely mentions an unspecified IB-corrected variable choice while declining to answer entirely, so the specific gotcha the rubric requires is not surfaced."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 432,
+          "chars": 2183,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response picks V4R4 but never acknowledges the existence of V4R4B or the mixing-releases gotcha, so the required gotcha concept is not cited."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 266,
+          "chars": 2488,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never identifies or discusses the V4R4/V4R4B release correction gotcha at all, instead getting stuck on an unrelated region-registry issue, so it fails to cite or address the required gotcha concept."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 965,
+          "chars": 1562,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response asserts ECCO v4r4 is a single collection with no release-splicing needed, missing the V4R4/V4R4B distinction entirely rather than picking one or flagging the mixing gotcha."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 248,
+          "chars": 3064,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never distinguishes V4R4 from V4R4B or warns against mixing them; it only lists 'ecco-release-mixing' as a manifest filename and even asserts SSH is 'a single self-consistent...collection,' failing to engage with or cite the release-mixing gotcha at all."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 215,
+          "chars": 29,
+          "error": "empty or limit message"
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 371,
+          "chars": 2399,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never mentions the V4R4/V4R4B release distinction or the risk of mixing them; it discusses missing knowledge files, region support, and CMR permissions but does not surface the specific SSH release gotcha the rubric requires."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 220,
+          "chars": 1949,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response refuses to proceed due to tool/access blockers and never mentions or cites the V4R4/V4R4B release-mixing gotcha at all."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 297,
+          "chars": 2794,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly flags that V4R4B must not be mixed with V4R4 within one series, citing it as a known gotcha, satisfying the rubric's core requirement even though it doesn't produce a final number."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 461,
+          "chars": 2509,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly names the V4R4/V4R4B release-mixing gotcha and states it will use V4R4 consistently for the whole record rather than switching, satisfying the rubric's requirement to pick one release and flag the mixing hazard."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 502,
+          "chars": 2349,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never mentions the two SSH release versions (V4R4 vs V4R4B) or the mixing-releases gotcha at all, instead blocking on unrelated infrastructure issues (missing knowledge bundle, no data access), so the required gotcha concept is not cited."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 220,
+          "chars": 2119,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The response never picks a release or cites the V4R4/V4R4B mixing gotcha at all; it just reports it cannot proceed due to missing tooling/permissions."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 344,
+          "chars": 1534,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript is a blocker/permissions request that never assembles an ECCO SSH series or mentions the V4R4/V4R4B release-mixing gotcha at all, so it fails the rubric's requirement to cite that concept or pick one release."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 575,
+          "chars": 3129,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response explicitly names the V4R4 vs V4R4B release-mixing gotcha and commits to a single consistent collection (V4R4) rather than silently splicing whatever collections cover the period."
+            }
+          },
+          "pass": false
+        }
+      ]
+    },
+    {
+      "passes": 1,
+      "trials": 19,
+      "rate": 0.053,
+      "ci95": [
+        0.009,
+        0.246
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "mht-basin-scope",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 1,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 49,
+          "chars": 265,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only shows a request for tool approval to run the ECCO script and never presents any RAPID comparison, Atlantic-scoped value, or citation of the gotcha/recipe, so the pass criteria are not met."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 699,
+          "chars": 2368,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never computes or cites the RAPID comparison using the Atlantic (~0.666 PW) value with named scope; it refuses to produce any number at all, citing missing data/credentials and a missing knowledge bundle, so it does not meet the pass criteria."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 98,
+          "chars": 1976,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces a RAPID comparison at all (blocked, no number given), so it does not use the Atlantic atlExt value with scope named as required to pass."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 97,
+          "chars": 1656,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refuses to run the computation or produce any RAPID comparison number at all, so it never uses the Atlantic (atlExt) value as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 608,
+          "chars": 2807,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial refused to produce a RAPID comparison at all rather than reporting the Atlantic-scoped ~0.666 PW value as the comparison figure, so it does not meet the pass criterion despite correctly identifying the basin-scope gotcha."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 142,
+          "chars": 2025,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refuses to produce any comparison number at all, so it never uses the Atlantic atlExt value (~0.666 PW) as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 424,
+          "chars": 1930,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript names the full-circle 1.098/1.10 PW as the 26.5N figure and refuses to give the Atlantic-only (atlExt ~0.666 PW) value or use it in the RAPID comparison, contrary to the rubric's requirement."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 594,
+          "chars": 1640,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript compares RAPID's ~1.3 PW against the full-circle 1.098/1.10 PW value rather than the Atlantic-only (atlExt) ~0.666 PW figure, so the RAPID comparison uses the wrong scope."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 149,
+          "chars": 2420,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refused to produce a computed RAPID comparison at all (no atlExt value cited or named), so it does not meet the rubric's requirement of using the Atlantic-scoped ~0.666 PW value with scope named."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 134,
+          "chars": 2030,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial refused to produce any comparison at all, so it never used the Atlantic (atlExt) value or named the scope, failing the eval's requirement."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 472,
+          "chars": 2138,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript refuses to produce any comparison at all, so it never uses the Atlantic atlExt value or cites the gotcha/recipe as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 113,
+          "chars": 1123,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never completed the RAPID comparison or cited the Atlantic (atlExt) scoped value with the gotcha/recipe\u2014it stalled asking for execution approval and produced no final comparison result."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 160,
+          "chars": 2021,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produced a RAPID comparison using the Atlantic (atlExt) value or any headline number at all, refusing outright due to sandbox limitations, so it does not meet the rubric's requirement."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 266,
+          "chars": 2190,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial refused to provide any RAPID comparison number and never cited the Atlantic (atlExt) value of ~0.666 PW as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 93,
+          "chars": 2003,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces a RAPID comparison using the Atlantic (atlExt) ~0.666 PW value with scope named; it refuses entirely and gives no number or comparison."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 432,
+          "chars": 1975,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The response correctly refuses to compare the global 1.098 PW value to RAPID, explicitly identifies it as scope-mismatched (Atlantic-only vs global), cites the gotcha (scope error) and recipe (AMOC/RAPID confrontation), and does not name the full-circle number as the 26.5N Atlantic transport."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 200,
+          "chars": 1772,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial refused to give any RAPID comparison number at all due to a claimed tooling access blocker, so it never used the Atlantic-scoped value or cited the gotcha/recipe as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 95,
+          "chars": 2364,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never produces a RAPID comparison using the Atlantic (atlExt) value at all\u2014it refuses to give any headline number, so it fails the rubric's requirement of comparing atlExt (~0.666 PW) to RAPID with scope named."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 64,
+          "chars": 549,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only shows a sandbox approval request and never proceeds to compute or report any RAPID/26.5N transport comparison, so it fails to meet the rubric's requirements."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 185,
+          "chars": 29,
+          "error": "empty or limit message"
+        }
+      ]
+    },
+    {
+      "passes": 1,
+      "trials": 19,
+      "rate": 0.053,
+      "ci95": [
+        0.009,
+        0.246
+      ],
+      "threshold": 0.8,
+      "pass": false,
+      "id": "swot-crossover-unapplied",
+      "type": "gotcha-avoidance",
+      "capability": "ocean-science",
+      "capability_version": "0.9.0",
+      "release_lock": "sha256:de135f0aa0f840d4b8615d91983cfaf61ac9da10bedf11a7e0756478d2607f04",
+      "errors": 1,
+      "trials_requested": 20,
+      "max_turns": 30,
+      "rubric": "notes",
+      "trial_detail": [
+        {
+          "trial": 1,
+          "elapsed_s": 36,
+          "chars": 733,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never loaded any granule, applied height_cor_xover, computed ssha_karin statistics, or cited the gotcha \u2014 it only asked the user for a file path and region."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 2,
+          "elapsed_s": 26,
+          "chars": 627,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only asks clarifying questions and never demonstrates adding height_cor_xover (gated by qual) to ssha_karin or explicitly stating the gotcha about flag-gating alone being insufficient before computing statistics."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 3,
+          "elapsed_s": 33,
+          "chars": 828,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never reaches the actual computation, so it never adds height_cor_xover gated by height_cor_xover_qual, never states the correction was applied, and never cites the uncorrected-flag-gating gotcha as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 4,
+          "elapsed_s": 40,
+          "chars": 865,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never loads any data or computes ssha_karin statistics, and never mentions applying height_cor_xover or the flag-gating-insufficient gotcha, so it does not meet the rubric's requirements."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 5,
+          "elapsed_s": 30,
+          "chars": 731,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only asks clarifying questions and never loads/computes ssha_karin, applies height_cor_xover, or cites the crossover correction gotcha as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 6,
+          "elapsed_s": 31,
+          "chars": 1143,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The model never computed ssha_karin statistics or applied height_cor_xover; it only asked clarifying questions, so the required correction application and gotcha citation in context of an actual computation never occurred."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 7,
+          "elapsed_s": 213,
+          "chars": 2062,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never actually computes ssha_karin statistics or applies height_cor_xover; it only asks the user for file path/region and describes an intended method, so the required correction application and gotcha citation were never demonstrated."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 8,
+          "elapsed_s": 20,
+          "chars": 541,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never applies height_cor_xover before computing statistics or explicitly states the correction was applied; it only asks for file path/region and vaguely mentions the crossover correction as a future step, never citing the flag-gating-insufficient gotcha or computing anything."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 9,
+          "elapsed_s": 19,
+          "chars": 494,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only asks clarifying questions and never loads the granule, applies height_cor_xover, computes ssha_karin statistics, or cites the gotcha, so the rubric's requirements are unmet."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 10,
+          "elapsed_s": 31,
+          "chars": 1147,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial never obtained a granule or computed any statistics, so it never actually added height_cor_xover (gated by height_cor_xover_qual) to ssha_karin as the rubric requires \u2014 it only stated an intent to do so later."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 11,
+          "elapsed_s": 143,
+          "chars": 1982,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "PASS",
+              "reason": "The transcript explicitly requires applying height_cor_xover (gated by qual flag) before computing ssha_karin statistics and cites the gotcha that flag-only masking leaves uncorrected calibration error in the mean/std."
+            }
+          },
+          "pass": true
+        },
+        {
+          "trial": 12,
+          "elapsed_s": 130,
+          "chars": 1687,
+          "graders": {
+            "programmatic": true,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The assistant never actually computed ssha_karin statistics or applied height_cor_xover to a granule; it only asked for the file path and region without performing or completing the task, so it cannot have satisfied the rubric's requirement of applying the correction and stating so before the statistic."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 13,
+          "elapsed_s": 31,
+          "chars": 988,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never loads a granule or computes ssha_karin statistics at all (it just asks clarifying questions), so it never applies height_cor_xover or cites the uncorrected-field gotcha as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 14,
+          "elapsed_s": 23,
+          "chars": 610,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never loads any granule or computes ssha_karin statistics at all, so it never applies height_cor_xover or cites the gotcha as required."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 15,
+          "elapsed_s": 28,
+          "chars": 689,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript merely asks the user for the granule and region without ever loading data, applying height_cor_xover, computing ssha_karin statistics, or citing the crossover-correction gotcha as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 16,
+          "elapsed_s": 147,
+          "chars": 2635,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The trial never computed ssha_karin statistics or applied height_cor_xover at all (no granule was obtained), so it cannot have satisfied the pass condition of applying the crossover correction before the statistic and demonstrating the gotcha."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 17,
+          "elapsed_s": 43,
+          "chars": 1097,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never reaches computing SSHA statistics or applying height_cor_xover correction; it only asks for the file path and region, so the required correction/gotcha content is entirely absent."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 18,
+          "elapsed_s": 49,
+          "chars": 1500,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript never computed SSHA statistics or applied height_cor_xover; it only asked for a file path/region and stopped, so it did not demonstrate the required correction workflow or gotcha application on an actual dataset."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 19,
+          "elapsed_s": 23,
+          "chars": 826,
+          "graders": {
+            "programmatic": false,
+            "rubric": {
+              "grade": "FAIL",
+              "reason": "The transcript only asks clarifying questions and never loads a granule, applies height_cor_xover, computes ssha_karin statistics, or cites the crossover gotcha as required by the rubric."
+            }
+          },
+          "pass": false
+        },
+        {
+          "trial": 20,
+          "elapsed_s": 224,
+          "chars": 29,
+          "error": "empty or limit message"
+        }
+      ]
+    }
+  ]
+}
