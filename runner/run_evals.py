@@ -316,23 +316,6 @@ def main():
     aside += [Path(q) for q in args.quarantine]
     holding = Path(tempfile.mkdtemp(prefix="osp-quarantine-"))
     moved = []
-    for n, path in enumerate(dict.fromkeys(p.resolve() for p in aside)):
-        if not path.exists():
-            continue
-        # A file is set aside as readily as a directory. An arm's own results
-        # file is a recorded answer to every case in it, and skipping it
-        # silently because it is not a directory hid that fact.
-        archive = holding / f"{n:02d}-{path.name}.tar.gz"
-        with tarfile.open(archive, "w:gz") as tf:
-            tf.add(path, arcname=path.name)
-        with tarfile.open(archive) as tf:
-            # Read it back before deleting the only copy.
-            if not tf.getmembers():
-                raise SystemExit(f"the archive of {path} is empty; nothing deleted")
-        shutil.rmtree(path)
-        moved.append((archive, path))
-        print(f"set aside {path}", flush=True)
-
     def put_back():
         # The "data" filter is meant for archives from elsewhere. It refuses
         # an absolute symlink, and refusing one here aborted the extraction
@@ -370,7 +353,31 @@ def main():
             return
         shutil.rmtree(holding, ignore_errors=True)
 
+    # Registered before the first tree moves, not after the last one. It used
+    # to be registered after the loop, so a failure inside the loop, which is
+    # where the deleting happens, left everything already moved on the floor
+    # with no handler to put it back. That is exactly how a run ended holding
+    # seven trees hostage in a temporary directory.
     atexit.register(put_back)
+    for n, path in enumerate(dict.fromkeys(p.resolve() for p in aside)):
+        if not path.exists():
+            continue
+        # A file is set aside as readily as a directory. An arm's own results
+        # file is a recorded answer to every case in it, and skipping it
+        # silently because it is not a directory hid that fact.
+        archive = holding / f"{n:02d}-{path.name}.tar.gz"
+        with tarfile.open(archive, "w:gz") as tf:
+            tf.add(path, arcname=path.name)
+        with tarfile.open(archive) as tf:
+            # Read it back before deleting the only copy.
+            if not tf.getmembers():
+                raise SystemExit(f"the archive of {path} is empty; nothing deleted")
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+        moved.append((archive, path))
+        print(f"set aside {path}", flush=True)
 
     # atexit does not run when the process is signalled, and a run killed
     # mid-arm would leave the workspace with its cases and its knowledge set
